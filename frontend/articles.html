@@ -1118,9 +1118,16 @@
     document.getElementById('tags-wrap').insertBefore(tag, input);
   }
 
-  // New article button
+  // Register page actions before awaiting Firestore requests.
   document.getElementById('new-article-btn').addEventListener('click', () => {
-    openEditor(editorModeFor());
+    try {
+      openEditor(editorModeFor());
+    } catch (error) {
+      console.error('Could not open the article editor:', error);
+      document.getElementById('editor-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      showEditorAlert(error.message || 'Could not open the article editor. Please refresh the page.', 'error');
+    }
   });
 
   // Init
