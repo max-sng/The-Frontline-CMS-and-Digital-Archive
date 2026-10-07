@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>User Management — The Frontline</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .users { max-width:980px;margin:28px auto;padding:12px; }
+    .cms-content .users { margin:0 auto; padding:0; }
+    .page-heading { display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px; }
+    .page-heading h1 { margin:0;line-height:1.2; }
+    .page-heading + .muted { margin:0 0 18px; }
+    .back-btn { color:var(--red);border-color:rgba(81,11,11,0.28);background:#fff8f8;font-weight:700; }
+    .back-btn:hover { color:#fff;background:var(--red);border-color:var(--red);transform:translateX(-2px); }
+    .back-icon { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(81,11,11,0.1);font-size:16px;line-height:1;transition:background 0.15s; }
+    .back-btn:hover .back-icon { background:rgba(255,255,255,0.18); }
+    .user-row { display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:#fff; }
+    .user-row > div:first-child { min-width:0; flex:1; }
+    .user-name { line-height:1.35; overflow-wrap:anywhere; }
+    .user-meta { font-size:13px;color:var(--text-sub); }
+    .user-actions { display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end; }
+    .user-actions .btn { min-height:36px;white-space:nowrap; }
+    .role-select { min-width:130px; }
+    .current-account-label { color:var(--text-muted);font-size:12px;font-weight:600;padding:0 6px;white-space:nowrap; }
+    @media (max-width:600px) {
+      .users { margin:18px auto;padding:10px; }
+      .user-row { align-items:stretch;flex-direction:column;gap:12px; }
+      .user-actions { justify-content:flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="cms-wrapper">
+  <aside class="cms-sidebar" id="sidebar">
+    <div class="sidebar-logo"><img src="assets/forefront-white.png" alt="The Frontline" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" /><span class="logo-fallback">The Frontline</span></div>
+    <nav class="sidebar-nav"><ul>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="media.html">Media</a></li>
+      <li><a href="archive.html">Archive</a></li>
+      <li><a href="correspondents.html">Correspondents</a></li>
+      <li><a href="settings.html">Settings</a></li>
+      <li><a href="approval-queue.html">Approval Queue</a></li>
+      <li class="active"><a href="user-management.html">User Management</a></li>
+    </ul></nav>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="cms-main">
+    <header class="cms-topbar">
+      <button class="topbar-hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+      <div class="search-wrap"><input type="text" placeholder="Search" readonly /></div>
+      <div class="topbar-user"><div class="user-text"><div class="user-name" id="topbar-username">Loading...</div><div class="user-role" id="topbar-role">Adviser</div></div><div class="user-avatar" id="topbar-avatar">A</div></div>
+    </header>
+    <main class="cms-content"><div class="users">
+    <div class="page-heading">
+      <h1>User Management</h1>
+      <a class="btn btn-outline back-btn" href="dashboard.html"><span class="back-icon">&larr;</span><span>Back to Dashboard</span></a>
+    </div>
+    <p class="muted">Adviser-only: manage user roles and deactivate accounts.</p>
+    <div id="users-list">Loading…</div>
+    </div></main>
+  </div>
+</div>
+
+  <script src="cms.js"></script>
+  <script type="module">
+    import { requireAuth, logoutUser, deactivateUser, changeUserRole } from '../backend/firebase/auth.js';
+    import { getAllUsers, approveEditorial } from '../backend/firebase/firestore.js';
+
+    const user = requireAuth(['adviser']);
+    if (!user) throw new Error('Not authorised');
+    document.getElementById('topbar-username').textContent = user.name || user.firstName || 'Admin';
+    document.getElementById('topbar-role').textContent = 'Adviser';
+    window.__frontlineLogout = logoutUser;
+
+    async function loadUsers() {
+      const container = document.getElementById('users-list');
+      container.textContent = 'Loading…';
+      try {
+        const all = await getAllUsers();
+        if (!all.length) { container.innerHTML = '<div class="empty-state"><div class="empty-state-title">No users found</div></div>'; return; }
+        container.innerHTML = '';
+        all.forEach(u => {
+          const row = document.createElement('div');
+          row.className = 'user-row';
+
+          const isPendingEditorial = u.role === 'pending_editorial';
+          const isCurrentUser = u.id === user.uid;
+          const displayRole = isPendingEditorial ? 'Editorial registration pending' : (u.role || 'correspondent');
+
+          row.innerHTML = `
+            <div>
+              <div class="user-name" style="font-weight:700">${u.name || (u.firstName + ' ' + u.surname) || 'User'}</div>
+              <div class="user-meta">${u.email} · Role: ${displayRole} · Status: ${u.status || 'active'}</div>
+            </div>
+            <div class="user-actions">
+              ${isPendingEditorial ? 
+                `<button class="btn btn-red" data-uid="${u.id}" data-act="approve">Approve Editorial</button>` : 
+                `<select data-uid="${u.id}" class="role-select" ${isCurrentUser ? 'disabled' : ''}>
+                  <option value="adviser">Adviser</option>
+                  <option value="editorial">Editorial</option>
+                  <option value="correspondent">Correspondent</option>
+                </select>
+                ${isCurrentUser
+                  ? '<span class="current-account-label">Current account</span>'
+                  : `<button class="btn btn-outline" data-uid="${u.id}" data-act="change">Change</button>
+                     <button class="btn btn-danger" data-uid="${u.id}" data-act="deactivate">Deactivate</button>`}`}
+            </div>`;
+          container.appendChild(row);
+          if (!isPendingEditorial) row.querySelector('.role-select').value = u.role || 'correspondent';
+        });
+
+      } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-title">Failed to load users</div></div>';
+      }
+    }
+
+    document.getElementById('users-list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const uid = btn.dataset.uid;
+      const act = btn.dataset.act;
+      if (act === 'change') {
+        const sel = document.querySelector(`select[data-uid="${uid}"]`);
+        const newRole = sel.value;
+        btn.disabled = true; btn.textContent = 'Saving...';
+        const r = await changeUserRole(uid, newRole);
+        if (r.success) { btn.textContent = 'Saved'; } else { btn.textContent = 'Failed'; btn.disabled = false; }
+        await loadUsers();
+      } else if (act === 'deactivate') {
+        if (!confirm('Deactivate this user?')) return;
+        btn.disabled = true; btn.textContent = 'Deactivating...';
+        const r = await deactivateUser(uid);
+        if (r.success) { btn.textContent = 'Deactivated'; } else { btn.textContent = 'Failed'; btn.disabled = false; }
+        await loadUsers();
+      } else if (act === 'approve') {
+        btn.disabled = true; btn.textContent = 'Approving...';
+        const r = await approveEditorial(uid);
+        if (r.success) { btn.textContent = 'Approved'; } else { btn.textContent = 'Failed'; btn.disabled = false; }
+        await loadUsers();
+      }
+    });
+
+    loadUsers();
+  </script>
+</body>
+</html>

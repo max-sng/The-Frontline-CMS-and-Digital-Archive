@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings – The Frontline CMS</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .settings-tabs { display:flex;border-bottom:2px solid var(--border);margin-bottom:28px;gap:0; }
+    .settings-tab { padding:8px 16px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font); }
+    .settings-tab:hover { color:var(--text-main); }
+    .settings-tab.active { color:var(--red);border-bottom-color:var(--red);font-weight:600; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .setting-row { display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border-light); }
+    .setting-row:last-of-type { border-bottom:none; }
+    .setting-label { font-size:13.5px;font-weight:600;color:var(--text-main);margin-bottom:2px; }
+    .setting-desc { font-size:12px;color:var(--text-muted); }
+    .setting-value { font-size:13px;color:var(--text-sub);margin-top:2px; }
+    .btn-edit { padding:6px 18px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:var(--text-sub);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
+    .btn-edit:hover { background:#e5e7ea; }
+    .toggle-wrap { display:flex;align-items:center;flex-shrink:0; }
+    .toggle { position:relative;width:44px;height:24px;cursor:pointer; }
+    .toggle input { opacity:0;width:0;height:0;position:absolute; }
+    .toggle-track { position:absolute;inset:0;background:#d1d5db;border-radius:var(--radius-full);transition:background 0.2s; }
+    .toggle input:checked ~ .toggle-track { background:var(--red); }
+    .toggle-thumb { position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+    .toggle input:checked ~ .toggle-thumb { transform:translateX(20px); }
+    .danger-row { background:var(--bg-dark2);border-radius:var(--radius-md);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:8px; }
+    .danger-row .setting-label { color:#fff; }
+    .danger-row .setting-desc  { color:#aaa; }
+    .btn-delete { padding:6px 18px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
+    .btn-delete:hover { background:rgba(255,255,255,0.2); }
+    .section-label { font-size:10.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px; }
+    .avatar-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .avatar-left { display:flex;align-items:center;gap:16px; }
+    .account-avatar { width:56px;height:56px;border-radius:50%;background:var(--bg-dark2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;position:relative; }
+    .account-avatar svg { color:#aaa; }
+    .upload-link { font-size:13px;font-weight:600;color:var(--red);cursor:pointer;text-decoration:none;display:block;margin-bottom:2px; }
+    .upload-link:hover { text-decoration:underline; }
+    .upload-hint { font-size:11.5px;color:var(--text-muted); }
+    .form-row-2 { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
+    .form-row-1 { margin-bottom:14px; }
+    .field-hint { font-size:11.5px;color:var(--text-muted);margin-top:4px; }
+    .form-input[readonly] { background:var(--bg-surface);color:var(--text-sub);cursor:default; }
+    .password-row { background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
+    .settings-footer { display:flex;justify-content:flex-end;gap:10px;margin-top:32px;padding-top:20px;border-top:1px solid var(--border); }
+    .modal-overlay { display:none;position:fixed;inset:0;background:rgba(20,5,5,0.6);z-index:500;align-items:center;justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:var(--bg-white);border-radius:var(--radius-xl);width:420px;max-width:95vw;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .modal-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:20px; }
+    .modal-title { font-size:17px;font-weight:700;color:var(--text-main); }
+    .modal-close { background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;line-height:1;padding:0;font-family:var(--font); }
+    .modal-close:hover { color:var(--text-main); }
+    .modal-footer-btns { display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border); }
+    .pw-alert { display:none;padding:9px 14px;border-radius:var(--radius-md);font-size:12.5px;font-weight:500;margin-bottom:14px; }
+    .pw-alert.show { display:block; }
+    .pw-alert.error { background:#fef2f2;border:1px solid #fecaca;color:#b91c1c; }
+    .pw-alert.success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
+    @media (max-width:768px) { .form-row-2 { grid-template-columns:1fr; } .avatar-row { flex-direction:column;align-items:flex-start;gap:12px; } }
+
+    /* Profile view / edit mode */
+    .profile-info-view { display:flex;flex-direction:column;gap:3px; }
+    .profile-view-name { font-size:15px;font-weight:700;color:var(--text-main); }
+    .profile-view-role { font-size:12px;color:var(--text-muted); }
+    .profile-upload-edit { display:flex;flex-direction:column;gap:2px; }
+    .account-avatar.editable { cursor:pointer; }
+    .account-avatar:not(.editable) { cursor:default; }
+    .tab-panel.active { animation:panelIn 0.18s ease; }
+    @keyframes panelIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+<div class="cms-wrapper">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="cms-sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="assets/forefront-white.png" alt="The Frontline"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+      <span class="logo-fallback">The Frontline</span>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        <li><a href="dashboard.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>Dashboard</a></li>
+        <li><a href="articles.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>Articles</a></li>
+        <li><a href="media.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 8l5 3-5 3V8z" fill="white"/></svg>Media</a></li>
+        <li><a href="archive.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 5h12v9a1 1 0 01-1 1H5a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>Archive</a></li>
+        <li><a href="correspondents.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>Correspondents</a></li>
+        <li class="active"><a href="settings.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>Settings</a></li>
+      </ul>
+    </nav>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="cms-main">
+    <header class="cms-topbar">
+      <button class="topbar-hamburger" id="hamburger" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="5" x2="18" y2="5"/><line x1="2" y1="10" x2="18" y2="10"/><line x1="2" y1="15" x2="18" y2="15"/></svg>
+      </button>
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+        <input type="text" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" />
+      </div>
+      <div class="topbar-user">
+        <div class="user-text">
+          <div class="user-name" id="topbar-username">Loading...</div>
+          <div class="user-role" id="topbar-role"></div>
+        </div>
+        <div class="user-avatar" id="topbar-avatar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+        </div>
+      </div>
+    </header>
+
+    <main class="cms-content">
+      <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
+
+      <div class="settings-tabs" id="settingsTabs">
+        <button class="settings-tab" data-tab="general">General</button>
+        <button class="settings-tab active" data-tab="account">Account</button>
+        <button class="settings-tab" data-tab="security">Security</button>
+        <button class="settings-tab" data-tab="notifications">Notifications</button>
+      </div>
+
+      <!-- ══ GENERAL ══ -->
+      <div class="tab-panel" id="panel-general">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Publication Name</div>
+            <div class="setting-value">The Frontline</div>
+            <div class="setting-desc">The official name displayed across the platform</div>
+          </div>
+          <button class="btn-edit" onclick="openEditModal('Publication Name','The Frontline')">Edit</button>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Contact Email</div>
+            <div class="setting-value">thefrontline@gordoncollege.edu.ph</div>
+            <div class="setting-desc">Primary contact email for the publication</div>
+          </div>
+          <button class="btn-edit" onclick="openEditModal('Contact Email','thefrontline@gordoncollege.edu.ph')">Edit</button>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Public Article Access</div>
+            <div class="setting-desc">Allow students to view published articles</div>
+          </div>
+          <label class="toggle toggle-wrap">
+            <input type="checkbox" checked />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="danger-row">
+          <div>
+            <div class="setting-label">Delete Publication Data</div>
+            <div class="setting-desc">Permanently removes all publication data from the system</div>
+          </div>
+          <button class="btn-delete" onclick="confirmDelete('publication')">Delete</button>
+        </div>
+        <div class="settings-footer">
+          <button class="btn btn-outline">Cancel</button>
+          <button class="btn btn-red" onclick="showToast('Changes saved successfully.')">Save changes</button>
+        </div>
+      </div>
+
+      <!-- ══ ACCOUNT ══ -->
+      <div class="tab-panel active" id="panel-account">
+        <div class="avatar-row">
+          <div class="avatar-left">
+            <input type="file" id="photoInput" accept="image/jpeg,image/png" style="display:none" />
+            <div class="account-avatar" id="accountAvatar">
+              <img id="avatarPreview" src="" alt=""
+                   style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:50%;" />
+              <svg id="avatarIcon" width="28" height="28" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+              </svg>
+              <div id="avatarOverlay"
+                   style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;border-radius:50%;">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.5">
+                  <path d="M13 3l1.5 2H17a1 1 0 011 1v9a1 1 0 01-1 1H3a1 1 0 01-1-1V6a1 1 0 011-1h2.5L7 3h6z"/>
+                  <circle cx="10" cy="10" r="3"/>
+                </svg>
+              </div>
+            </div>
+            <!-- View mode: name + role -->
+            <div id="profileInfoView" class="profile-info-view">
+              <div class="profile-view-name" id="profileViewName"></div>
+              <div class="profile-view-role" id="profileViewRole"></div>
+            </div>
+            <!-- Edit mode: upload controls -->
+            <div id="profileUploadEdit" class="profile-upload-edit" style="display:none;">
+              <a class="upload-link" href="#"
+                 onclick="event.preventDefault();document.getElementById('photoInput').click()">Upload new photo</a>
+              <div class="upload-hint">JPG or PNG, max 10MB</div>
+            </div>
+          </div>
+          <button class="btn-edit" id="editProfileBtn">Edit Profile</button>
+        </div>
+
+        <div class="section-label">Personal Information</div>
+
+        <div class="form-row-2">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">First name</label>
+            <input type="text" class="form-input" id="accFirstName" readonly placeholder="Enter first name" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Surname</label>
+            <input type="text" class="form-input" id="accSurname" readonly placeholder="Enter surname" />
+          </div>
+        </div>
+        <div class="form-row-1">
+          <label class="form-label">Email address</label>
+          <input type="email" class="form-input" id="accEmail" readonly placeholder="email@gordoncollege.edu.ph" />
+          <div class="field-hint">Used for login and notifications</div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Program</label>
+            <input type="text" class="form-input" id="accProgram" readonly placeholder="Enter program" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Section</label>
+            <input type="text" class="form-input" id="accSection" readonly placeholder="Enter section" />
+          </div>
+        </div>
+        <div class="form-row-1" style="margin-top:14px">
+          <label class="form-label">Academic year joined</label>
+          <input type="text" class="form-input" id="accYear" readonly placeholder="e.g. 2022–2023" style="max-width:220px" />
+          <div class="field-hint">Academic year you first joined the publication</div>
+        </div>
+
+        <div class="settings-footer" id="account-footer" style="display:none;">
+          <button class="btn btn-outline" id="cancelEditBtn">Cancel</button>
+          <button class="btn btn-red" id="saveProfileBtn">Save changes</button>
+        </div>
+      </div>
+
+      <!-- ══ SECURITY ══ -->
+      <div class="tab-panel" id="panel-security">
+        <div class="section-label" style="margin-bottom:16px">Login &amp; Password</div>
+        <div class="password-row">
+          <div>
+            <div class="setting-label">Password</div>
+            <div class="setting-desc">Change your account password</div>
+          </div>
+          <button class="btn-edit" onclick="document.getElementById('pwModal').classList.add('open')">Change password</button>
+        </div>
+        <div class="danger-row" style="margin-top:12px">
+          <div>
+            <div class="setting-label">Delete account</div>
+            <div class="setting-desc">Permanently removes your account and all associated data</div>
+          </div>
+          <button class="btn-delete" onclick="confirmDelete('account')">Delete account</button>
+        </div>
+      </div>
+
+      <!-- ══ NOTIFICATIONS ══ -->
+      <div class="tab-panel" id="panel-notifications">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Article published</div>
+            <div class="setting-desc">When one of your articles gets published</div>
+          </div>
+          <label class="toggle toggle-wrap"><input type="checkbox" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Article returned for revision</div>
+            <div class="setting-desc">When an editor sends your draft back with feedback</div>
+          </div>
+          <label class="toggle toggle-wrap"><input type="checkbox" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">New article assigned</div>
+            <div class="setting-desc">When the editor assigns you a new piece to write</div>
+          </div>
+          <label class="toggle toggle-wrap"><input type="checkbox" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══ EDIT FIELD MODAL ══ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="editModalTitle">Edit</span>
+      <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')">&#10005;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="editModalLabel">Value</label>
+      <input type="text" class="form-input" id="editModalInput" />
+    </div>
+    <div class="modal-footer-btns">
+      <button class="btn btn-outline" onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-red" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CHANGE PASSWORD MODAL ══ -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Change Password</span>
+      <button class="modal-close" onclick="document.getElementById('pwModal').classList.remove('open')">&#10005;</button>
+    </div>
+    <div class="pw-alert" id="pwAlert"></div>
+    <div class="form-group">
+      <label class="form-label">New password</label>
+      <input type="password" class="form-input" id="pwNew" placeholder="At least 8 characters" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm new password</label>
+      <input type="password" class="form-input" id="pwConfirm" placeholder="Repeat new password" />
+    </div>
+    <div class="modal-footer-btns">
+      <button class="btn btn-outline" onclick="document.getElementById('pwModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-red" id="pwSaveBtn">Update password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE CONFIRM MODAL ══ -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="deleteModalTitle">Confirm Delete</span>
+      <button class="modal-close" onclick="document.getElementById('deleteModal').classList.remove('open')">&#10005;</button>
+    </div>
+    <p style="font-size:13.5px;color:var(--text-sub);line-height:1.6;margin-bottom:4px" id="deleteModalDesc">This action cannot be undone.</p>
+    <div class="modal-footer-btns">
+      <button class="btn btn-outline" onclick="document.getElementById('deleteModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-danger" onclick="document.getElementById('deleteModal').classList.remove('open');showToast('Deletion request submitted.')">Yes, delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="cms.js"></script>
+<script type="module">
+  import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
+  import { getUser, updateUser }     from '../backend/firebase/firestore.js';
+  import { updatePassword }          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+  import { auth, storage }           from '../backend/firebase/firebase-config.js';
+
+  // ── Auth guard ──
+  const user = requireAuth(['correspondent', 'editorial', 'adviser']);
+  if (!user) throw new Error('Not authenticated');
+
+  // ── Topbar ──
+  document.getElementById('topbar-username').textContent = user.name || user.firstName || 'User';
+  document.getElementById('topbar-role').textContent = user.role === 'adviser' ? 'Adviser' : user.role === 'editorial' ? 'Editorial Board' : 'Correspondent';
+  window.__frontlineLogout = logoutUser;
+
+  if (user.photoURL) {
+    document.getElementById('topbar-avatar').innerHTML =
+      `<img src="${user.photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+  }
+
+  // ── Load profile from Firestore ──
+  const profile = await getUser(user.uid);
+  const displayName = ((profile?.firstName || user.firstName || '') + ' ' + (profile?.surname || user.surname || '')).trim();
+  const displayRole = user.role === 'adviser' ? 'Adviser' : user.role === 'editorial' ? 'Editorial Board' : `Correspondent${user.section ? ' - ' + user.section : ''}`;
+
+  document.getElementById('profileViewName').textContent = displayName || 'User';
+  document.getElementById('profileViewRole').textContent = displayRole;
+
+  if (profile) {
+    document.getElementById('accFirstName').value = profile.firstName  || '';
+    document.getElementById('accSurname').value   = profile.surname    || '';
+    document.getElementById('accEmail').value     = profile.email      || '';
+    document.getElementById('accProgram').value   = profile.program    || '';
+    document.getElementById('accSection').value   = profile.section    || '';
+    document.getElementById('accYear').value      = profile.yearJoined || '';
+
+    if (profile.photoURL) {
+      const prev = document.getElementById('avatarPreview');
+      prev.src = profile.photoURL;
+      prev.style.display = 'block';
+      document.getElementById('avatarIcon').style.display = 'none';
+      document.getElementById('topbar-avatar').innerHTML =
+        `<img src="${profile.photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+    }
+  }
+
+  // Tracks the currently saved photo so cancel/save stay in sync after the first save
+  let currentPhotoURL = profile?.photoURL || user.photoURL || null;
+
+  // ── General tab: editorial only ──
+  const generalTabBtn   = document.querySelector('.settings-tab[data-tab="general"]');
+  const generalTabPanel = document.getElementById('panel-general');
+  if (user.role !== 'editorial') {
+    generalTabBtn.style.display   = 'none';
+    generalTabPanel.style.display = 'none';
+  }
+
+  // ── Tab switching (supports #hash from topbar dropdown) ──
+  document.getElementById('settingsTabs').addEventListener('click', e => {
+    const btn = e.target.closest('.settings-tab');
+    if (!btn) return;
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    history.replaceState(null, '', '#' + btn.dataset.tab);
+  });
+
+  const hashTab = window.location.hash.replace('#', '');
+  if (hashTab) {
+    // Only follow the hash if the tab is accessible to this user
+    const tabBtn = document.querySelector(`.settings-tab[data-tab="${hashTab}"]:not([style*="display: none"])`);
+    if (tabBtn) tabBtn.click();
+  } else if (user.role === 'editorial') {
+    // Editorial users default to General
+    generalTabBtn.click();
+  }
+
+  // ── Edit profile state ──
+  let editing = false;
+  const editableFields = ['accFirstName','accSurname','accEmail','accProgram','accSection','accYear'];
+
+  function setEditing(state) {
+    editing = state;
+
+    editableFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.readOnly = !state;
+      el.style.background = state ? '#fff' : '';
+      el.style.cursor = state ? '' : 'default';
+    });
+
+    document.getElementById('profileInfoView').style.display   = state ? 'none' : 'flex';
+    document.getElementById('profileUploadEdit').style.display = state ? 'flex' : 'none';
+
+    const avatarEl = document.getElementById('accountAvatar');
+    if (state) {
+      avatarEl.classList.add('editable');
+      avatarEl.onclick = () => document.getElementById('photoInput').click();
+    } else {
+      avatarEl.classList.remove('editable');
+      avatarEl.onclick = null;
+      document.getElementById('avatarOverlay').style.display = 'none';
+    }
+
+    document.getElementById('editProfileBtn').style.display = state ? 'none' : '';
+    document.getElementById('account-footer').style.display  = state ? 'flex' : 'none';
+  }
+
+  document.getElementById('editProfileBtn').addEventListener('click', () => {
+    if (!editing) setEditing(true);
+  });
+
+  document.getElementById('cancelEditBtn').addEventListener('click', () => {
+    setEditing(false);
+    if (profile) {
+      document.getElementById('accFirstName').value = profile.firstName  || '';
+      document.getElementById('accSurname').value   = profile.surname    || '';
+      document.getElementById('accEmail').value     = profile.email      || '';
+      document.getElementById('accProgram').value   = profile.program    || '';
+      document.getElementById('accSection').value   = profile.section    || '';
+      document.getElementById('accYear').value      = profile.yearJoined || '';
+    }
+    document.getElementById('photoInput').value = '';
+    // Revert both the preview and the topbar to the last saved photo
+    if (currentPhotoURL) {
+      document.getElementById('avatarPreview').src          = currentPhotoURL;
+      document.getElementById('avatarPreview').style.display = 'block';
+      document.getElementById('avatarIcon').style.display   = 'none';
+      document.getElementById('topbar-avatar').innerHTML =
+        `<img src="${currentPhotoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+    } else {
+      document.getElementById('avatarPreview').style.display = 'none';
+      document.getElementById('avatarIcon').style.display    = '';
+      document.getElementById('topbar-avatar').innerHTML =
+        `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>`;
+    }
+  });
+
+  // ── Save profile ──
+  document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('saveProfileBtn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    let photoURL = currentPhotoURL;
+
+    const photoFile = document.getElementById('photoInput').files[0];
+    if (photoFile) {
+      try {
+        const storageRef = ref(storage, `profile-photos/${user.uid}`);
+        await uploadBytes(storageRef, photoFile);
+        photoURL = await getDownloadURL(storageRef);
+      } catch (e) {
+        showToast('Photo upload failed. Please try again.', 'error');
+        btn.textContent = 'Save changes';
+        btn.disabled = false;
+        return;
+      }
+    }
+
+    const firstName = document.getElementById('accFirstName').value.trim();
+    const surname   = document.getElementById('accSurname').value.trim();
+    const data = {
+      firstName,
+      surname,
+      name:       `${firstName} ${surname}`.trim(),
+      email:      document.getElementById('accEmail').value.trim(),
+      program:    document.getElementById('accProgram').value.trim(),
+      section:    document.getElementById('accSection').value.trim(),
+      yearJoined: document.getElementById('accYear').value.trim(),
+      photoURL,
+    };
+
+    const result = await updateUser(user.uid, data);
+    if (result.success) {
+      sessionStorage.setItem('user', JSON.stringify({ ...user, ...data }));
+      document.getElementById('profileViewName').textContent = data.name || displayName;
+      setEditing(false);
+
+      if (photoURL) {
+        currentPhotoURL = photoURL;
+        const prev = document.getElementById('avatarPreview');
+        prev.src = photoURL;
+        prev.style.display = 'block';
+        document.getElementById('avatarIcon').style.display = 'none';
+        document.getElementById('topbar-avatar').innerHTML =
+          `<img src="${photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+      }
+
+      showToast('Profile updated successfully.', 'success');
+    } else {
+      showToast('Failed to update profile. Please try again.', 'error');
+    }
+
+    btn.textContent = 'Save changes';
+    btn.disabled = false;
+  });
+
+  // ── Change password ──
+  document.getElementById('pwSaveBtn').addEventListener('click', async () => {
+    const newPw   = document.getElementById('pwNew').value;
+    const confirm = document.getElementById('pwConfirm').value;
+    const alertEl = document.getElementById('pwAlert');
+
+    alertEl.className = 'pw-alert';
+    alertEl.textContent = '';
+
+    if (!newPw || newPw.length < 8) {
+      alertEl.textContent = 'Password must be at least 8 characters.';
+      alertEl.className = 'pw-alert show error'; return;
+    }
+    if (newPw !== confirm) {
+      alertEl.textContent = 'Passwords do not match.';
+      alertEl.className = 'pw-alert show error'; return;
+    }
+
+    try {
+      await updatePassword(auth.currentUser, newPw);
+      document.getElementById('pwModal').classList.remove('open');
+      document.getElementById('pwNew').value = '';
+      document.getElementById('pwConfirm').value = '';
+      showToast('Password updated successfully.', 'success');
+    } catch (e) {
+      alertEl.textContent = e.code === 'auth/requires-recent-login'
+        ? 'Please log out and log back in before changing your password.'
+        : 'Failed to update password. Please try again.';
+      alertEl.className = 'pw-alert show error';
+    }
+  });
+
+  // ── General tab helpers ──
+  window.openEditModal = (label, value) => {
+    document.getElementById('editModalTitle').textContent = 'Edit ' + label;
+    document.getElementById('editModalLabel').textContent = label;
+    document.getElementById('editModalInput').value = value;
+    document.getElementById('editModal').classList.add('open');
+  };
+  window.saveEdit = () => {
+    document.getElementById('editModal').classList.remove('open');
+    showToast('Changes saved successfully.', 'success');
+  };
+  window.confirmDelete = type => {
+    const titles = { publication:'Delete Publication Data', account:'Delete Account' };
+    const descs  = {
+      publication: 'This will permanently delete all publication data. This action cannot be undone.',
+      account:     'This will permanently remove your account and all associated data. This action cannot be undone.'
+    };
+    document.getElementById('deleteModalTitle').textContent = titles[type] || 'Confirm Delete';
+    document.getElementById('deleteModalDesc').textContent  = descs[type]  || 'This action cannot be undone.';
+    document.getElementById('deleteModal').classList.add('open');
+  };
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  // ── Photo input: validate then preview ──
+  document.getElementById('photoInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      showToast('Invalid format. Please use JPG or PNG.', 'error');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('File exceeds 10MB limit. Please choose a smaller image.', 'error');
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataURL = ev.target.result;
+      const prev = document.getElementById('avatarPreview');
+      prev.src = dataURL;
+      prev.style.display = 'block';
+      document.getElementById('avatarIcon').style.display = 'none';
+      // Live-preview the new photo in the topbar corner immediately
+      document.getElementById('topbar-avatar').innerHTML =
+        `<img src="${dataURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Avatar hover overlay — only active in edit mode
+  const avatarEl = document.getElementById('accountAvatar');
+  avatarEl.addEventListener('mouseenter', () => {
+    if (editing) document.getElementById('avatarOverlay').style.display = 'flex';
+  });
+  avatarEl.addEventListener('mouseleave', () => {
+    document.getElementById('avatarOverlay').style.display = 'none';
+  });
+
+  // Warn before navigating away with unsaved edits
+  window.addEventListener('beforeunload', e => {
+    if (editing) { e.preventDefault(); e.returnValue = ''; }
+  });
+</script>
+</body>
+</html>

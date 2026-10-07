@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — The Frontline</title>
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+
+  <div class="auth-left"></div>
+
+  <div class="auth-panel">
+    <div class="auth-inner">
+
+      <img src="assets/frontline-logo.png" alt="The Frontline" class="auth-logo" />
+
+      <h1 class="auth-title">Log into The Frontline</h1>
+      <p class="auth-subtitle">Welcome! Please log in with your account.</p>
+
+      <!-- Error Alert -->
+      <div class="reset-alert error hidden" id="login-error">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span id="login-error-msg">Invalid email or password. Please try again.</span>
+      </div>
+
+      <div class="auth-form">
+        <div class="auth-field">
+          <label class="auth-label" for="login-email">Email</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </span>
+            <input type="email" id="login-email" class="auth-input"
+                   placeholder="email@gordoncollege.edu.ph" autocomplete="email" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="login-password">Password</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input type="password" id="login-password" class="auth-input"
+                   placeholder="Enter your password" autocomplete="current-password" />
+            <button type="button" class="eye-toggle"
+                    onclick="toggleEye('login-password', this)"
+                    tabindex="-1" aria-label="Toggle password visibility">
+              <svg class="eye-on" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-off hidden" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="remember-row">
+          <div class="remember-left">
+            <input type="checkbox" id="remember" />
+            <label for="remember">Remember me</label>
+          </div>
+          <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button class="auth-btn" id="login-btn" onclick="handleLogin()">Login</button>
+
+        <p class="auth-bottom">Don't have an account yet? <a href="register.html">Sign up</a></p>
+      </div>
+
+      <div class="auth-footer">Copyright &copy; 2026 &middot; Team TriDev</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loginUser } from '../backend/firebase/auth.js';
+
+    // ── Eye toggle ──
+    window.toggleEye = function(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.querySelector('.eye-on').classList.toggle('hidden', isPassword);
+      btn.querySelector('.eye-off').classList.toggle('hidden', !isPassword);
+    };
+
+    // ── Login handler ──
+    window.handleLogin = async function() {
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorBox = document.getElementById('login-error');
+      const errorMsg = document.getElementById('login-error-msg');
+      const btn      = document.getElementById('login-btn');
+
+      errorBox.classList.add('hidden');
+
+      if (!email || !password) {
+        errorMsg.textContent = 'Please fill in all fields.';
+        errorBox.classList.remove('hidden');
+        return;
+      }
+
+      // Show loading
+      btn.textContent = 'Logging in...';
+      btn.disabled = true;
+
+      const result = await loginUser(email, password);
+
+      if (result.success) {
+        window.location.href = 'dashboard.html';
+      } else {
+        errorMsg.textContent = result.error;
+        errorBox.classList.remove('hidden');
+        btn.textContent = 'Login';
+        btn.disabled = false;
+      }
+    };
+
+    // Enter key submits
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.handleLogin();
+    });
+
+    // If already logged in, skip login page
+    const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+    if (user) window.location.href = 'dashboard.html';
+  </script>
+</body>
+</html>

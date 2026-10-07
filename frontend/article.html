@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Article — The Frontline</title>
+  <script>
+    const articleId = new URLSearchParams(window.location.search).get('id');
+    window.location.replace(articleId
+      ? `article-view.html?id=${encodeURIComponent(articleId)}`
+      : 'index.html');
+  </script>
+</head>
+<body>
+  <p>Redirecting to The Frontline...</p>
+</body>
+</html>

@@ -2,3 +2,4 @@ frontend/oracleJdk-26
 claude
 .git
 node_modules
+/h *

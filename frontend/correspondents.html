@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Correspondents – The Frontline CMS</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .section-tabs { display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;flex-wrap:nowrap;gap:0;overflow-x:auto;scrollbar-width:none; }
+    .section-tabs::-webkit-scrollbar { display:none; }
+    .section-tab { padding:8px 10px;font-size:12.5px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font);flex-shrink:0; }
+    .section-tab:hover { color:var(--text-main); }
+    .section-tab.active { color:var(--red);border-bottom-color:var(--red);font-weight:600; }
+    .corr-avatar { width:34px;height:34px;border-radius:50%;background:var(--bg-dark2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:12px;font-weight:600;flex-shrink:0;overflow:hidden; }
+    .corr-avatar img { width:100%;height:100%;object-fit:cover; }
+    .corr-name { font-size:13px;font-weight:600;color:var(--text-main);line-height:1.2; }
+    .corr-role { font-size:11.5px;color:var(--text-muted);margin-top:1px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .user-cell { display:flex;align-items:center;gap:10px; }
+    .pagination { display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-top:20px; }
+    .page-btn { width:30px;height:30px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-white);color:var(--text-sub);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;transition:background 0.12s; }
+    .page-btn:hover { background:var(--bg-surface); }
+    .page-btn.active { background:var(--red);color:#fff;border-color:var(--red); }
+    .page-btn:disabled { opacity:0.4;cursor:not-allowed; }
+    .modal-overlay { display:none;position:fixed;inset:0;background:rgba(20,5,5,0.6);z-index:500;align-items:center;justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:var(--bg-white);border-radius:var(--radius-xl);width:480px;max-width:95vw;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .modal-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:20px; }
+    .modal-title { font-size:18px;font-weight:700;color:var(--text-main); }
+    .modal-close { background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;line-height:1;padding:0;font-family:var(--font); }
+    .modal-close:hover { color:var(--text-main); }
+    .modal-footer { display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border); }
+    .alert { display:none;padding:10px 14px;border-radius:var(--radius-md);font-size:13px;font-weight:500;margin-bottom:16px;align-items:center;gap:8px;line-height:1.4; }
+    .alert.show { display:flex; }
+    .alert-success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
+    .alert-error   { background:#fef2f2;border:1px solid #fecaca;color:#b91c1c; }
+    .alert-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+    .alert-success .alert-dot { background:#22c55e; }
+    .alert-error   .alert-dot { background:#ef4444; }
+  </style>
+</head>
+<body>
+<div class="cms-wrapper">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="cms-sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="assets/forefront-white.png" alt="The Frontline"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+      <span class="logo-fallback">The Frontline</span>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        <li><a href="dashboard.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>
+          Dashboard</a></li>
+        <li><a href="articles.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
+          Articles</a></li>
+        <li><a href="media.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 8l5 3-5 3V8z" fill="white"/></svg>
+          Media</a></li>
+        <li><a href="archive.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 5h12v9a1 1 0 01-1 1H5a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>
+          Archive</a></li>
+        <li class="active"><a href="correspondents.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+          Correspondents</a></li>
+        <li><a href="settings.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+          Settings</a></li>
+      </ul>
+    </nav>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="cms-main">
+    <header class="cms-topbar">
+      <button class="topbar-hamburger" id="hamburger" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="5" x2="18" y2="5"/><line x1="2" y1="10" x2="18" y2="10"/><line x1="2" y1="15" x2="18" y2="15"/></svg>
+      </button>
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+        <input type="text" id="topbar-search" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" />
+      </div>
+      <div class="topbar-user">
+        <div class="user-text">
+          <div class="user-name" id="topbar-username">Loading...</div>
+          <div class="user-role" id="topbar-role"></div>
+        </div>
+        <div class="user-avatar" id="topbar-avatar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+        </div>
+      </div>
+    </header>
+
+    <main class="cms-content">
+      <div class="page-header">
+        <h1 class="page-title">Correspondents</h1>
+        <button class="btn btn-red" id="openModalBtn">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+          Add Correspondent
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="section-tabs" id="sectionTabs">
+        <button class="section-tab active" data-section="All">All</button>
+        <button class="section-tab" data-section="Editorial Board">Editorial Board</button>
+        <button class="section-tab" data-section="News">News</button>
+        <button class="section-tab" data-section="Opinion-Editorial">Opinion-Editorial</button>
+        <button class="section-tab" data-section="DevComm">DevComm</button>
+        <button class="section-tab" data-section="Feature">Feature</button>
+        <button class="section-tab" data-section="Literary">Literary</button>
+        <button class="section-tab" data-section="Photojournalism">Photojournalism</button>
+        <button class="section-tab" data-section="Sports">Sports</button>
+        <button class="section-tab" data-section="Arts">Arts</button>
+        <button class="section-tab" data-section="Broadcasting">Broadcasting</button>
+      </div>
+
+      <!-- Table — 4 columns only: User, Section/Role, Email, View -->
+      <table class="articles-table" id="corrTable" style="table-layout:fixed;width:100%">
+        <thead>
+          <tr>
+            <th style="width:38%">User</th>
+            <th style="width:22%">Section/Role</th>
+            <th style="width:32%">Email</th>
+            <th style="width:8%"></th>
+          </tr>
+        </thead>
+        <tbody id="corrTableBody">
+          <tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <div class="pagination" id="pagination"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ══ ADD CORRESPONDENT MODAL ══ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Add New Correspondent</span>
+      <button class="modal-close" id="closeModalBtn">&#10005;</button>
+    </div>
+    <div class="alert alert-success" id="alertSuccess">
+      <span class="alert-dot"></span><span id="alertSuccessMsg"></span>
+    </div>
+    <div class="alert alert-error" id="alertError">
+      <span class="alert-dot"></span><span id="alertErrorMsg"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">First name</label>
+        <input type="text" class="form-input" id="fieldFirstName" placeholder="e.g. Alyssa Marie" />
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Surname</label>
+        <input type="text" class="form-input" id="fieldSurname" placeholder="e.g. Alcantara" />
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Email address</label>
+      <input type="email" class="form-input" id="fieldEmail" placeholder="e.g. 202612345@gordoncollege.edu.ph" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Section</label>
+        <select class="form-select" id="fieldSection">
+          <option value="">— Select —</option>
+          <option>Editorial Board</option><option>News</option><option>Opinion-Editorial</option>
+          <option>DevComm</option><option>Feature</option><option>Literary</option>
+          <option>Photojournalism</option><option>Sports</option><option>Arts</option><option>Broadcasting</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Role</label>
+        <select class="form-select" id="fieldRole">
+          <option value="">— Select —</option>
+          <option>Editor-in-Chief</option>
+          <option>News Editor</option><option>Opinion-Editorial Editor</option>
+          <option>DevComm Editor</option><option>Feature Editor</option>
+          <option>Literary-Kultura Editor</option><option>Head Photojournalist</option>
+          <option>Sports Editor</option><option>Head of Visual Arts</option><option>Head Broadcaster</option>
+          <option>Senior News Correspondent</option><option>Junior News Correspondent</option>
+          <option>Senior Editorial Opinion Corresp.</option><option>Junior Editorial Opinion Corresp.</option>
+          <option>Senior DevComm Correspondent</option><option>Junior DevComm Correspondent</option>
+          <option>Senior Feature Correspondent</option><option>Junior Feature Correspondent</option>
+          <option>Senior Literary-Kultura Corresp.</option><option>Junior Literary-Kultura Corresp.</option>
+          <option>Senior Photojournalist</option><option>Junior Photojournalist</option>
+          <option>Senior Sports Correspondent</option><option>Junior Sports Correspondent</option>
+          <option>Senior Graphic Artist</option><option>Junior Graphic Artist</option>
+          <option>Senior TV Broadcaster</option><option>Junior TV Broadcaster</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="cancelModalBtn">Cancel</button>
+      <button class="btn btn-red" id="submitBtn">Add Correspondent</button>
+    </div>
+  </div>
+</div>
+
+<script src="cms.js"></script>
+<script type="module">
+  import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
+  import { getAllUsers, approveEditorial } from '../backend/firebase/firestore.js';
+
+  const user = requireAuth(['editorial', 'adviser']);
+  if (!user) throw new Error('Not authenticated');
+
+  document.getElementById('topbar-username').textContent = user.name || user.firstName || 'User';
+  document.getElementById('topbar-role').textContent = user.role === 'adviser' ? 'Adviser' : 'Editorial Board';
+  if (user.photoURL) {
+    document.getElementById('topbar-avatar').innerHTML =
+      `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+  }
+  window.__frontlineLogout = logoutUser;
+
+  const ROWS = 10;
+  let allUsers      = [];
+  let activeSection = 'All';
+  let page          = 1;
+
+  const ini = n => (n || '?').split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+
+  async function loadUsers() {
+    try {
+      allUsers = await getAllUsers();
+      render();
+    } catch (e) {
+      document.getElementById('corrTableBody').innerHTML =
+        `<tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);">Failed to load.</td></tr>`;
+    }
+  }
+
+  function getFiltered() {
+    if (activeSection === 'All') return allUsers;
+    return allUsers.filter(u => u.section === activeSection);
+  }
+
+  function render() {
+    const data  = getFiltered();
+    const total = Math.max(1, Math.ceil(data.length / ROWS));
+    if (page > total) page = 1;
+    const slice   = data.slice((page-1)*ROWS, page*ROWS);
+    const showSec = activeSection === 'All';
+
+    document.getElementById('corrTableBody').innerHTML = slice.length
+      ? slice.map(c => {
+          const name      = c.name || `${c.firstName||''} ${c.surname||''}`.trim() || 'Unknown';
+          const isPending = c.status === 'pending';
+          return `
+            <tr>
+              <td data-label="User">
+                <div class="user-cell">
+                  <div class="corr-avatar">${ini(name)}</div>
+                  <div>
+                    <div class="corr-name">${name}</div>
+                    <div class="corr-role">${c.role || c.section || '—'}</div>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Section/Role">${showSec ? (c.section||'—') : (c.role||'—')}</td>
+              <td data-label="Email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.email||'—'}</td>
+              <td>
+                <div class="options-cell">
+                  <button class="edit-btn" onclick="viewProfile('${c.id}')">View</button>
+                  ${isPending ? `<button class="btn btn-red btn-sm" onclick="approveUser('${c.id}')">Approve</button>` : ''}
+                </div>
+              </td>
+            </tr>`;
+        }).join('')
+      : `<tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13.5px;">No correspondents found in this section.</td></tr>`;
+
+    const pag = document.getElementById('pagination');
+    if (total <= 1) { pag.innerHTML = ''; return; }
+    let h = `<button class="page-btn" ${page===1?'disabled':''} onclick="goPage(${page-1})">&#8249;</button>`;
+    for (let i=1;i<=total;i++) h += `<button class="page-btn${i===page?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    h += `<button class="page-btn" ${page===total?'disabled':''} onclick="goPage(${page+1})">&#8250;</button>`;
+    pag.innerHTML = h;
+  }
+
+  window.goPage      = n  => { page = n; render(); };
+  window.viewProfile = id => { window.location.href = `correspondent-profile-public.html?id=${id}`; };
+  window.approveUser = async id => {
+    if (!confirm('Approve this editorial account?')) return;
+    const result = await approveEditorial(id);
+    if (result.success) { showToast('Account approved.', 'success'); loadUsers(); }
+    else showToast('Failed to approve.', 'error');
+  };
+
+  document.getElementById('sectionTabs').addEventListener('click', e => {
+    const btn = e.target.closest('.section-tab');
+    if (!btn) return;
+    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    activeSection = btn.dataset.section;
+    page = 1;
+    render();
+  });
+
+  const modal       = document.getElementById('addModal');
+  const clearAlerts = () => ['alertSuccess','alertError'].forEach(id => document.getElementById(id).classList.remove('show'));
+  const clearForm   = () => ['fieldFirstName','fieldSurname','fieldEmail','fieldSection','fieldRole'].forEach(id => { document.getElementById(id).value=''; });
+  const closeModal  = () => { modal.classList.remove('open'); clearAlerts(); clearForm(); };
+
+  document.getElementById('openModalBtn').addEventListener('click',   () => { clearAlerts(); clearForm(); modal.classList.add('open'); });
+  document.getElementById('closeModalBtn').addEventListener('click',  closeModal);
+  document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target===modal) closeModal(); });
+
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    clearAlerts();
+    const firstName = document.getElementById('fieldFirstName').value.trim();
+    const surname   = document.getElementById('fieldSurname').value.trim();
+    const email     = document.getElementById('fieldEmail').value.trim();
+    const sec       = document.getElementById('fieldSection').value;
+    const role      = document.getElementById('fieldRole').value;
+
+    if (!firstName||!surname||!email||!sec||!role) {
+      document.getElementById('alertErrorMsg').textContent = 'Please fill in all fields.';
+      document.getElementById('alertError').classList.add('show');
+      return;
+    }
+    if (allUsers.some(u => u.email===email)) {
+      document.getElementById('alertErrorMsg').textContent = 'This email is already registered.';
+      document.getElementById('alertError').classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = 'Adding...';
+    btn.disabled = true;
+
+    try {
+      const { addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const { db } = await import('../backend/firebase/firebase-config.js');
+      await addDoc(collection(db, 'users'), {
+        firstName, surname, name:`${firstName} ${surname}`,
+        email, section:sec, role, status:'invited', createdAt:serverTimestamp()
+      });
+      document.getElementById('alertSuccessMsg').textContent = `"${firstName} ${surname}" added. They can register using ${email}.`;
+      document.getElementById('alertSuccess').classList.add('show');
+      clearForm();
+      loadUsers();
+    } catch(e) {
+      document.getElementById('alertErrorMsg').textContent = 'Failed to add. Please try again.';
+      document.getElementById('alertError').classList.add('show');
+    } finally {
+      btn.textContent = 'Add Correspondent';
+      btn.disabled = false;
+    }
+  });
+
+  await loadUsers();
+</script>
+</body>
+</html>

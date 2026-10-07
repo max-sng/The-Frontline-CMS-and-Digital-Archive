@@ -1,0 +1,157 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (
+        (request.auth.uid == userId
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.email.matches('^[^@]+@gordoncollege.edu.ph$')
+          && request.resource.data.role in ['correspondent', 'pending_editorial']
+          && request.resource.data.status == (request.resource.data.role == 'pending_editorial' ? 'pending' : 'active')
+          && request.resource.data.keys().hasOnly([
+            'firstName', 'surname', 'name', 'email', 'role', 'status', 'section', 'createdAt'
+          ]))
+        || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+          && request.resource.data.email.matches('^[^@]+@gordoncollege.edu.ph$')
+          && request.resource.data.role == 'correspondent'
+          && request.resource.data.status == 'invited'
+          && request.resource.data.keys().hasOnly([
+            'firstName', 'surname', 'name', 'email', 'role', 'status', 'section', 'createdAt'
+          ]))
+      );
+      allow update: if request.auth != null && (
+        // Adviser may update any user
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active')
+        // Users may update profile fields, but not their role, status, or email.
+        || (request.auth.uid == userId
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'firstName', 'surname', 'name', 'section', 'program', 'yearJoined', 'photoURL', 'updatedAt'
+          ]))
+      );
+      allow delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    // Articles collection
+    match /articles/{articleId} {
+      allow read: if resource.data.status == 'published' || (request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+        && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial']
+          || resource.data.authorId == request.auth.uid
+          || resource.data.assignedTo == request.auth.uid
+        ));
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial', 'correspondent']
+        && request.resource.data.authorId == request.auth.uid;
+      allow update: if request.auth != null && (
+        // Adviser may update anything
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active')
+        // Editorial staff may manage articles but cannot publish or replace the author.
+        || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editorial'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+          && request.resource.data.status != 'published'
+          && request.resource.data.authorId == resource.data.authorId)
+        // Correspondents may edit their own or assigned drafts and submit them for review.
+        || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'correspondent'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+          && (resource.data.authorId == request.auth.uid || resource.data.assignedTo == request.auth.uid)
+          && request.resource.data.authorId == resource.data.authorId
+          && request.resource.data.assignedTo == resource.data.assignedTo
+          && (
+            (resource.data.status in ['draft', 'assigned']
+              && request.resource.data.status in ['draft', 'assigned', 'pending'])
+            || (resource.data.status == 'pending'
+              && request.resource.data.status == 'pending')
+            || (resource.data.status == 'reviewed'
+              && request.resource.data.status in ['reviewed', 'pending'])
+          ))
+      );
+      allow delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+
+      // Feedback subcollection
+      match /feedback/{fbId} {
+        allow read: if request.auth != null && (
+          // advisers and editorial can read feedback
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser','editorial'])
+          // or the feedback sender
+          || resource.data.fromUid == request.auth.uid
+          // or the article author or assigned correspondent
+          || get(/databases/$(database)/documents/articles/$(articleId)).data.authorId == request.auth.uid
+          || get(/databases/$(database)/documents/articles/$(articleId)).data.assignedTo == request.auth.uid
+        );
+        allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
+        allow update, delete: if false; // feedback once written shouldn't be modified by clients
+      }
+
+      // Public comments for published articles
+      match /comments/{commentId} {
+        allow read: if get(/databases/$(database)/documents/articles/$(articleId)).data.status == 'published';
+        allow create: if request.resource.data.articleId == articleId
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.comment is string
+          && request.resource.data.comment.size() > 0
+          && get(/databases/$(database)/documents/articles/$(articleId)).data.status == 'published';
+        allow update, delete: if false;
+      }
+    }
+
+    // Audit log — clients may write audit entries, but never read or modify them
+    match /audit_log/{logId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if false;
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow create: if request.auth != null
+        && request.resource.data.toUid is string
+        && request.resource.data.toUid != ''
+        && request.resource.data.type is string
+        && request.resource.data.message is string
+        && request.resource.data.read == false
+        && (request.resource.data.fromUid == request.auth.uid || request.resource.data.fromUid == null);
+      allow read: if request.auth != null && resource.data.toUid == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.toUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['read', 'updatedAt'])
+        && request.resource.data.read == true;
+      allow delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    // Media library
+    match /media/{mediaId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.uploadedBy == request.auth.uid
+        && request.resource.data.filename is string
+        && request.resource.data.url is string;
+      allow update, delete: if request.auth != null && (
+        resource.data.uploadedBy == request.auth.uid
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial']
+      );
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

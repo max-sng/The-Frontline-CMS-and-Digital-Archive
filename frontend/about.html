@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us – The Frontline</title>
+  <link rel="stylesheet" href="frontline.css"/>
+</head>
+<body>
+
+  <!-- ══ TOPBAR ══ -->
+  <header class="site-header">
+    <div class="header-brand">
+      <img src="assets/forefront-black.png" alt="The Frontline" class="brand-logo"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+      <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
+    </div>
+    <nav class="site-nav">
+      <div class="nav-bar">
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round">
+            <line x1="2" y1="5" x2="18" y2="5"/>
+            <line x1="2" y1="10" x2="18" y2="10"/>
+            <line x1="2" y1="15" x2="18" y2="15"/>
+          </svg>
+        </button>
+        <span class="nav-date" id="nav-date"></span>
+        <ul class="nav-links">
+          <li><a href="index.html">News</a></li>
+          <li><a href="#">Editorial</a></li>
+          <li><a href="#">Opinion</a></li>
+          <li><a href="#">Features</a></li>
+          <li><a href="#">Literary</a></li>
+          <li><a href="#">DevComm</a></li>
+          <li><a href="#">Sports</a></li>
+          <li><a href="#">Comics</a></li>
+        </ul>
+        <button class="search-btn" aria-label="Search">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ══ POPUP OVERLAY MENU (same as index.html) ══ -->
+  <div class="popup-overlay" id="popupOverlay" onclick="closeMenu()"></div>
+  <div class="popup-menu" id="popupMenu">
+    <div class="popup-head">
+      <img src="assets/forefront-black.png" alt="The Frontline" class="popup-logo"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+      <span class="popup-logo-fallback">The <span>F</span>rontline</span>
+      <button class="popup-close" id="popupClose" aria-label="Close menu">&#10005;</button>
+    </div>
+    <div class="popup-body">
+      <div class="popup-col">
+        <a href="#">News</a>
+        <a href="#">Editorial</a>
+        <a href="#">Opinion</a>
+        <a href="#">Column</a>
+        <a href="#">Features</a>
+      </div>
+      <div class="popup-col">
+        <a href="#">Literary</a>
+        <a href="#">DevComm</a>
+        <a href="#">Sports</a>
+        <a href="#">Arts</a>
+      </div>
+    </div>
+    <div class="popup-footer">
+      <div class="popup-footer-col">
+        <div class="popup-section-title">Special Issues</div>
+        <a href="#">Bagani</a>
+        <a href="#">Sinagtala</a>
+        <a href="#">Bidlisiw</a>
+        <a href="#">Babaylan</a>
+      </div>
+      <div class="popup-footer-col">
+        <div class="popup-section-title">About</div>
+        <a href="about.html">About Us</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN CONTENT ══ -->
+  <main class="about-main">
+    <div class="about-wrap">
+
+      <h2 class="about-heading">Purpose</h2>
+      <p class="about-text">The Frontline aims to inform and empower the Gordon College community through student journalism and creative work. It provides a space for campus news, ideas, and perspectives to be shared with readers.</p>
+
+      <h2 class="about-heading">About the Publication</h2>
+      <p class="about-text">The Frontline is the official student publication of Gordon College. Its digital news portal features news, editorials, opinion, columns, features, literary works, development communication, sports, arts, and comics from its student contributors.</p>
+
+      <h2 class="about-heading">Contact Us</h2>
+      <p class="about-text">For any comments, suggestions, or inquiries, you may reach us at
+        <a href="mailto:thefrontline@gordoncollege.edu.ph" class="about-link">
+          thefrontline@gordoncollege.edu.ph
+        </a>
+      </p>
+
+    </div>
+  </main>
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="assets/forefront-white.png" alt="The Frontline" class="footer-logo"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <span class="footer-logo-fallback">The <span>F</span>rontline</span>
+        <p class="footer-tagline">The Official Digital News Portal of The Frontline</p>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Sections</div>
+        <a href="#">News</a><a href="#">Editorial</a><a href="#">Opinion</a>
+        <a href="#">Features</a><a href="#">Literary</a><a href="#">DevComm</a>
+        <a href="#">Sports</a><a href="#">Comics</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Special Issues</div>
+        <a href="#">Bagani</a><a href="#">Sinagtala</a>
+        <a href="#">Bidlisiw</a><a href="#">Babaylan</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">More on The Frontline</div>
+        <a href="about.html">About Us</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>THE FRONTLINE – The Official Student Publication Unit of Gordon College<br>
+        Designed and developed by the Gordon College's College of Computer Studies 2026–2026</span>
+      <span>Olongapo City Sports Complex, Donor St., East Tapinac, Olongapo City, Philippines, 2200<br>
+        © 2026, The Frontline. All Rights Reserved</span>
+    </div>
+  </footer>
+
+<script>
+  // ── Live date ──
+  const d = new Date();
+  document.getElementById('nav-date').textContent = d.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric'
+  });
+
+  // ── Popup menu ──
+  const popupMenu    = document.getElementById('popupMenu');
+  const popupOverlay = document.getElementById('popupOverlay');
+
+  function openMenu() {
+    const headerH = document.querySelector('.site-header').offsetHeight;
+    popupMenu.style.top = headerH + 'px';
+    popupMenu.classList.add('open');
+    popupOverlay.classList.add('open');
+  }
+  function closeMenu() {
+    popupMenu.classList.remove('open');
+    popupOverlay.classList.remove('open');
+  }
+
+  document.getElementById('hamburger').addEventListener('click', openMenu);
+  document.getElementById('popupClose').addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+</script>
+</body>
+</html>

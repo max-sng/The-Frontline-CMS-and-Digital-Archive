@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Approval Queue — The Frontline</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .admin-page { max-width:980px; margin:0 auto; }
+    .page-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:8px; }
+    .page-heading h1 { margin:0; line-height:1.2; }
+    .page-heading + .muted { margin:0 0 18px; }
+    .back-btn { color:var(--red); border-color:rgba(81,11,11,0.28); background:#fff8f8; font-weight:700; }
+    .back-btn:hover { color:#fff; background:var(--red); border-color:var(--red); transform:translateX(-2px); }
+    .back-icon { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(81,11,11,0.1); font-size:16px; line-height:1; transition:background 0.15s; }
+    .back-btn:hover .back-icon { background:rgba(255,255,255,0.18); }
+    .queue-list { padding:18px; }
+    .queue-item { border:1px solid var(--border); padding:16px; border-radius:8px; margin-bottom:10px; background:#fff; display:flex; justify-content:space-between; align-items:center; gap:18px; }
+    .queue-item > div:first-child { min-width:0; flex:1; }
+    .queue-title { font-weight:700; line-height:1.35; overflow-wrap:anywhere; }
+    .queue-meta { font-size:13px; color:var(--text-sub); }
+    .queue-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .queue-actions .btn { min-height:36px; white-space:nowrap; }
+    @media (max-width:600px) {
+      .queue-list { padding:10px 0; }
+      .queue-item { align-items:stretch; flex-direction:column; gap:12px; }
+      .queue-actions { justify-content:flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="cms-wrapper">
+  <aside class="cms-sidebar" id="sidebar">
+    <div class="sidebar-logo"><img src="assets/forefront-white.png" alt="The Frontline" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" /><span class="logo-fallback">The Frontline</span></div>
+    <nav class="sidebar-nav"><ul>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="articles.html">Articles</a></li>
+      <li><a href="media.html">Media</a></li>
+      <li><a href="archive.html">Archive</a></li>
+      <li><a href="correspondents.html">Correspondents</a></li>
+      <li><a href="settings.html">Settings</a></li>
+      <li class="active"><a href="approval-queue.html">Approval Queue</a></li>
+      <li><a href="user-management.html">User Management</a></li>
+    </ul></nav>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="cms-main">
+    <header class="cms-topbar">
+      <button class="topbar-hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+      <div class="search-wrap"><input type="text" placeholder="Search" readonly /></div>
+      <div class="topbar-user"><div class="user-text"><div class="user-name" id="topbar-username">Loading...</div><div class="user-role" id="topbar-role">Adviser</div></div><div class="user-avatar" id="topbar-avatar">A</div></div>
+    </header>
+    <main class="cms-content"><div class="admin-page">
+    <div class="page-heading">
+      <h1>Approval Queue</h1>
+      <a class="btn btn-outline back-btn" href="dashboard.html"><span class="back-icon">&larr;</span><span>Back to Dashboard</span></a>
+    </div>
+    <p class="muted">Admin-only: review submitted articles before publication.</p>
+    <div id="queue" class="queue-list">Loading…</div>
+    </div></main>
+  </div>
+</div>
+
+  <script src="cms.js"></script>
+  <script type="module">
+    import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
+    import { getAllArticles, updateArticleStatus } from '../backend/firebase/firestore.js';
+
+    const user = requireAuth(['adviser']);
+    if (!user) throw new Error('Not authorised');
+    document.getElementById('topbar-username').textContent = user.name || user.firstName || 'Admin';
+    document.getElementById('topbar-role').textContent = 'Adviser';
+    window.__frontlineLogout = logoutUser;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[character]);
+    }
+
+    async function loadQueue() {
+      const container = document.getElementById('queue');
+      container.textContent = 'Loading…';
+      try {
+        const all = await getAllArticles();
+        const list = all.filter(a => a.status === 'pending' || a.status === 'pending_adviser' || a.status === 'pending_editorial');
+        if (!list.length) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-title">No items in queue</div><div class="empty-state-sub">You have no articles awaiting approval.</div></div>';
+          return;
+        }
+        container.innerHTML = '';
+        list.forEach(a => {
+          const el = document.createElement('div');
+          el.className = 'queue-item';
+          el.innerHTML = `
+            <div>
+              <div class="queue-title">${escapeHtml(a.title || 'Untitled')}</div>
+              <div class="queue-meta">Author: ${escapeHtml(a.authorName || '—')} · Status: ${escapeHtml(a.status)}</div>
+            </div>
+            <div class="queue-actions">
+              <button class="btn btn-outline" data-id="${escapeHtml(a.id)}" data-action="reject">Reject</button>
+              <button class="btn btn-red" data-id="${escapeHtml(a.id)}" data-action="publish">Approve & Publish</button>
+            </div>`;
+          container.appendChild(el);
+        });
+      } catch (e) {
+        console.error('Failed to load approval queue:', e);
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-title">Failed to load queue</div></div>';
+      }
+    }
+
+    document.getElementById('queue').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const act = btn.dataset.action;
+      if (act === 'publish') {
+        btn.disabled = true; btn.textContent = 'Publishing...';
+        const r = await updateArticleStatus(id, 'published');
+        if (r.success) btn.textContent = 'Published'; else { btn.textContent = 'Failed'; btn.disabled = false; }
+        await loadQueue();
+      } else if (act === 'reject') {
+        btn.disabled = true; btn.textContent = 'Rejecting...';
+        const r = await updateArticleStatus(id, 'draft');
+        if (r.success) btn.textContent = 'Rejected'; else { btn.textContent = 'Failed'; btn.disabled = false; }
+        await loadQueue();
+      }
+    });
+
+    loadQueue();
+  </script>
+</body>
+</html>
