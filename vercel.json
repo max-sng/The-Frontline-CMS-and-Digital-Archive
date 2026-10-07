@@ -1,0 +1,28 @@
+{
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/", "destination": "/frontend/index.html" },
+    { "source": "/index.html", "destination": "/frontend/index.html" },
+    { "source": "/about.html", "destination": "/frontend/about.html" },
+    { "source": "/article.html", "destination": "/frontend/article.html" },
+    { "source": "/article-view.html", "destination": "/frontend/article-view.html" },
+    { "source": "/login.html", "destination": "/frontend/login.html" },
+    { "source": "/register.html", "destination": "/frontend/register.html" },
+    { "source": "/forgot-password.html", "destination": "/frontend/forgot-password.html" },
+    { "source": "/dashboard.html", "destination": "/frontend/dashboard.html" },
+    { "source": "/articles.html", "destination": "/frontend/articles.html" },
+    { "source": "/media.html", "destination": "/frontend/media.html" },
+    { "source": "/archive.html", "destination": "/frontend/archive.html" },
+    { "source": "/correspondents.html", "destination": "/frontend/correspondents.html" },
+    { "source": "/correspondent-profile-public.html", "destination": "/frontend/correspondent-profile-public.html" },
+    { "source": "/settings.html", "destination": "/frontend/settings.html" },
+    { "source": "/approval-queue.html", "destination": "/frontend/approval-queue.html" },
+    { "source": "/user-management.html", "destination": "/frontend/user-management.html" },
+    { "source": "/frontline.css", "destination": "/frontend/frontline.css" },
+    { "source": "/auth.css", "destination": "/frontend/auth.css" },
+    { "source": "/shared.css", "destination": "/frontend/shared.css" },
+    { "source": "/cms.js", "destination": "/frontend/cms.js" },
+    { "source": "/assets/:path*", "destination": "/frontend/assets/:path*" }
+  ]
+}
