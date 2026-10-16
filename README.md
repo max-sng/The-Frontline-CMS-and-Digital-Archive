@@ -3,6 +3,14 @@
 The Frontline is a static website and CMS backed by Firebase Authentication and
 Cloud Firestore.
 
+## Run locally
+
+Open the repository root in VS Code and serve the page over HTTP, for example
+`frontend/articles.html` with Live Server at
+`http://localhost:5500/frontend/articles.html`. Do not open the HTML file
+directly or serve only the `frontend/` directory: CMS pages import Firebase
+modules from the sibling `backend/` directory.
+
 ## Deploy to Vercel
 
 Import this GitHub repository into Vercel and use the repository root as the

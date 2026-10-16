@@ -145,12 +145,7 @@ export async function logoutUser() {
 // ── RESET PASSWORD ────────────────────────────────────────
 export async function resetPassword(email) {
   try {
-    // Firebase silently succeeds for unknown emails, so check Firestore first
-    const snap = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
-    if (snap.empty) {
-      return { success: false, error: 'No account found with this email.' };
-    }
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(auth, email.trim().toLowerCase());
     return { success: true };
   } catch (error) {
     return { success: false, error: getErrorMessage(error.code) };

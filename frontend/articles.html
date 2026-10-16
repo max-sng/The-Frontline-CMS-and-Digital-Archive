@@ -206,6 +206,49 @@
         <h1 class="page-title">Articles</h1>
         <button class="btn btn-red" id="new-article-btn">+ Add Article</button>
       </div>
+      <p id="article-editor-load-error" role="alert" style="display:none;color:var(--red);margin:-10px 0 16px;">
+        The article tools are still loading. Serve this page from the repository root over HTTP and make sure the backend modules are reachable, then refresh.
+      </p>
+      <script>
+        (() => {
+          let openEditor = null;
+          let openRequested = false;
+          const button = document.getElementById('new-article-btn');
+          const loadError = document.getElementById('article-editor-load-error');
+          let openRequestTimeout = null;
+          const reportStartupError = event => {
+            const detail = event?.message || event?.reason?.message || event?.reason || 'Check that the backend modules are reachable.';
+            loadError.textContent = `Article tools failed to initialize: ${detail}`;
+            loadError.style.display = 'block';
+          };
+          window.addEventListener('error', reportStartupError, true);
+          window.addEventListener('unhandledrejection', reportStartupError);
+          button.addEventListener('click', () => {
+            if (openEditor) {
+              openEditor();
+            } else {
+              openRequested = true;
+              if (!openRequestTimeout) {
+                openRequestTimeout = window.setTimeout(() => {
+                  loadError.style.display = 'block';
+                }, 10000);
+              }
+            }
+          });
+          window.__frontlineRegisterArticleEditor = handler => {
+            openEditor = handler;
+            window.removeEventListener('error', reportStartupError, true);
+            window.removeEventListener('unhandledrejection', reportStartupError);
+            window.clearTimeout(openRequestTimeout);
+            openRequestTimeout = null;
+            loadError.style.display = 'none';
+            if (openRequested) {
+              openRequested = false;
+              openEditor();
+            }
+          };
+        })();
+      </script>
       <div id="articles-content"></div>
     </main>
   </div>
@@ -385,15 +428,37 @@
 </div>
 
 <script src="cms.js"></script>
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
-<script type="module">
-  import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
-  import {
-    subscribeArticles, createArticle,
-    updateArticle, updateArticleStatus, deleteArticle,
-    getCorrespondents, addArticleFeedback, getArticleFeedbacks
-  } from '../backend/firebase/firestore.js';
+<script async src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+<script>
+  // Start Firebase downloads without holding up editor initialization.
+  const authApiPromise = import('../backend/firebase/auth.js');
+  const firestoreApiPromise = import('../backend/firebase/firestore.js');
+  function requireAuth(allowedRoles = ['correspondent', 'editorial', 'adviser']) {
+    const sessionUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+    if (!sessionUser) {
+      window.location.href = 'login.html';
+      return null;
+    }
+    if (!allowedRoles.includes(sessionUser.role)) {
+      window.location.href = 'dashboard.html';
+      return null;
+    }
+    return sessionUser;
+  }
+  const logoutUser = (...args) => authApiPromise.then(api => api.logoutUser(...args));
+  const firestoreCall = name => (...args) => firestoreApiPromise.then(api => {
+    if (typeof api[name] !== 'function') throw new Error(`Article service is missing ${name}.`);
+    return api[name](...args);
+  });
+  const subscribeArticles = firestoreCall('subscribeArticles');
+  const createArticle = firestoreCall('createArticle');
+  const updateArticle = firestoreCall('updateArticle');
+  const updateArticleStatus = firestoreCall('updateArticleStatus');
+  const deleteArticle = firestoreCall('deleteArticle');
+  const getCorrespondents = firestoreCall('getCorrespondents');
+  const addArticleFeedback = firestoreCall('addArticleFeedback');
+  const getArticleFeedbacks = firestoreCall('getArticleFeedbacks');
 
   // Allow adviser to access this page as well
   let user = null;
@@ -443,13 +508,38 @@
   }
 
   function sanitizeArticleContent(content) {
-    if (typeof window.DOMPurify?.sanitize !== 'function') {
-      throw new Error('The content sanitizer did not load. Refresh the page and try again.');
+    if (typeof window.DOMPurify?.sanitize === 'function') {
+      return window.DOMPurify.sanitize(content || '', {
+        ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','blockquote','pre','sub','sup','span','div','ul','ol','li','a','img','iframe'],
+        ALLOWED_ATTR: ['href','target','src','alt','frameborder','allowfullscreen','class','style','data-list']
+      });
     }
-    return window.DOMPurify.sanitize(content || '', {
-      ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','blockquote','pre','sub','sup','span','div','ul','ol','li','a','img','iframe'],
-      ALLOWED_ATTR: ['href','target','src','alt','frameborder','allowfullscreen','class','style','data-list']
-    });
+
+    // Keep article creation usable when the optional sanitizer CDN is unavailable.
+    const parsed = new DOMParser().parseFromString(String(content || ''), 'text/html');
+    const allowedTags = new Set(['P','BR','STRONG','B','EM','I','U','S','H1','H2','H3','BLOCKQUOTE','PRE','SUB','SUP','SPAN','DIV','UL','OL','LI','A','IMG']);
+    const allowedAttributes = new Set(['href','src','alt','title','class']);
+    const cleanNode = node => {
+      Array.from(node.childNodes).forEach(child => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        if (!allowedTags.has(child.tagName)) {
+          cleanNode(child);
+          child.replaceWith(...child.childNodes);
+          return;
+        }
+        Array.from(child.attributes).forEach(attribute => {
+          const name = attribute.name.toLowerCase();
+          const value = attribute.value.trim();
+          const safeUrl = /^(https?:|mailto:)/i.test(value) || value.startsWith('/') || value.startsWith('#');
+          if (!allowedAttributes.has(name) || ((name === 'href' || name === 'src') && !safeUrl)) {
+            child.removeAttribute(attribute.name);
+          }
+        });
+        cleanNode(child);
+      });
+    };
+    cleanNode(parsed.body);
+    return parsed.body.innerHTML;
   }
 
   function editorModeFor(article = null) {
@@ -485,7 +575,18 @@
   function ensureQuill() {
     if (quill) return;
     if (typeof window.Quill !== 'function') {
-      throw new Error('The article editor could not load. Check your network connection and refresh the page.');
+      const root = document.getElementById('quill-editor');
+      root.contentEditable = 'true';
+      root.setAttribute('role', 'textbox');
+      root.setAttribute('aria-label', 'Article content');
+      root.style.minHeight = '280px';
+      document.getElementById('quill-toolbar').style.display = 'none';
+      quill = {
+        root,
+        getText: () => root.innerText || root.textContent || '',
+        format: () => {}
+      };
+      return;
     }
     quill = new Quill('#quill-editor', {
       theme: 'snow',
@@ -691,13 +792,11 @@
 
   function openEditor(mode, article = null, id = null) {
     editingId = id;
-
+    document.getElementById('editor-alert').classList.remove('show');
     if (typeof window.Quill !== 'function') {
-      document.getElementById('editor-alert').classList.remove('show');
-      document.getElementById('editor-overlay').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-      showEditorAlert('The editor could not load. Check your network connection and refresh the page.', 'error');
-      return;
+      document.getElementById('quill-toolbar').style.display = 'none';
+    } else {
+      document.getElementById('quill-toolbar').style.display = '';
     }
 
     const ef = document.getElementById('editorial-fields');
@@ -936,7 +1035,7 @@
               window.close();
             };
           <\/script>
-        </body></html>
+        <\/body></html>
       `;
       popout.document.write(popoutHtml);
       popout.document.close();
@@ -1119,7 +1218,7 @@
   }
 
   // Register page actions before awaiting Firestore requests.
-  document.getElementById('new-article-btn').addEventListener('click', () => {
+  window.__frontlineRegisterArticleEditor(() => {
     try {
       openEditor(editorModeFor());
     } catch (error) {
@@ -1139,8 +1238,13 @@
     document.getElementById('articles-content').innerHTML =
       '<p class="empty-msg">Failed to load articles. Check your connection and refresh the page.</p>';
     showToast('Could not load articles. Please check your connection.', 'error');
+  }).catch(error => {
+    console.error('Article services could not be loaded:', error);
+    document.getElementById('articles-content').innerHTML =
+      '<p class="empty-msg">Article services could not be loaded. Check the backend path and your connection, then refresh.</p>';
+    showToast('Could not connect to article services.', 'error');
   });
-  await loadCorrespondents();
+  loadCorrespondents();
 
   // Status options are filtered during table rendering.
 </script>
