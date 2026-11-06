@@ -7,9 +7,7 @@
   <link rel="stylesheet" href="shared.css" />
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <style>
-    .correspondent-view .status-dropdown { pointer-events: none; }
-    .correspondent-view .status-menu { display: none !important; }
-    .modal-overlay { position:fixed;inset:0;background:rgba(30,10,10,0.6);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto; }
+    .modal-overlay { position:fixed;inset:0;background:rgba(30,10,10,0.6);z-index:500;display:flex;align-items:stretch;justify-content:stretch;padding:0;overflow:hidden; }
     .notif-button { position:relative;border:none;background:transparent;color:var(--text-main);width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer; }
     .notif-button:hover { background:rgba(0,0,0,.05); }
     .notif-panel { position:absolute;top:68px;right:24px;width:340px;max-height:420px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 48px rgba(0,0,0,.12);z-index:1001;padding:12px; }
@@ -24,13 +22,16 @@
     .modal-overlay.hidden { display:none; }
     .editor-modal {
       background: #fff;
-      border-radius: var(--radius-xl);
+      border-radius: 0;
       width: 100%;
-      max-width: 900px;
-      padding: 32px 36px 28px;
+      max-width: none;
+      height: 100vh;
+      height: 100dvh;
+      padding: 24px 32px;
       position: relative;
-      margin: auto;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.13);
+      margin: 0;
+      box-shadow: none;
+      overflow-y: auto;
     }
     .editor-modal-header {
       display: flex;
@@ -46,8 +47,8 @@
     }
     .editor-grid {
       display: grid;
-      grid-template-columns: 2.5fr 1fr;
-      gap: 36px;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 28px;
       align-items: start;
     }
     .editor-grid > div:first-child {
@@ -61,8 +62,9 @@
       border-radius: 18px;
       border: 2px solid #e0e3ea;
       padding: 24px 16px 24px 16px;
-      min-width: 210px;
-      max-width: 260px;
+      width: 300px;
+      min-width: 300px;
+      max-width: 300px;
       box-sizing: border-box;
       box-shadow: 0 6px 32px rgba(0,0,0,0.10);
       display: flex;
@@ -99,14 +101,12 @@
       overflow-y: auto;
       transition: min-height 0.2s, max-height 0.2s;
     }
-        /* Quill editor auto-resize for content */
-        .ql-editor {
-          min-height: 120px;
-          max-height: 220px;
-          overflow-y: auto;
-          padding-bottom: 8px;
-          transition: min-height 0.2s, max-height 0.2s;
-        }
+    .ql-editor { min-height: 320px; max-height: 55vh; overflow-y: auto; padding-bottom: 8px; }
+    #quill-editor { min-height: 340px !important; }
+    .articles-toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
+    .articles-toolbar .media-search { width:min(340px,100%); }
+    #delete-confirm-overlay { align-items:center;justify-content:center;padding:16px; }
+    #delete-confirm-overlay .editor-modal { width:min(400px,100%);height:auto;max-width:400px;border-radius:var(--radius-xl); }
     .tags-wrap { border:1px solid var(--border);border-radius:var(--radius-md);padding:7px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:42px;background:#fff; }
     .section-tag { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--radius-full);font-size:12px;font-weight:500;color:var(--text-sub);background:var(--bg-surface); }
     .tag-x { background:none;border:none;font-size:14px;color:var(--text-muted);cursor:pointer;line-height:1;padding:0;margin-left:2px; }
@@ -123,19 +123,14 @@
     .editor-alert.success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
     .editor-alert.error   { background:#fef2f2;border:1px solid #fecaca;color:#b91c1c; }
     @media (max-width: 1024px) {
-      .editor-modal { max-width: 98vw; padding: 18px 6vw; }
-      .editor-grid { grid-template-columns: 1fr; gap: 18px; }
-      .editor-grid > div:last-child {
-        margin-top: 18px;
-        max-width: 100%;
-        min-width: unset;
-        border-radius: var(--radius-lg);
-      }
+      .editor-modal { padding: 18px 24px; }
+      .editor-grid { grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; }
+      .editor-grid > div:last-child { width:280px;min-width:280px;max-width:280px;border-radius:var(--radius-lg); }
     }
     @media (max-width: 768px) {
-      .editor-modal { padding: 12px 2vw; }
+      .editor-modal { padding: 12px 16px; }
       .editor-grid { grid-template-columns: 1fr; gap: 10px; }
-      .modal-overlay { padding: 6px; }
+      .editor-grid > div:last-child { width:auto;min-width:0;max-width:none; }
     }
   </style>
 </head>
@@ -204,7 +199,13 @@
     <main class="cms-content">
       <div class="page-header">
         <h1 class="page-title">Articles</h1>
-        <button class="btn btn-red" id="new-article-btn">+ Add Article</button>
+        <button class="btn btn-red" id="new-article-btn">Create</button>
+      </div>
+      <div class="articles-toolbar">
+        <div class="media-search">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+          <input type="search" id="articles-search" placeholder="Search articles..." aria-label="Search articles" />
+        </div>
       </div>
       <p id="article-editor-load-error" role="alert" style="display:none;color:var(--red);margin:-10px 0 16px;">
         The article tools are still loading. Serve this page from the repository root over HTTP and make sure the backend modules are reachable, then refresh.
@@ -260,13 +261,13 @@
     <div class="editor-modal-header">
       <span class="editor-modal-title" id="editor-title">New Article</span>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-gray btn-sm" id="popout-btn" title="Pop out editor" style="margin-right:8px;">🗗 Pop out</button>
+        <button class="btn btn-outline btn-sm" id="editor-exit-btn" type="button">Exit</button>
         <div id="review-avatar" style="display:none;"></div>
         <button class="btn btn-red btn-sm" id="publish-btn" style="display:none;">Publish</button>
       </div>
     </div>
     <div class="editor-alert" id="editor-alert"><span id="editor-alert-msg"></span></div>
-    <div class="editor-grid" id="editor-grid-main" style="grid-template-columns:2fr 1fr;">
+    <div class="editor-grid" id="editor-grid-main">
       <div>
         <div class="form-group">
           <label class="form-label">Article Title</label>
@@ -328,30 +329,7 @@
           <div id="quill-editor" style="min-height:280px;border:1px solid var(--border);border-radius:0 0 var(--radius-md) var(--radius-md);background:#fff;padding:10px;"></div>
         </div>
       </div>
-      <div style="min-width:260px;max-width:340px;">
-        <!-- ══ POP-OUT EDITOR MODAL ══ -->
-        <div class="modal-overlay hidden" id="popout-overlay">
-          <div class="editor-modal" style="max-width:900px;">
-            <div class="editor-modal-header">
-              <span class="editor-modal-title" id="popout-title">Edit Article</span>
-              <button class="btn btn-gray btn-sm" id="popout-close">✕ Close</button>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Article Title</label>
-              <input type="text" class="form-input" id="popout-article-title" placeholder="Enter headline here..." />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Article Content</label>
-              <div id="popout-quill-toolbar"></div>
-              <div id="popout-quill-editor" style="min-height:320px;border:1px solid var(--border);border-radius:0 0 var(--radius-md) var(--radius-md);background:#fff;padding:10px;"></div>
-            </div>
-            <div class="editor-footer">
-              <button class="btn btn-gray" id="popout-cancel">Cancel</button>
-              <button class="btn btn-red" id="popout-save">Save</button>
-            </div>
-          </div>
-        </div>
-
+      <div>
         <!-- ══ DELETE CONFIRMATION MODAL ══ -->
         <div class="modal-overlay hidden" id="delete-confirm-overlay">
           <div class="editor-modal" style="max-width:400px;text-align:center;">
@@ -371,6 +349,18 @@
         </div>
         <div id="editorial-fields">
           <div class="form-group">
+            <label class="form-label">Writer</label>
+            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Artist</label>
+            <input type="text" class="form-input" id="artist-name" spellcheck="true" autocorrect="on" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Photojournalist</label>
+            <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on" />
+          </div>
+          <div class="form-group">
             <label class="form-label">Assign to Correspondent</label>
             <select class="form-select" id="assign-correspondent">
               <option value="">None</option>
@@ -385,8 +375,8 @@
         </div>
         <div id="correspondent-fields" style="display:none;">
           <div class="form-group">
-            <label class="form-label">Author</label>
-            <input type="text" class="form-input" id="author-name" />
+            <label class="form-label">Writer</label>
+            <input type="text" class="form-input" id="writer-name" spellcheck="true" autocorrect="on" />
           </div>
           <div class="form-group">
             <label class="form-label">Due Date</label>
@@ -408,7 +398,7 @@
             <img id="cover-preview" class="cover-preview-img" alt="" />
             <button class="btn btn-red btn-sm" type="button"
               onclick="event.stopPropagation();document.getElementById('cover-file-input').click()">
-              + Upload image
+              Upload image
             </button>
           </label>
         </div>
@@ -470,6 +460,7 @@
     document.getElementById('articles-content').innerHTML = '<p class="empty-msg">Authentication error. Please log in again.</p>';
     throw e;
   }
+  const userDisplayName = user.name || [user.firstName, user.surname].filter(Boolean).join(' ').trim() || 'User';
 
   // ── Topbar ──
   document.getElementById('topbar-username').textContent = user.name || user.firstName || 'User';
@@ -494,6 +485,7 @@
   // ── State ──
   const statusLabels = { draft:'Draft', pending:'Pending', reviewed:'Reviewed', published:'Published', assigned:'Assigned', pending_adviser:'Awaiting Final Approval', pending_editorial:'Awaiting Editorial Review' };
   let articlesData   = [];
+  let visibleArticles = [];
   let editingId      = null; // Firestore doc ID of article being edited
   let quill = null;
 
@@ -547,9 +539,15 @@
     return user.role === 'editorial' ? 'editorial' : 'correspondent';
   }
 
-  function canShowStatusOption(status) {
+  function canShowStatusOption(status, article) {
     if (status === 'published') return user.role === 'adviser';
     if (status === 'pending_adviser') return user.role === 'editorial' || user.role === 'adviser';
+    if (user.role === 'correspondent') {
+      if (article.status === 'pending') return status === 'pending';
+      if (article.status === 'reviewed') return status === 'pending';
+      if (['draft', 'assigned'].includes(article.status)) return ['draft', 'pending', 'assigned'].includes(status);
+      return false;
+    }
     return true;
   }
 
@@ -579,6 +577,9 @@
       root.contentEditable = 'true';
       root.setAttribute('role', 'textbox');
       root.setAttribute('aria-label', 'Article content');
+      root.setAttribute('spellcheck', 'true');
+      root.setAttribute('autocorrect', 'on');
+      root.setAttribute('autocapitalize', 'sentences');
       root.style.minHeight = '280px';
       document.getElementById('quill-toolbar').style.display = 'none';
       quill = {
@@ -594,23 +595,37 @@
         toolbar: '#quill-toolbar'
       }
     });
+    quill.root.setAttribute('spellcheck', 'true');
+    quill.root.setAttribute('autocorrect', 'on');
+    quill.root.setAttribute('autocapitalize', 'sentences');
   }
 
   // ── Build table ──
   function buildTable() {
+    const query = document.getElementById('articles-search').value.trim().toLocaleLowerCase();
+    visibleArticles = articlesData.filter(article => [
+      article.title, article.section, article.writerName, article.authorName,
+      article.artistName, article.photojournalistName, article.status
+    ].some(value => String(value || '').toLocaleLowerCase().includes(query)));
+
     if (!articlesData.length) {
       document.getElementById('articles-content').innerHTML = `
         <div class="empty-state">
           <div class="empty-state-title">No articles yet</div>
           <div class="empty-state-sub">Create your first article to get started</div>
-          ${user.role !== 'adviser' ? '<button class="btn btn-red" id="empty-new-btn">+ Add Article</button>' : ''}
+          ${user.role !== 'adviser' ? '<button class="btn btn-red" id="empty-new-btn">Create</button>' : ''}
         </div>`;
       document.getElementById('empty-new-btn')?.addEventListener('click', () => openEditor(editorModeFor()));
       return;
     }
+    if (!visibleArticles.length) {
+      document.getElementById('articles-content').innerHTML =
+        '<p class="empty-msg">No articles match your search.</p>';
+      return;
+    }
 
     let rows = '';
-    articlesData.forEach((a, i) => {
+    visibleArticles.forEach((a, i) => {
       const status = Object.hasOwn(statusLabels, a.status) ? a.status : 'draft';
       const canEdit = user.role !== 'correspondent'
         || ['draft', 'assigned', 'pending', 'reviewed'].includes(status);
@@ -618,16 +633,12 @@
         <tr>
           <td class="title-cell" data-label="Title">${escapeHtml(a.title || 'Untitled')}</td>
           <td data-label="Section">${escapeHtml((a.section || '—').toUpperCase())}</td>
-          <td data-label="Writer">${escapeHtml(a.authorName || '—')}</td>
+          <td data-label="Writer" title="${escapeHtml(a.writerName || a.authorName || '—')}">${escapeHtml(a.writerName || a.authorName || '—')}</td>
           <td data-label="Status">
             <div class="status-dropdown" id="dd-${i}">
-              <div class="status-badge ${status}" id="badge-${i}"><span>${escapeHtml(statusLabels[status])}</span></div>
+              <button type="button" class="status-badge ${status}" id="badge-${i}" aria-label="Change status, currently ${escapeHtml(statusLabels[status])}"><span>${escapeHtml(statusLabels[status])}</span></button>
               <div class="status-menu" id="menu-${i}">
-                <div class="status-option opt-draft    ${status==='draft'    ?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="draft"><span class="status-dot dot-draft"></span>Draft</div>
-                <div class="status-option opt-pending  ${status==='pending'  ?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="pending"><span class="status-dot dot-pending"></span>Pending</div>
-                <div class="status-option opt-reviewed ${status==='reviewed' ?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="reviewed"><span class="status-dot dot-reviewed"></span>Reviewed</div>
-                ${canShowStatusOption('published') ? `<div class="status-option opt-published ${status==='published'?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="published"><span class="status-dot dot-published"></span>Published</div>` : ''}
-                <div class="status-option opt-assigned ${status==='assigned' ?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="assigned"><span class="status-dot dot-assigned"></span>Assigned</div>
+                ${['draft', 'pending', 'reviewed', 'published', 'assigned', 'pending_adviser'].filter(nextStatus => canShowStatusOption(nextStatus, a)).map(nextStatus => `<div class="status-option opt-${nextStatus} ${status===nextStatus?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="${nextStatus}"><span class="status-dot dot-${nextStatus}"></span>${escapeHtml(statusLabels[nextStatus])}</div>`).join('')}
               </div>
             </div>
           </td>
@@ -649,7 +660,7 @@
           </colgroup>
           <thead><tr>
             <th>Article Title</th><th>Section</th>
-            <th>Writer Name</th><th>Status</th><th>Options</th>
+            <th>Writer Name</th><th>Status</th><th></th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -719,7 +730,7 @@
       if (editBtn) {
         const i   = editBtn.dataset.i;
         const id  = editBtn.dataset.id;
-        const art = articlesData[i];
+        const art = visibleArticles[i];
         openEditor(editorModeFor(art), art, id);
         return;
       }
@@ -771,13 +782,6 @@
   }
 
   // Function to receive pop-out edits
-  window.applyPopoutEdits = function(data) {
-    document.getElementById('article-title').value = data.title;
-    ensureQuill();
-    quill.root.innerHTML = sanitizeArticleContent(data.content);
-    document.getElementById('article-cutline').value = data.cutline;
-  };
-
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#articles-content')) closeAllMenus();
   });
@@ -816,6 +820,10 @@
       ensureQuill();
       quill.root.innerHTML = sanitizeArticleContent(article.content);
       document.getElementById('article-cutline').value = article.cutline || '';
+      document.getElementById('editorial-writer-name').value = article.writerName || article.authorName || '';
+      document.getElementById('writer-name').value = article.writerName || article.authorName || '';
+      document.getElementById('artist-name').value = article.artistName || '';
+      document.getElementById('photojournalist-name').value = article.photojournalistName || '';
       document.querySelectorAll('#tags-wrap .section-tag').forEach(t => t.remove());
       const articleTags = Array.isArray(article.tags) && article.tags.length
         ? article.tags
@@ -867,6 +875,10 @@
       ensureQuill();
       quill.root.innerHTML = '';
       document.getElementById('article-cutline').value   = '';
+      document.getElementById('editorial-writer-name').value = user.name || `${user.firstName || ''} ${user.surname || ''}`.trim();
+      document.getElementById('writer-name').value = user.name || `${user.firstName || ''} ${user.surname || ''}`.trim();
+      document.getElementById('artist-name').value = '';
+      document.getElementById('photojournalist-name').value = '';
       document.getElementById('editor-feedback').value = '';
       document.getElementById('feedback-thread').replaceChildren();
       document.getElementById('feedback-thread').style.display = 'none';
@@ -881,7 +893,6 @@
     if (mode === 'correspondent') {
       title.textContent = article ? 'Edit Article' : 'Write Article';
       cf.style.display = 'block';
-      document.getElementById('author-name').value = user.name || user.firstName || '';
       const isSubmitted = article && !['draft', 'assigned', 'reviewed'].includes(article.status);
       const saveStatus = isSubmitted
         ? article.status
@@ -897,6 +908,7 @@
 
     } else if (mode === 'review') {
       title.textContent = 'Review Article';
+      if (user.role === 'adviser') ef.style.display = 'block';
       rd.style.display = fg.style.display = 'block';
       // Only adviser may publish; other reviewers forward to adviser
       if (article) {
@@ -948,98 +960,8 @@
 
     document.getElementById('editor-overlay').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    document.getElementById('editor-exit-btn').onclick = closeEditor;
 
-    // ── Attach pop-out button event listener ──
-    document.getElementById('popout-btn').onclick = function() {
-      const article = {
-        title: document.getElementById('article-title').value,
-        content: sanitizeArticleContent(quill ? quill.root.innerHTML : ''),
-        cutline: document.getElementById('article-cutline').value
-      };
-
-      // Open pop-out window
-      const popout = window.open('', '', 'width=900,height=700,resizable,scrollbars');
-      if (!popout) {
-        showToast('Pop-out blocked. Allow pop-ups for this site and try again.', 'error');
-        return;
-      }
-
-      // Write minimal HTML for the pop-out
-      const popoutHtml = `
-        <html><head>
-          <title>Pop-out Article Editor</title>
-          <link rel="stylesheet" href="shared.css" />
-          <link href='https://cdn.quilljs.com/1.3.6/quill.snow.css' rel='stylesheet'>
-          <style>body{margin:0;padding:0;} .editor-modal{max-width:900px;margin:32px auto;box-shadow:0 8px 40px rgba(0,0,0,0.13);} .editor-footer{justify-content:flex-end;gap:10px;}</style>
-        </head><body>
-          <div class="editor-modal">
-            <div class="editor-modal-header">
-              <span class="editor-modal-title">Pop-out Editor</span>
-              <button id="popout-close" class="btn btn-outline btn-sm">✕ Close</button>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Article Title</label>
-              <input type="text" class="form-input" id="popout-title" value="${escapeHtml(article.title)}" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Article Content</label>
-              <div id="popout-quill-toolbar">
-                <span class="ql-formats">
-                  <select class="ql-font"><option selected></option><option value="serif"></option><option value="monospace"></option></select>
-                  <select class="ql-size"><option value="small"></option><option selected></option><option value="large"></option><option value="huge"></option></select>
-                  <select class="ql-header"><option value="1"></option><option value="2"></option><option value="3"></option><option selected></option></select>
-                </span>
-                <span class="ql-formats">
-                  <button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button><button class="ql-strike"></button>
-                  <button class="ql-script" value="sub"></button><button class="ql-script" value="super"></button>
-                </span>
-                <span class="ql-formats"><select class="ql-color"></select><select class="ql-background"></select></span>
-                <span class="ql-formats">
-                  <button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button>
-                  <button class="ql-indent" value="-1"></button><button class="ql-indent" value="+1"></button>
-                </span>
-                <span class="ql-formats">
-                  <button class="ql-link"></button><button class="ql-image"></button><button class="ql-video"></button>
-                </span>
-                <span class="ql-formats">
-                  <select class="ql-align"></select><button class="ql-direction" value="rtl"></button>
-                  <button class="ql-blockquote"></button><button class="ql-code-block"></button><button class="ql-clean"></button>
-                </span>
-              </div>
-              <div id="popout-quill-editor" style="min-height:220px;border:1px solid var(--border);border-radius:0 0 var(--radius-md) var(--radius-md);background:#fff;padding:10px;"></div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Cutline</label>
-              <textarea class="form-textarea" id="popout-cutline" rows="2">${escapeHtml(article.cutline)}</textarea>
-            </div>
-            <div class="editor-footer">
-              <button class="btn btn-outline" id="popout-cancel">Cancel</button>
-              <button class="btn btn-red" id="popout-save">Save</button>
-            </div>
-          </div>
-          <script src='https://cdn.quilljs.com/1.3.6/quill.min.js'><\/script>
-          <script>
-            const quill = new Quill('#popout-quill-editor', { theme: 'snow', modules: { toolbar: '#popout-quill-toolbar' } });
-            quill.root.innerHTML = ${JSON.stringify(article.content).replace(/</g, '\\u003c')};
-            document.getElementById('popout-close').onclick = () => window.close();
-            document.getElementById('popout-cancel').onclick = () => window.close();
-            document.getElementById('popout-save').onclick = () => {
-              const data = {
-                title: document.getElementById('popout-title').value,
-                content: quill.root.innerHTML,
-                cutline: document.getElementById('popout-cutline').value
-              };
-              if (window.opener && window.opener.applyPopoutEdits) {
-                window.opener.applyPopoutEdits(data);
-              }
-              window.close();
-            };
-          <\/script>
-        <\/body></html>
-      `;
-      popout.document.write(popoutHtml);
-      popout.document.close();
-    };
   }
 
   function closeEditor() {
@@ -1054,7 +976,7 @@
   async function saveArticle(status) {
     if (isSavingArticle) return;
     isSavingArticle = true;
-    const actionButtons = document.querySelectorAll('#editor-footer button, #publish-btn, #popout-btn');
+    const actionButtons = document.querySelectorAll('#editor-footer button, #publish-btn, #editor-exit-btn');
     actionButtons.forEach(button => { button.disabled = true; });
 
     try {
@@ -1092,10 +1014,21 @@
         tags,
         assignedTo: assignee,
         dueDate: dueDate || existingArticle?.dueDate || null,
+        writerName: (user.role === 'correspondent'
+          ? document.getElementById('writer-name').value
+          : document.getElementById('editorial-writer-name').value).trim(),
+        artistName: document.getElementById('artist-name').value.trim(),
+        photojournalistName: document.getElementById('photojournalist-name').value.trim(),
       };
+      if (!data.writerName) {
+        showEditorAlert('Please enter the writer name.', 'error');
+        return;
+      }
       if (!editingId) {
         data.authorId = user.uid;
-        data.authorName = user.name || `${user.firstName} ${user.surname}`;
+        data.authorName = data.writerName || userDisplayName;
+      } else if (data.writerName) {
+        data.authorName = data.writerName;
       }
 
       const fileInput = document.getElementById('cover-file-input');
@@ -1129,7 +1062,7 @@
         if (feedbackMsg && articleId) {
           const feedbackResult = await addArticleFeedback(articleId, {
             fromUid: user.uid,
-            fromName: user.name || `${user.firstName} ${user.surname}`,
+            fromName: userDisplayName,
             role: user.role,
             message: feedbackMsg
           });
@@ -1245,6 +1178,7 @@
     showToast('Could not connect to article services.', 'error');
   });
   loadCorrespondents();
+  document.getElementById('articles-search').addEventListener('input', buildTable);
 
   // Status options are filtered during table rendering.
 </script>

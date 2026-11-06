@@ -280,7 +280,7 @@
             <div>
               <div class="work-card-section">${(article.section || 'General').toUpperCase()}</div>
               <div class="work-card-title">${escapeHtml(article.title || 'Untitled')}</div>
-              <div class="work-card-author">by ${escapeHtml(article.authorName || user.name || 'Unknown')}</div>
+              <div class="work-card-author">by ${escapeHtml(article.writerName || article.authorName || user.name || 'Unknown')}</div>
             </div>
           </a>`).join('');
       }

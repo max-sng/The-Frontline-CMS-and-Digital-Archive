@@ -439,6 +439,44 @@ export async function updateUser(uid, data) {
   }
 }
 
+export async function getPublicationSettings() {
+  const snap = await getDoc(doc(db, 'settings', 'publication'));
+  return snap.exists() ? snap.data() : {};
+}
+
+export async function updatePublicationSettings(data) {
+  const allowedFields = ['publicationName', 'contactEmail', 'publicArticleAccess'];
+  if (!data || Object.keys(data).some(key => !allowedFields.includes(key))) {
+    return { success: false, error: 'Invalid publication settings.' };
+  }
+  if (Object.hasOwn(data, 'publicationName')
+    && (typeof data.publicationName !== 'string' || !data.publicationName.trim())) {
+    return { success: false, error: 'Publication name cannot be empty.' };
+  }
+  if (Object.hasOwn(data, 'contactEmail')
+    && (typeof data.contactEmail !== 'string' || !data.contactEmail.trim())) {
+    return { success: false, error: 'Contact email cannot be empty.' };
+  }
+  if (Object.hasOwn(data, 'publicArticleAccess') && typeof data.publicArticleAccess !== 'boolean') {
+    return { success: false, error: 'Public article access must be enabled or disabled.' };
+  }
+  try {
+    const settingsRef = doc(db, 'settings', 'publication');
+    const existing = await getDoc(settingsRef);
+    await setDoc(settingsRef, {
+      publicationName: 'The Frontline',
+      contactEmail: 'thefrontline@gordoncollege.edu.ph',
+      publicArticleAccess: true,
+      ...(existing.exists() ? existing.data() : {}),
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
 // Approve editorial account
 export async function approveEditorial(uid) {
   try {
@@ -497,6 +535,17 @@ export async function getArticleFeedbacks(articleId) {
 
 export async function createNotification(notification) {
   try {
+    const preferenceKey = {
+      article_published: 'articlePublished',
+      revision_requested: 'articleReturned',
+      article_assigned: 'articleAssigned'
+    }[notification.type];
+    if (preferenceKey && notification.toUid) {
+      const recipient = await getDoc(doc(db, 'users', notification.toUid));
+      if (recipient.exists() && recipient.data().notificationPreferences?.[preferenceKey] === false) {
+        return { success: true, skipped: true };
+      }
+    }
     const ref = await addDoc(collection(db, 'notifications'), {
       ...notification,
       fromUid: notification.fromUid || null,

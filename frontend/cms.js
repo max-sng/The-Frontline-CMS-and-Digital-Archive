@@ -246,6 +246,14 @@ function initHamburger() {
 /* ── Hide restricted sidebar links based on role ── */
 function initSidebarAccess() {
   const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+  document.querySelectorAll('.sidebar-nav li a').forEach(link => {
+    Array.from(link.childNodes).forEach(node => {
+      if (node.nodeType !== Node.TEXT_NODE || !node.textContent.trim()) return;
+      const label = document.createElement('span');
+      label.textContent = node.textContent.trim();
+      node.replaceWith(label);
+    });
+  });
   if (!user || !['editorial','adviser'].includes(user.role)) {
     const corrLink = document.querySelector('a[href="correspondents.html"]');
     if (corrLink) corrLink.closest('li').style.display = 'none';

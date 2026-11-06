@@ -358,7 +358,7 @@
             <div class="card-section">${(a.section || 'General').toUpperCase()}</div>
             <div class="card-title">${truncate(a.title, 80)}</div>
             <div class="card-excerpt">${truncate(a.excerpt || '', 100)}</div>
-            <div class="card-author">by ${a.authorName || 'Unknown'}</div>
+            <div class="card-author">by ${a.writerName || a.authorName || 'Unknown'}</div>
           </div>
         </a>`).join('');
     } else {
@@ -375,7 +375,7 @@
         <div class="latest-info">
           <div class="latest-section">${(a.section || 'General').toUpperCase()}</div>
           <div class="latest-title">${truncate(a.title, 60)}</div>
-          <div class="latest-author">by ${a.authorName || 'Unknown'}</div>
+          <div class="latest-author">by ${a.writerName || a.authorName || 'Unknown'}</div>
         </div>
       </a>`).join('');
   }
@@ -386,7 +386,7 @@
 
     const filtered = publishedArticles.filter(article => {
       const matchesSection = !section || (article.section || 'General').toString() === section;
-      const haystack = [article.title, article.excerpt, article.authorName, article.section].map(normalize).join(' ');
+      const haystack = [article.title, article.excerpt, article.writerName, article.authorName, article.section].map(normalize).join(' ');
       const matchesQuery = !query || haystack.includes(query);
       return matchesSection && matchesQuery;
     });

@@ -99,7 +99,7 @@
           el.innerHTML = `
             <div>
               <div class="queue-title">${escapeHtml(a.title || 'Untitled')}</div>
-              <div class="queue-meta">Author: ${escapeHtml(a.authorName || '—')} · Status: ${escapeHtml(a.status)}</div>
+              <div class="queue-meta">Writer: ${escapeHtml(a.writerName || a.authorName || '—')} · Status: ${escapeHtml(a.status)}</div>
             </div>
             <div class="queue-actions">
               <button class="btn btn-outline" data-id="${escapeHtml(a.id)}" data-action="reject">Reject</button>

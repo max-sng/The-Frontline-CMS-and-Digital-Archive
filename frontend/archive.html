@@ -64,6 +64,10 @@
 
     <main class="cms-content">
       <h1 class="page-title">Archive</h1>
+      <div class="media-search" style="margin:12px 0 20px;width:min(340px,100%);">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+        <input type="search" id="archive-search" placeholder="Search archive..." aria-label="Search archive" />
+      </div>
       <div id="archive-content"></div>
     </main>
   </div>
@@ -74,6 +78,7 @@
   import { getAllPublishedArticles } from '../backend/firebase/firestore.js';
 
   const container = document.getElementById('archive-content');
+  let archiveArticles = [];
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -97,7 +102,9 @@
 
   function renderArchive(articles) {
     if (!articles.length) {
-      container.innerHTML = '<p class="empty-msg">No archived articles yet.</p>';
+      container.innerHTML = document.getElementById('archive-search').value.trim()
+        ? '<p class="empty-msg">No articles match your search.</p>'
+        : '<p class="empty-msg">No archived articles yet.</p>';
       return;
     }
 
@@ -117,7 +124,7 @@
           <div class="card-section">${escapeHtml((a.section || 'Article').toUpperCase())}</div>
           <div class="card-title">${escapeHtml(a.title || 'Untitled article')}</div>
           <div class="card-excerpt">${escapeHtml(a.cutline || '')}</div>
-          <div class="card-author">by ${escapeHtml(a.authorName || 'Unknown author')}</div>
+          <div class="card-author">by ${escapeHtml(a.writerName || a.authorName || 'Unknown writer')}</div>
         </div>
       </a>`).join('');
 
@@ -129,7 +136,17 @@
     }).join('');
   }
 
-  getAllPublishedArticles().then(renderArchive).catch(error => {
+  document.getElementById('archive-search').addEventListener('input', event => {
+    const query = event.target.value.trim().toLocaleLowerCase();
+    renderArchive(archiveArticles.filter(article => [
+      article.title, article.section, article.writerName, article.authorName, article.cutline
+    ].some(value => String(value || '').toLocaleLowerCase().includes(query))));
+  });
+
+  getAllPublishedArticles().then(articles => {
+    archiveArticles = articles;
+    renderArchive(archiveArticles);
+  }).catch(error => {
     console.error('Failed to load archive:', error);
     container.innerHTML = '<p class="empty-msg">Failed to load archived articles. Please refresh the page.</p>';
   });

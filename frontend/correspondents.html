@@ -8,12 +8,12 @@
   <style>
     .section-tabs { display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;flex-wrap:nowrap;gap:0;overflow-x:auto;scrollbar-width:none; }
     .section-tabs::-webkit-scrollbar { display:none; }
-    .section-tab { padding:8px 10px;font-size:12.5px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font);flex-shrink:0; }
+    .section-tab { width:148px;height:38px;padding:0 10px;font-size:12.5px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-family:var(--font);flex:0 0 148px; }
     .section-tab:hover { color:var(--text-main); }
     .section-tab.active { color:var(--red);border-bottom-color:var(--red);font-weight:600; }
     .corr-avatar { width:34px;height:34px;border-radius:50%;background:var(--bg-dark2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:12px;font-weight:600;flex-shrink:0;overflow:hidden; }
     .corr-avatar img { width:100%;height:100%;object-fit:cover; }
-    .corr-name { font-size:13px;font-weight:600;color:var(--text-main);line-height:1.2; }
+    .corr-name { max-width:180px;font-size:13px;font-weight:600;color:var(--text-main);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .corr-role { font-size:11.5px;color:var(--text-muted);margin-top:1px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .user-cell { display:flex;align-items:center;gap:10px; }
     .pagination { display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-top:20px; }
@@ -98,7 +98,6 @@
       <div class="page-header">
         <h1 class="page-title">Correspondents</h1>
         <button class="btn btn-red" id="openModalBtn">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
           Add Correspondent
         </button>
       </div>
@@ -118,12 +117,12 @@
         <button class="section-tab" data-section="Broadcasting">Broadcasting</button>
       </div>
 
-      <!-- Table — 4 columns only: User, Section/Role, Email, View -->
+      <!-- Table — 4 columns only: User, Section, Email, View -->
       <table class="articles-table" id="corrTable" style="table-layout:fixed;width:100%">
         <thead>
           <tr>
             <th style="width:38%">User</th>
-            <th style="width:22%">Section/Role</th>
+            <th style="width:22%">Section</th>
             <th style="width:32%">Email</th>
             <th style="width:8%"></th>
           </tr>
@@ -165,36 +164,14 @@
       <label class="form-label">Email address</label>
       <input type="email" class="form-input" id="fieldEmail" placeholder="e.g. 202612345@gordoncollege.edu.ph" />
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Section</label>
-        <select class="form-select" id="fieldSection">
-          <option value="">— Select —</option>
-          <option>Editorial Board</option><option>News</option><option>Opinion-Editorial</option>
-          <option>DevComm</option><option>Feature</option><option>Literary</option>
-          <option>Photojournalism</option><option>Sports</option><option>Arts</option><option>Broadcasting</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Role</label>
-        <select class="form-select" id="fieldRole">
-          <option value="">— Select —</option>
-          <option>Editor-in-Chief</option>
-          <option>News Editor</option><option>Opinion-Editorial Editor</option>
-          <option>DevComm Editor</option><option>Feature Editor</option>
-          <option>Literary-Kultura Editor</option><option>Head Photojournalist</option>
-          <option>Sports Editor</option><option>Head of Visual Arts</option><option>Head Broadcaster</option>
-          <option>Senior News Correspondent</option><option>Junior News Correspondent</option>
-          <option>Senior Editorial Opinion Corresp.</option><option>Junior Editorial Opinion Corresp.</option>
-          <option>Senior DevComm Correspondent</option><option>Junior DevComm Correspondent</option>
-          <option>Senior Feature Correspondent</option><option>Junior Feature Correspondent</option>
-          <option>Senior Literary-Kultura Corresp.</option><option>Junior Literary-Kultura Corresp.</option>
-          <option>Senior Photojournalist</option><option>Junior Photojournalist</option>
-          <option>Senior Sports Correspondent</option><option>Junior Sports Correspondent</option>
-          <option>Senior Graphic Artist</option><option>Junior Graphic Artist</option>
-          <option>Senior TV Broadcaster</option><option>Junior TV Broadcaster</option>
-        </select>
-      </div>
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Section</label>
+      <select class="form-select" id="fieldSection">
+        <option value="">— Select —</option>
+        <option>News</option><option>Opinion-Editorial</option><option>DevComm</option>
+        <option>Feature</option><option>Literary</option><option>Photojournalism</option>
+        <option>Sports</option><option>Arts</option><option>Broadcasting</option>
+      </select>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" id="cancelModalBtn">Cancel</button>
@@ -246,7 +223,6 @@
     const total = Math.max(1, Math.ceil(data.length / ROWS));
     if (page > total) page = 1;
     const slice   = data.slice((page-1)*ROWS, page*ROWS);
-    const showSec = activeSection === 'All';
 
     document.getElementById('corrTableBody').innerHTML = slice.length
       ? slice.map(c => {
@@ -259,11 +235,11 @@
                   <div class="corr-avatar">${ini(name)}</div>
                   <div>
                     <div class="corr-name">${name}</div>
-                    <div class="corr-role">${c.role || c.section || '—'}</div>
+                    <div class="corr-role">${c.section || '—'}</div>
                   </div>
                 </div>
               </td>
-              <td data-label="Section/Role">${showSec ? (c.section||'—') : (c.role||'—')}</td>
+              <td data-label="Section">${c.section || '—'}</td>
               <td data-label="Email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.email||'—'}</td>
               <td>
                 <div class="options-cell">
@@ -304,7 +280,7 @@
 
   const modal       = document.getElementById('addModal');
   const clearAlerts = () => ['alertSuccess','alertError'].forEach(id => document.getElementById(id).classList.remove('show'));
-  const clearForm   = () => ['fieldFirstName','fieldSurname','fieldEmail','fieldSection','fieldRole'].forEach(id => { document.getElementById(id).value=''; });
+  const clearForm   = () => ['fieldFirstName','fieldSurname','fieldEmail','fieldSection'].forEach(id => { document.getElementById(id).value=''; });
   const closeModal  = () => { modal.classList.remove('open'); clearAlerts(); clearForm(); };
 
   document.getElementById('openModalBtn').addEventListener('click',   () => { clearAlerts(); clearForm(); modal.classList.add('open'); });
@@ -318,9 +294,8 @@
     const surname   = document.getElementById('fieldSurname').value.trim();
     const email     = document.getElementById('fieldEmail').value.trim();
     const sec       = document.getElementById('fieldSection').value;
-    const role      = document.getElementById('fieldRole').value;
 
-    if (!firstName||!surname||!email||!sec||!role) {
+    if (!firstName||!surname||!email||!sec) {
       document.getElementById('alertErrorMsg').textContent = 'Please fill in all fields.';
       document.getElementById('alertError').classList.add('show');
       return;
@@ -340,7 +315,7 @@
       const { db } = await import('../backend/firebase/firebase-config.js');
       await addDoc(collection(db, 'users'), {
         firstName, surname, name:`${firstName} ${surname}`,
-        email, section:sec, role, status:'invited', createdAt:serverTimestamp()
+        email, section:sec, role:'correspondent', status:'invited', createdAt:serverTimestamp()
       });
       document.getElementById('alertSuccessMsg').textContent = `"${firstName} ${surname}" added. They can register using ${email}.`;
       document.getElementById('alertSuccess').classList.add('show');

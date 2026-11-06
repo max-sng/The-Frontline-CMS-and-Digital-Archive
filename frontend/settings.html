@@ -6,18 +6,18 @@
   <title>Settings – The Frontline CMS</title>
   <link rel="stylesheet" href="shared.css" />
   <style>
-    .settings-tabs { display:flex;border-bottom:2px solid var(--border);margin-bottom:28px;gap:0; }
+    .settings-tabs { display:none; }
     .settings-tab { padding:8px 16px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font); }
     .settings-tab:hover { color:var(--text-main); }
     .settings-tab.active { color:var(--red);border-bottom-color:var(--red);font-weight:600; }
-    .tab-panel { display:none; }
-    .tab-panel.active { display:block; }
+    .tab-panel { display:block;margin-bottom:30px;padding-bottom:28px;border-bottom:1px solid var(--border); }
+    .tab-panel:last-of-type { border-bottom:none; }
     .setting-row { display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border-light); }
     .setting-row:last-of-type { border-bottom:none; }
-    .setting-label { font-size:13.5px;font-weight:600;color:var(--text-main);margin-bottom:2px; }
-    .setting-desc { font-size:12px;color:var(--text-muted); }
-    .setting-value { font-size:13px;color:var(--text-sub);margin-top:2px; }
-    .btn-edit { padding:6px 18px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:var(--text-sub);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
+    .setting-label { font-size:15px;font-weight:600;color:var(--text-main);margin-bottom:3px; }
+    .setting-desc { font-size:13px;color:var(--text-muted); }
+    .setting-value { font-size:14px;color:var(--text-sub);margin-top:3px; }
+    .btn-edit { height:34px;min-height:34px;padding:0 18px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:var(--text-sub);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
     .btn-edit:hover { background:#e5e7ea; }
     .toggle-wrap { display:flex;align-items:center;flex-shrink:0; }
     .toggle { position:relative;width:44px;height:24px;cursor:pointer; }
@@ -29,9 +29,10 @@
     .danger-row { background:var(--bg-dark2);border-radius:var(--radius-md);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:8px; }
     .danger-row .setting-label { color:#fff; }
     .danger-row .setting-desc  { color:#aaa; }
-    .btn-delete { padding:6px 18px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
+    .btn-delete { height:34px;min-height:34px;padding:0 18px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
     .btn-delete:hover { background:rgba(255,255,255,0.2); }
-    .section-label { font-size:10.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px; }
+    .section-label { font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px; }
+    .settings-section-title { font-size:20px;font-weight:750;margin:0 0 18px;color:var(--text-main); }
     .avatar-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
     .avatar-left { display:flex;align-items:center;gap:16px; }
     .account-avatar { width:56px;height:56px;border-radius:50%;background:var(--bg-dark2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;position:relative; }
@@ -62,7 +63,7 @@
     /* Profile view / edit mode */
     .profile-info-view { display:flex;flex-direction:column;gap:3px; }
     .profile-view-name { font-size:15px;font-weight:700;color:var(--text-main); }
-    .profile-view-role { font-size:12px;color:var(--text-muted); }
+    .profile-view-role { font-size:13px;color:var(--text-muted); }
     .profile-upload-edit { display:flex;flex-direction:column;gap:2px; }
     .account-avatar.editable { cursor:pointer; }
     .account-avatar:not(.editable) { cursor:default; }
@@ -123,30 +124,24 @@
     <main class="cms-content">
       <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
 
-      <div class="settings-tabs" id="settingsTabs">
-        <button class="settings-tab" data-tab="general">General</button>
-        <button class="settings-tab active" data-tab="account">Account</button>
-        <button class="settings-tab" data-tab="security">Security</button>
-        <button class="settings-tab" data-tab="notifications">Notifications</button>
-      </div>
-
       <!-- ══ GENERAL ══ -->
       <div class="tab-panel" id="panel-general">
+        <h2 class="settings-section-title">General</h2>
         <div class="setting-row">
           <div>
             <div class="setting-label">Publication Name</div>
-            <div class="setting-value">The Frontline</div>
+            <div class="setting-value" id="publication-name-value">The Frontline</div>
             <div class="setting-desc">The official name displayed across the platform</div>
           </div>
-          <button class="btn-edit" onclick="openEditModal('Publication Name','The Frontline')">Edit</button>
+          <button class="btn-edit" onclick="openEditModal('Publication Name','publicationName')">Edit</button>
         </div>
         <div class="setting-row">
           <div>
             <div class="setting-label">Contact Email</div>
-            <div class="setting-value">thefrontline@gordoncollege.edu.ph</div>
+            <div class="setting-value" id="contact-email-value">thefrontline@gordoncollege.edu.ph</div>
             <div class="setting-desc">Primary contact email for the publication</div>
           </div>
-          <button class="btn-edit" onclick="openEditModal('Contact Email','thefrontline@gordoncollege.edu.ph')">Edit</button>
+          <button class="btn-edit" onclick="openEditModal('Contact Email','contactEmail')">Edit</button>
         </div>
         <div class="setting-row">
           <div>
@@ -154,26 +149,16 @@
             <div class="setting-desc">Allow students to view published articles</div>
           </div>
           <label class="toggle toggle-wrap">
-            <input type="checkbox" checked />
+            <input type="checkbox" id="public-article-access" checked />
             <span class="toggle-track"></span>
             <span class="toggle-thumb"></span>
           </label>
-        </div>
-        <div class="danger-row">
-          <div>
-            <div class="setting-label">Delete Publication Data</div>
-            <div class="setting-desc">Permanently removes all publication data from the system</div>
-          </div>
-          <button class="btn-delete" onclick="confirmDelete('publication')">Delete</button>
-        </div>
-        <div class="settings-footer">
-          <button class="btn btn-outline">Cancel</button>
-          <button class="btn btn-red" onclick="showToast('Changes saved successfully.')">Save changes</button>
         </div>
       </div>
 
       <!-- ══ ACCOUNT ══ -->
       <div class="tab-panel active" id="panel-account">
+        <h2 class="settings-section-title">Account</h2>
         <div class="avatar-row">
           <div class="avatar-left">
             <input type="file" id="photoInput" accept="image/jpeg,image/png" style="display:none" />
@@ -247,6 +232,7 @@
 
       <!-- ══ SECURITY ══ -->
       <div class="tab-panel" id="panel-security">
+        <h2 class="settings-section-title">Security</h2>
         <div class="section-label" style="margin-bottom:16px">Login &amp; Password</div>
         <div class="password-row">
           <div>
@@ -255,37 +241,38 @@
           </div>
           <button class="btn-edit" onclick="document.getElementById('pwModal').classList.add('open')">Change password</button>
         </div>
-        <div class="danger-row" style="margin-top:12px">
+        <div class="danger-row" id="delete-account-setting" style="margin-top:12px;display:none">
           <div>
             <div class="setting-label">Delete account</div>
             <div class="setting-desc">Permanently removes your account and all associated data</div>
           </div>
-          <button class="btn-delete" onclick="confirmDelete('account')">Delete account</button>
+          <button class="btn-delete" type="button" onclick="window.location.href='user-management.html'">Manage accounts</button>
         </div>
       </div>
 
       <!-- ══ NOTIFICATIONS ══ -->
       <div class="tab-panel" id="panel-notifications">
+        <h2 class="settings-section-title">Notifications</h2>
         <div class="setting-row">
           <div>
             <div class="setting-label">Article published</div>
             <div class="setting-desc">When one of your articles gets published</div>
           </div>
-          <label class="toggle toggle-wrap"><input type="checkbox" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-published" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
         </div>
         <div class="setting-row">
           <div>
             <div class="setting-label">Article returned for revision</div>
             <div class="setting-desc">When an editor sends your draft back with feedback</div>
           </div>
-          <label class="toggle toggle-wrap"><input type="checkbox" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-revision" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
         </div>
         <div class="setting-row">
           <div>
             <div class="setting-label">New article assigned</div>
             <div class="setting-desc">When the editor assigns you a new piece to write</div>
           </div>
-          <label class="toggle toggle-wrap"><input type="checkbox" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-assigned" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
         </div>
       </div>
 
@@ -334,25 +321,10 @@
   </div>
 </div>
 
-<!-- ══ DELETE CONFIRM MODAL ══ -->
-<div class="modal-overlay" id="deleteModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title" id="deleteModalTitle">Confirm Delete</span>
-      <button class="modal-close" onclick="document.getElementById('deleteModal').classList.remove('open')">&#10005;</button>
-    </div>
-    <p style="font-size:13.5px;color:var(--text-sub);line-height:1.6;margin-bottom:4px" id="deleteModalDesc">This action cannot be undone.</p>
-    <div class="modal-footer-btns">
-      <button class="btn btn-outline" onclick="document.getElementById('deleteModal').classList.remove('open')">Cancel</button>
-      <button class="btn btn-danger" onclick="document.getElementById('deleteModal').classList.remove('open');showToast('Deletion request submitted.')">Yes, delete</button>
-    </div>
-  </div>
-</div>
-
 <script src="cms.js"></script>
 <script type="module">
   import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
-  import { getUser, updateUser }     from '../backend/firebase/firestore.js';
+  import { getUser, updateUser, getPublicationSettings, updatePublicationSettings } from '../backend/firebase/firestore.js';
   import { updatePassword }          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
   import { auth, storage }           from '../backend/firebase/firebase-config.js';
@@ -360,6 +332,23 @@
   // ── Auth guard ──
   const user = requireAuth(['correspondent', 'editorial', 'adviser']);
   if (!user) throw new Error('Not authenticated');
+  const defaultPublicationSettings = {
+    publicationName: 'The Frontline',
+    contactEmail: 'thefrontline@gordoncollege.edu.ph',
+    publicArticleAccess: true
+  };
+  let publicationSettings = { ...defaultPublicationSettings };
+  if (user.role === 'adviser') {
+    try {
+      publicationSettings = { ...defaultPublicationSettings, ...await getPublicationSettings() };
+      document.getElementById('publication-name-value').textContent = publicationSettings.publicationName;
+      document.getElementById('contact-email-value').textContent = publicationSettings.contactEmail;
+      document.getElementById('public-article-access').checked = publicationSettings.publicArticleAccess === true;
+    } catch (error) {
+      console.error('Failed to load publication settings:', error);
+      showToast('Could not load publication settings.', 'error');
+    }
+  }
 
   // ── Topbar ──
   document.getElementById('topbar-username').textContent = user.name || user.firstName || 'User';
@@ -400,34 +389,36 @@
   // Tracks the currently saved photo so cancel/save stay in sync after the first save
   let currentPhotoURL = profile?.photoURL || user.photoURL || null;
 
-  // ── General tab: editorial only ──
-  const generalTabBtn   = document.querySelector('.settings-tab[data-tab="general"]');
-  const generalTabPanel = document.getElementById('panel-general');
-  if (user.role !== 'editorial') {
-    generalTabBtn.style.display   = 'none';
-    generalTabPanel.style.display = 'none';
-  }
-
-  // ── Tab switching (supports #hash from topbar dropdown) ──
-  document.getElementById('settingsTabs').addEventListener('click', e => {
-    const btn = e.target.closest('.settings-tab');
-    if (!btn) return;
-    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
-    history.replaceState(null, '', '#' + btn.dataset.tab);
+  document.getElementById('panel-general').style.display = user.role === 'adviser' ? 'block' : 'none';
+  document.getElementById('delete-account-setting').style.display = user.role === 'adviser' ? 'flex' : 'none';
+  const notificationDefaults = {
+    articlePublished: 'notification-published',
+    articleReturned: 'notification-revision',
+    articleAssigned: 'notification-assigned'
+  };
+  let notificationPreferences = Object.fromEntries(
+    Object.keys(notificationDefaults).map(key => [
+      key,
+      typeof profile?.notificationPreferences?.[key] === 'boolean'
+        ? profile.notificationPreferences[key]
+        : true
+    ])
+  );
+  Object.entries(notificationDefaults).forEach(([key, elementId]) => {
+    const checkbox = document.getElementById(elementId);
+    checkbox.checked = notificationPreferences[key];
+    checkbox.addEventListener('change', async () => {
+      const nextPreferences = { ...notificationPreferences, [key]: checkbox.checked };
+      const result = await updateUser(user.uid, { notificationPreferences: nextPreferences });
+      if (!result.success) {
+        checkbox.checked = notificationPreferences[key];
+        showToast(result.error || 'Could not save notification preference.', 'error');
+        return;
+      }
+      notificationPreferences = nextPreferences;
+      showToast('Notification preference saved.', 'success');
+    });
   });
-
-  const hashTab = window.location.hash.replace('#', '');
-  if (hashTab) {
-    // Only follow the hash if the tab is accessible to this user
-    const tabBtn = document.querySelector(`.settings-tab[data-tab="${hashTab}"]:not([style*="display: none"])`);
-    if (tabBtn) tabBtn.click();
-  } else if (user.role === 'editorial') {
-    // Editorial users default to General
-    generalTabBtn.click();
-  }
 
   // ── Edit profile state ──
   let editing = false;
@@ -584,26 +575,45 @@
   });
 
   // ── General tab helpers ──
-  window.openEditModal = (label, value) => {
+  let editingSetting = null;
+  window.openEditModal = (label, key) => {
+    editingSetting = key;
     document.getElementById('editModalTitle').textContent = 'Edit ' + label;
     document.getElementById('editModalLabel').textContent = label;
-    document.getElementById('editModalInput').value = value;
+    document.getElementById('editModalInput').value = publicationSettings[key] || '';
     document.getElementById('editModal').classList.add('open');
   };
-  window.saveEdit = () => {
+  window.saveEdit = async () => {
+    const value = document.getElementById('editModalInput').value.trim();
+    if (!editingSetting || !value) {
+      showToast('Enter a value before saving.', 'error');
+      return;
+    }
+    if (editingSetting === 'contactEmail' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
+      showToast('Enter a valid contact email address.', 'error');
+      return;
+    }
+    const result = await updatePublicationSettings({ [editingSetting]: value });
+    if (!result.success) {
+      showToast(result.error || 'Could not save this setting.', 'error');
+      return;
+    }
+    publicationSettings[editingSetting] = value;
+    document.getElementById(editingSetting === 'publicationName' ? 'publication-name-value' : 'contact-email-value').textContent = value;
     document.getElementById('editModal').classList.remove('open');
-    showToast('Changes saved successfully.', 'success');
+    showToast('Setting saved.', 'success');
   };
-  window.confirmDelete = type => {
-    const titles = { publication:'Delete Publication Data', account:'Delete Account' };
-    const descs  = {
-      publication: 'This will permanently delete all publication data. This action cannot be undone.',
-      account:     'This will permanently remove your account and all associated data. This action cannot be undone.'
-    };
-    document.getElementById('deleteModalTitle').textContent = titles[type] || 'Confirm Delete';
-    document.getElementById('deleteModalDesc').textContent  = descs[type]  || 'This action cannot be undone.';
-    document.getElementById('deleteModal').classList.add('open');
-  };
+  document.getElementById('public-article-access').addEventListener('change', async event => {
+    const nextValue = event.target.checked;
+    const result = await updatePublicationSettings({ publicArticleAccess: nextValue });
+    if (!result.success) {
+      event.target.checked = !nextValue;
+      showToast(result.error || 'Could not update public article access.', 'error');
+      return;
+    }
+    publicationSettings.publicArticleAccess = nextValue;
+    showToast('Public article access updated.', 'success');
+  });
 
   document.querySelectorAll('.modal-overlay').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });

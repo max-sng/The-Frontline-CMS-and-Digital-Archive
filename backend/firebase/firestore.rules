@@ -33,8 +33,16 @@ service cloud.firestore {
           && request.resource.data.status == resource.data.status
           && request.resource.data.email == resource.data.email
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'firstName', 'surname', 'name', 'section', 'program', 'yearJoined', 'photoURL', 'updatedAt'
+            'firstName', 'surname', 'name', 'section', 'program', 'yearJoined', 'photoURL', 'notificationPreferences', 'updatedAt'
           ]))
+        && (!request.resource.data.keys().hasAny(['notificationPreferences'])
+          || (request.resource.data.notificationPreferences is map
+            && request.resource.data.notificationPreferences.keys().hasOnly([
+              'articlePublished', 'articleReturned', 'articleAssigned'
+            ])
+            && request.resource.data.notificationPreferences.articlePublished is bool
+            && request.resource.data.notificationPreferences.articleReturned is bool
+            && request.resource.data.notificationPreferences.articleAssigned is bool))
       );
       allow delete: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
@@ -43,7 +51,12 @@ service cloud.firestore {
 
     // Articles collection
     match /articles/{articleId} {
-      allow read: if resource.data.status == 'published' || (request.auth != null
+      function publicAccessEnabled() {
+        return !exists(/databases/$(database)/documents/settings/publication)
+          || get(/databases/$(database)/documents/settings/publication).data.publicArticleAccess == true;
+      }
+
+      allow read: if (resource.data.status == 'published' && publicAccessEnabled()) || (request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
         && (
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial']
@@ -134,6 +147,22 @@ service cloud.firestore {
       allow delete: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    match /settings/{settingId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+      allow create, update: if request.auth != null
+        && settingId == 'publication'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+        && request.resource.data.keys().hasOnly([
+          'publicationName', 'contactEmail', 'publicArticleAccess', 'updatedAt'
+        ])
+        && request.resource.data.publicationName is string
+        && request.resource.data.contactEmail is string
+        && request.resource.data.publicArticleAccess is bool;
+      allow delete: if false;
     }
 
     // Media library
