@@ -68,8 +68,6 @@
     .profile-upload-edit { display:flex;flex-direction:column;gap:2px; }
     .account-avatar.editable { cursor:pointer; }
     .account-avatar:not(.editable) { cursor:default; }
-    .tab-panel.active { animation:panelIn 0.18s ease; }
-    @keyframes panelIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
   </style>
 </head>
 <body>
@@ -158,7 +156,7 @@
       </div>
 
       <!-- ══ ACCOUNT ══ -->
-      <div class="tab-panel active" id="panel-account">
+      <div class="tab-panel" id="panel-account">
         <h2 class="settings-section-title">Account</h2>
         <div class="avatar-row">
           <div class="avatar-left">
