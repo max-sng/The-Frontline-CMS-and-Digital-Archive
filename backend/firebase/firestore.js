@@ -249,10 +249,13 @@ export async function updateArticleStatus(id, status) {
     if (!articleSnap.exists()) return { success: false, error: 'Article not found.' };
     const article = { id: articleSnap.id, ...articleSnap.data() };
 
-    if (actorRole === 'correspondent'
-      && ((article.authorId !== actorUid && article.assignedTo !== actorUid)
-        || !['draft', 'assigned', 'pending'].includes(status))) {
-      return { success: false, error: 'Correspondents may only submit their own articles for review.' };
+    if (actorRole === 'correspondent') {
+      const canSubmit = status === 'pending'
+        && (article.authorId === actorUid || article.assignedTo === actorUid)
+        && ['draft', 'assigned', 'reviewed'].includes(article.status || 'draft');
+      if (!canSubmit) {
+        return { success: false, error: 'Correspondents may only submit their own or assigned articles for review.' };
+      }
     }
     if (status === 'pending_adviser' && !['editorial', 'adviser'].includes(actorRole)) {
       return { success: false, error: 'Only editorial staff may forward articles to an adviser.' };

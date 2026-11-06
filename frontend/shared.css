@@ -188,6 +188,8 @@ ul { list-style: none; }
 .status-badge { display: inline-flex; align-items: center; justify-content: space-between; gap: 5px; width: 148px; height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; font-family: var(--font); overflow: hidden; }
 .status-badge span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status-badge::after { content: ' ▾'; font-size: 9px; opacity: 0.7; }
+.status-badge.status-readonly { cursor: default; }
+.status-badge.status-readonly::after { content: none; }
 .status-badge.draft     { background: #fde8e8; color: #c0392b; }
 .status-badge.pending   { background: #fef9e7; color: #b7950b; }
 .status-badge.reviewed  { background: #e8f4fd; color: #1a6fa0; }

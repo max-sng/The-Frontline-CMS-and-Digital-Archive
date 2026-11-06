@@ -11,6 +11,7 @@
     .settings-tab:hover { color:var(--text-main); }
     .settings-tab.active { color:var(--red);border-bottom-color:var(--red);font-weight:600; }
     .tab-panel { display:block;margin-bottom:30px;padding-bottom:28px;border-bottom:1px solid var(--border); }
+    .tab-panel[hidden] { display:none; }
     .tab-panel:last-of-type { border-bottom:none; }
     .setting-row { display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border-light); }
     .setting-row:last-of-type { border-bottom:none; }
@@ -125,7 +126,7 @@
       <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
 
       <!-- ══ GENERAL ══ -->
-      <div class="tab-panel" id="panel-general">
+      <div class="tab-panel" id="panel-general" hidden>
         <h2 class="settings-section-title">General</h2>
         <div class="setting-row">
           <div>
@@ -332,6 +333,7 @@
   // ── Auth guard ──
   const user = requireAuth(['correspondent', 'editorial', 'adviser']);
   if (!user) throw new Error('Not authenticated');
+  document.getElementById('panel-general').hidden = user.role !== 'adviser';
   const defaultPublicationSettings = {
     publicationName: 'The Frontline',
     contactEmail: 'thefrontline@gordoncollege.edu.ph',
@@ -389,7 +391,6 @@
   // Tracks the currently saved photo so cancel/save stay in sync after the first save
   let currentPhotoURL = profile?.photoURL || user.photoURL || null;
 
-  document.getElementById('panel-general').style.display = user.role === 'adviser' ? 'block' : 'none';
   document.getElementById('delete-account-setting').style.display = user.role === 'adviser' ? 'flex' : 'none';
   const notificationDefaults = {
     articlePublished: 'notification-published',

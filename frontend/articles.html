@@ -635,12 +635,14 @@
           <td data-label="Section">${escapeHtml((a.section || '—').toUpperCase())}</td>
           <td data-label="Writer" title="${escapeHtml(a.writerName || a.authorName || '—')}">${escapeHtml(a.writerName || a.authorName || '—')}</td>
           <td data-label="Status">
-            <div class="status-dropdown" id="dd-${i}">
-              <button type="button" class="status-badge ${status}" id="badge-${i}" aria-label="Change status, currently ${escapeHtml(statusLabels[status])}"><span>${escapeHtml(statusLabels[status])}</span></button>
-              <div class="status-menu" id="menu-${i}">
-                ${['draft', 'pending', 'reviewed', 'published', 'assigned', 'pending_adviser'].filter(nextStatus => canShowStatusOption(nextStatus, a)).map(nextStatus => `<div class="status-option opt-${nextStatus} ${status===nextStatus?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="${nextStatus}"><span class="status-dot dot-${nextStatus}"></span>${escapeHtml(statusLabels[nextStatus])}</div>`).join('')}
-              </div>
-            </div>
+            ${user.role === 'correspondent'
+              ? `<span class="status-badge status-readonly ${status}" aria-label="Status: ${escapeHtml(statusLabels[status])}"><span>${escapeHtml(statusLabels[status])}</span></span>`
+              : `<div class="status-dropdown" id="dd-${i}">
+                  <button type="button" class="status-badge ${status}" id="badge-${i}" aria-label="Change status, currently ${escapeHtml(statusLabels[status])}"><span>${escapeHtml(statusLabels[status])}</span></button>
+                  <div class="status-menu" id="menu-${i}">
+                    ${['draft', 'pending', 'reviewed', 'published', 'assigned', 'pending_adviser'].filter(nextStatus => canShowStatusOption(nextStatus, a)).map(nextStatus => `<div class="status-option opt-${nextStatus} ${status===nextStatus?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="${nextStatus}"><span class="status-dot dot-${nextStatus}"></span>${escapeHtml(statusLabels[nextStatus])}</div>`).join('')}
+                  </div>
+                </div>`}
           </td>
           <td data-label="Options">
             <div class="options-cell">
@@ -677,6 +679,7 @@
       const badge = e.target.closest('.status-badge');
       if (badge) {
         const dd     = badge.closest('.status-dropdown');
+        if (!dd) return;
         const menu   = dd.querySelector('.status-menu');
         const isOpen = menu.classList.contains('open');
         closeAllMenus();
