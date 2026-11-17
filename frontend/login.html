@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — The Frontline</title>
+  <link rel="icon" type="image/png" href="assets/app-logo.png">
   <link rel="stylesheet" href="auth.css">
 </head>
 <body>
@@ -13,7 +14,7 @@
   <div class="auth-panel">
     <div class="auth-inner">
 
-      <img src="assets/frontline-logo.png" alt="The Frontline" class="auth-logo">
+      <img src="assets/app-logo.png" alt="The Frontline" class="auth-logo">
 
       <h1 class="auth-title">Log into The Frontline</h1>
       <p class="auth-subtitle">Welcome! Please log in with your account.</p>
@@ -60,7 +61,7 @@
           <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
         </div>
 
-        <button class="auth-btn" id="login-btn" onclick="handleLogin()">Login</button>
+        <button class="auth-btn" id="login-btn" onclick="handleLogin()">Log in</button>
 
         <p class="auth-bottom">Don't have an account yet? <a href="register.html">Sign up</a></p>
       </div>
@@ -90,12 +91,12 @@
       errorBox.classList.add('hidden');
 
       if (!email || !password) {
-        errorMsg.textContent = 'Please fill in all fields.';
+        errorMsg.textContent = 'Enter your email and password.';
         errorBox.classList.remove('hidden');
         return;
       }
 
-      btn.textContent = 'Logging in...';
+      btn.textContent = 'Logging in…';
       btn.disabled = true;
 
       const result = await loginUser(email, password);
@@ -105,7 +106,7 @@
       } else {
         errorMsg.textContent = result.error;
         errorBox.classList.remove('hidden');
-        btn.textContent = 'Login';
+        btn.textContent = 'Log in';
         btn.disabled = false;
       }
     };

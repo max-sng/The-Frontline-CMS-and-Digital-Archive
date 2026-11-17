@@ -16,9 +16,9 @@
     .comment-item p { margin:0; color:#444; line-height:1.75; }
     .comment-form { display:grid; gap:16px; margin-top:16px; }
     .comment-form-row { display:grid; gap:16px; grid-template-columns:1fr; }
-    .comment-field label { display:block; margin-bottom:6px; font-size:13px; color:#333; }
+    .comment-field label { display:block; margin-bottom:6px; font-size:var(--fs-sm); color:#333; }
     .comment-field input,
-    .comment-field textarea { width:100%; border:1px solid #d8d8d8; border-radius:8px; padding:12px 14px; font-size:14px; }
+    .comment-field textarea { width:100%; border:1px solid #d8d8d8; border-radius:8px; padding:12px 14px; font-size:var(--fs-md); }
     .btn-submit-comment { width:fit-content; padding:12px 22px; border:none; border-radius:7px; background:#510B0B; color:#fff; cursor:pointer; }
   </style>
 </head>
@@ -93,7 +93,7 @@
 
   <main class="article-main">
     <div class="article-wrap" id="article-wrap">
-      <div style="text-align:center;padding:80px 24px;color:#999;">Loading article...</div>
+      <div style="text-align:center;padding:80px 24px;color:var(--text-muted);">Loading article...</div>
     </div>
   </main>
 
@@ -172,7 +172,7 @@
 </script>
 
 <script type="module">
-  import { addArticleComment, getArticle, getArticleComments, getPublishedArticles, articleSection } from '../backend/firebase/firestore.js';
+  import { addArticleComment, getArticle, getArticleComments, getPublishedArticles, articleSection, toTitleCaseName } from '../backend/firebase/firestore.js';
 
   const wrap = document.getElementById('article-wrap');
 
@@ -205,7 +205,7 @@
       const item = document.createElement('div');
       item.className = 'comment-item';
       item.innerHTML = `
-        <strong>${escapeHtml(comment.name || 'Anonymous')}</strong>
+        <strong>${escapeHtml(toTitleCaseName(comment.name || 'Anonymous'))}</strong>
         <p>${escapeHtml(comment.comment || '')}</p>
       `;
       list.appendChild(item);
@@ -251,7 +251,7 @@
     wrap.innerHTML = `
       <div style="text-align:center;padding:80px 24px;">
         <h2 style="color:#333;margin-bottom:12px;">Article not found</h2>
-        <p style="color:#999;">No article ID was provided.</p>
+        <p style="color:var(--text-muted);">No article ID was provided.</p>
         <a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a>
       </div>`;
   } else {
@@ -262,7 +262,7 @@
         wrap.innerHTML = `
           <div style="text-align:center;padding:80px 24px;">
             <h2 style="color:#333;margin-bottom:12px;">Article not found</h2>
-            <p style="color:#999;">This article may have been removed or is not yet published.</p>
+            <p style="color:var(--text-muted);">This article may have been removed or is not yet published.</p>
             <a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a>
           </div>`;
       } else {
@@ -293,17 +293,17 @@
               }
             </div>
             <div class="meta-info">
-              <div class="meta-name">${escapeHtml(article.writerName || article.authorName || 'Unknown')}</div>
+              <div class="meta-name">${escapeHtml(toTitleCaseName(article.writerName || article.authorName || 'Unknown'))}</div>
               <div class="meta-role">Writer</div>
-              ${article.artistName ? `<div class="meta-role">Artist: ${escapeHtml(article.artistName)}</div>` : ''}
-              ${article.photojournalistName ? `<div class="meta-role">Photojournalist: ${escapeHtml(article.photojournalistName)}</div>` : ''}
+              ${article.artistName ? `<div class="meta-role">Artist: ${escapeHtml(toTitleCaseName(article.artistName))}</div>` : ''}
+              ${article.photojournalistName ? `<div class="meta-role">Photojournalist: ${escapeHtml(toTitleCaseName(article.photojournalistName))}</div>` : ''}
             </div>
             ${publishedDate ? `<div class="meta-date">Published on ${publishedDate}</div>` : ''}
           </div>
           ${article.coverPhoto
             ? `<figure class="article-figure">
                 <img src="${article.coverPhoto}" alt="${escapeHtml(article.title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;">
-                ${article.cutline ? `<figcaption style="font-size:12px;color:#888;margin-top:8px;text-align:center;">${escapeHtml(article.cutline)}</figcaption>` : ''}
+                ${article.cutline ? `<figcaption style="font-size:var(--fs-xs);color:var(--text-muted);margin-top:8px;text-align:center;">${escapeHtml(article.cutline)}</figcaption>` : ''}
                </figure>`
             : `<figure class="article-figure">
                 <div class="article-hero-img" style="background:linear-gradient(135deg,#1a0a2e,#2e1a4a,#0a1a2e);width:100%;aspect-ratio:16/9;border-radius:4px;"></div>
@@ -367,11 +367,11 @@
                   <div class="card-section">${escapeHtml(articleSection(a).toUpperCase())}</div>
                   <div class="card-title">${escapeHtml(a.title || 'Untitled')}</div>
                   <div class="card-excerpt">${escapeHtml(a.excerpt || '')}</div>
-                  <div class="card-author">by ${escapeHtml(a.writerName || a.authorName || 'Unknown')}</div>
+                  <div class="card-author">by ${escapeHtml(toTitleCaseName(a.writerName || a.authorName || 'Unknown'))}</div>
                 </div>
               </a>`).join('');
           } else {
-            relGrid.innerHTML = '<p style="color:#999;font-size:13px;">No related articles yet.</p>';
+            relGrid.innerHTML = '<p style="color:var(--text-muted);font-size:var(--fs-sm);">No related articles yet.</p>';
           }
         } catch (e) {
           console.error('Related articles error:', e);
@@ -382,7 +382,7 @@
       wrap.innerHTML = `
         <div style="text-align:center;padding:80px 24px;">
           <h2 style="color:#333;margin-bottom:12px;">Failed to load article</h2>
-          <p style="color:#999;">Please check your connection and try again.</p>
+          <p style="color:var(--text-muted);">Please check your connection and try again.</p>
           <a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a>
         </div>`;
     }

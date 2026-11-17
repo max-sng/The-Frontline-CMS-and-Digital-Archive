@@ -4,50 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings – The Frontline CMS</title>
+  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
   <link rel="stylesheet" href="shared.css">
   <style>
-    .settings-tabs { display:none; }
-    .settings-tab { padding:8px 16px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font); }
-    .settings-tab:hover { color:var(--text-main); }
-    .settings-tab.active { color:var(--red);border-bottom-color:var(--red);font-weight:600; }
-    .tab-panel { display:block;margin-bottom:30px;padding-bottom:28px;border-bottom:1px solid var(--border); }
+    .tab-panel { display:block;margin-bottom:20px;padding:24px 28px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg); }
     .tab-panel[hidden] { display:none; }
     .tab-panel:last-of-type { border-bottom:none; }
     .setting-row { display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border-light); }
     .setting-row:last-of-type { border-bottom:none; }
-    .setting-label { font-size:15px;font-weight:600;color:var(--text-main);margin-bottom:3px; }
-    .setting-desc { font-size:13px;color:var(--text-muted); }
-    .setting-value { font-size:14px;color:var(--text-sub);margin-top:3px; }
-    .btn-edit { height:34px;min-height:34px;padding:0 18px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:var(--text-sub);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
-    .btn-edit:hover { background:#e5e7ea; }
+    .setting-label { font-size:var(--fs-lg);font-weight:600;color:var(--text-main);margin-bottom:3px; }
+    .setting-desc { font-size:var(--fs-sm);color:var(--text-muted); }
+    .setting-value { font-size:var(--fs-md);color:var(--text-sub);margin-top:3px; }
+    .btn-edit { height:34px;min-height:34px;padding:0 18px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:var(--fs-sm);font-weight:600;color:var(--text-sub);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
+    .btn-edit:hover { background:var(--border); }
     .toggle-wrap { display:flex;align-items:center;flex-shrink:0; }
     .toggle { position:relative;width:44px;height:24px;cursor:pointer; }
     .toggle input { opacity:0;width:0;height:0;position:absolute; }
-    .toggle-track { position:absolute;inset:0;background:#d1d5db;border-radius:var(--radius-full);transition:background 0.2s; }
+    .toggle-track { position:absolute;inset:0;background:var(--border);border-radius:var(--radius-full);transition:background 0.2s; }
     .toggle input:checked ~ .toggle-track { background:var(--red); }
     .toggle-thumb { position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2); }
     .toggle input:checked ~ .toggle-thumb { transform:translateX(20px); }
     .danger-row { background:var(--bg-dark2);border-radius:var(--radius-md);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:8px; }
     .danger-row .setting-label { color:#fff; }
     .danger-row .setting-desc  { color:#aaa; }
-    .btn-delete { height:34px;min-height:34px;padding:0 18px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
+    .btn-delete { height:34px;min-height:34px;padding:0 18px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:var(--radius-sm);font-size:var(--fs-sm);font-weight:600;color:#fff;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background 0.12s;flex-shrink:0; }
     .btn-delete:hover { background:rgba(255,255,255,0.2); }
-    .section-label { font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px; }
-    .settings-section-title { font-size:20px;font-weight:750;margin:0 0 18px;color:var(--text-main); }
+    .section-label { font-size:var(--fs-xs);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px; }
+    .settings-section-title { font-size:var(--fs-2xl);font-weight:700;margin:0 0 18px;color:var(--text-main); }
     .avatar-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
     .avatar-left { display:flex;align-items:center;gap:16px; }
-    .account-avatar { width:56px;height:56px;border-radius:50%;background:var(--bg-dark2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;position:relative; }
-    .account-avatar svg { color:#aaa; }
-    .upload-link { font-size:13px;font-weight:600;color:var(--red);cursor:pointer;text-decoration:none;display:block;margin-bottom:2px; }
+    .account-avatar { width:56px;height:56px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;position:relative; }
+    .account-avatar svg { color:#fff; }
+    .upload-link { font-size:var(--fs-sm);font-weight:600;color:var(--red);cursor:pointer;text-decoration:none;display:block;margin-bottom:2px; }
     .upload-link:hover { text-decoration:underline; }
-    .upload-hint { font-size:11.5px;color:var(--text-muted); }
+    .upload-hint { font-size:var(--fs-xs);color:var(--text-muted); }
     .form-row-2 { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
     .form-row-1 { margin-bottom:14px; }
     /* Personal information: widths sized to their content, like "Academic year joined". */
     #panel-account .form-row-2 { grid-template-columns:repeat(2, minmax(0, 240px)); justify-content:start; }
     #panel-account .form-row-2.row-program { grid-template-columns:minmax(0, 300px) minmax(0, 180px); }
     #panel-account .input-email { max-width:360px; }
-    .field-hint { font-size:11.5px;color:var(--text-muted);margin-top:4px; }
+    .field-hint { font-size:var(--fs-xs);color:var(--text-muted);margin-top:4px; }
     .form-input[readonly] { background:var(--bg-surface);color:var(--text-sub);cursor:default; }
     .password-row { background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
     .settings-footer { display:flex;justify-content:flex-end;gap:10px;margin-top:32px;padding-top:20px;border-top:1px solid var(--border); }
@@ -55,20 +52,20 @@
     .modal-overlay.open { display:flex; }
     .modal-box { background:var(--bg-white);border-radius:var(--radius-xl);width:420px;max-width:95vw;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.2); }
     .modal-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:20px; }
-    .modal-title { font-size:17px;font-weight:700;color:var(--text-main); }
-    .modal-close { background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;line-height:1;padding:0;font-family:var(--font); }
+    .modal-title { font-size:var(--fs-xl);font-weight:700;color:var(--text-main); }
+    .modal-close { background:none;border:none;font-size:var(--fs-2xl);color:var(--text-muted);cursor:pointer;line-height:1;padding:0;font-family:var(--font); }
     .modal-close:hover { color:var(--text-main); }
     .modal-footer-btns { display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border); }
-    .pw-alert { display:none;padding:9px 14px;border-radius:var(--radius-md);font-size:12.5px;font-weight:500;margin-bottom:14px; }
+    .pw-alert { display:none;padding:9px 14px;border-radius:var(--radius-md);font-size:var(--fs-sm);font-weight:500;margin-bottom:14px; }
     .pw-alert.show { display:block; }
-    .pw-alert.error { background:#fef2f2;border:1px solid #fecaca;color:#b91c1c; }
+    .pw-alert.error { background:var(--red-tint);border:1px solid var(--red-tint-line);color:var(--red); }
     .pw-alert.success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
     @media (max-width:768px) { .form-row-2, #panel-account .form-row-2, #panel-account .form-row-2.row-program { grid-template-columns:1fr; } #panel-account .input-email { max-width:none; } .avatar-row { flex-direction:column;align-items:flex-start;gap:12px; } }
 
     /* Profile view / edit mode */
     .profile-info-view { display:flex;flex-direction:column;gap:3px; }
-    .profile-view-name { font-size:15px;font-weight:700;color:var(--text-main); }
-    .profile-view-role { font-size:13px;color:var(--text-muted); }
+    .profile-view-name { font-size:var(--fs-lg);font-weight:700;color:var(--text-main); }
+    .profile-view-role { font-size:var(--fs-sm);color:var(--text-muted); }
     .profile-upload-edit { display:flex;flex-direction:column;gap:2px; }
     .account-avatar.editable { cursor:pointer; }
     .account-avatar:not(.editable) { cursor:default; }
@@ -79,24 +76,46 @@
 
   <aside class="cms-sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <img src="assets/forefront-white.png" alt="The Frontline"
+      <img src="assets/frontline-cms-logo.png" width="994" height="369" alt="The Frontline — CMS and digital archive for The Forefront"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="logo-fallback">The Frontline</span>
     </div>
     <nav class="sidebar-nav">
       <ul>
         <li><a href="dashboard.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>Dashboard</a></li>
-        <li><a href="articles.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>Articles</a></li>
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>
+          Dashboard</a></li>
+        <li class="nav-group"><a class="adviser-parent" href="articles.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
+          Articles</a>
+          <button type="button" class="nav-toggle adviser-toggle" aria-expanded="false">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
+          <span>Articles</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav" hidden>
+            <li><a href="articles.html">View Article</a></li>
+            <li id="li-approval-queue"><a href="approval-queue.html">Approval Queue</a></li>
+          </ul></li>
         <li><a href="media.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 8l5 3-5 3V8z" fill="white"/></svg>Media</a></li>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2zm0 2v10h12V5H4zm1.5 8l3-4 2.2 2.6 1.6-1.9L14.5 13h-9z" clip-rule="evenodd"/></svg>
+          Media</a></li>
         <li><a href="archive.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 5h12v9a1 1 0 01-1 1H5a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>Archive</a></li>
-        <li><a href="correspondents.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>Correspondents</a></li>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 5h12v9a1 1 0 01-1 1H5a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>
+          Archive</a></li>
+        <li class="non-adviser-only"><a href="correspondents.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+          Correspondents</a></li>
+        <li id="li-user-management" class="nav-group admin-only"><button type="button" class="nav-toggle" aria-expanded="false">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 9a3 3 0 100-6 3 3 0 000 6zm-5 8a5 5 0 0110 0v1H2v-1zm12-8a3 3 0 100-6 3 3 0 000 6zm1 1h-1a4.97 4.97 0 00-2.2 1.2A4.9 4.9 0 0115 17v1h3v-1a4 4 0 00-3-4.2z"/></svg>
+          <span>User Management</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav" hidden>
+            <li><a href="correspondents.html">Correspondents</a></li>
+            <li><a href="user-management.html">Role and Status</a></li>
+          </ul></li>
+      </ul>
+      <ul class="nav-foot">
         <li class="active"><a href="settings.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>Settings</a></li>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+          Settings</a></li>
       </ul>
     </nav>
   </aside>
@@ -185,7 +204,7 @@
               <div class="upload-hint">JPG or PNG, max 10MB</div>
             </div>
           </div>
-          <button class="btn-edit" id="editProfileBtn">Edit Profile</button>
+          <button class="btn-edit" id="editProfileBtn">Edit profile</button>
         </div>
 
         <div class="section-label">Personal Information</div>
@@ -326,6 +345,7 @@
   const user = requireAuth(['correspondent', 'editorial', 'adviser']);
   if (!user) throw new Error('Not authenticated');
   document.getElementById('panel-general').hidden = user.role !== 'adviser';
+  if (user.role === 'adviser') document.getElementById('accSection').closest('.form-group').style.display = 'none';
   const defaultPublicationSettings = {
     publicationName: 'The Frontline',
     contactEmail: 'thefrontline@gordoncollege.edu.ph',
@@ -340,7 +360,7 @@
       document.getElementById('public-article-access').checked = publicationSettings.publicArticleAccess === true;
     } catch (error) {
       console.error('Failed to load publication settings:', error);
-      showToast('Could not load publication settings.', 'error');
+      showToast("Publication settings couldn't load. Refresh the page to try again.", 'error');
     }
   }
 
@@ -490,7 +510,7 @@
       if (upload.success) {
         photoURL = upload.url;
       } else {
-        showToast(upload.error || 'Photo upload failed. Please try again.', 'error');
+        showToast(upload.error || "Your photo couldn't upload. Try again.", 'error');
         btn.textContent = 'Save changes';
         btn.disabled = false;
         return;
@@ -504,7 +524,7 @@
       surname,
       name:       `${firstName} ${surname}`.trim(),
       program:    document.getElementById('accProgram').value.trim(),
-      section:    document.getElementById('accSection').value.trim(),
+      ...(user.role === 'adviser' ? {} : { section: document.getElementById('accSection').value.trim() }),
       yearJoined: document.getElementById('accYear').value.trim(),
       photoURL,
     };
@@ -528,10 +548,10 @@
           `<img src="${photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;">`;
       }
 
-      showToast('Profile updated successfully.', 'success');
+      showToast('Profile saved.', 'success');
     } else {
       console.error('Profile update failed:', result.error);
-      showToast('Failed to update profile. Please try again.', 'error');
+      showToast("Couldn't save your profile. Try again.", 'error');
     }
 
     btn.textContent = 'Save changes';
@@ -561,7 +581,7 @@
       document.getElementById('pwModal').classList.remove('open');
       document.getElementById('pwNew').value = '';
       document.getElementById('pwConfirm').value = '';
-      showToast('Password updated successfully.', 'success');
+      showToast('Password changed.', 'success');
     } catch (e) {
       alertEl.textContent = e.code === 'auth/requires-recent-login'
         ? 'Please log out and log back in before changing your password.'
@@ -620,12 +640,12 @@
     const file = e.target.files[0];
     if (!file) return;
     if (!['image/jpeg', 'image/png'].includes(file.type)) {
-      showToast('Invalid format. Please use JPG or PNG.', 'error');
+      showToast('Choose a JPG or PNG image.', 'error');
       e.target.value = '';
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      showToast('File exceeds 10MB limit. Please choose a smaller image.', 'error');
+      showToast('This image is over 10 MB. Choose a smaller one.', 'error');
       e.target.value = '';
       return;
     }

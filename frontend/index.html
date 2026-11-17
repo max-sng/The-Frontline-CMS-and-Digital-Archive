@@ -29,7 +29,7 @@
       background: transparent;
       color: #fff;
       padding: 0 8px 0 14px;
-      font-size: 13px;
+      font-size: var(--fs-sm);
       outline: none;
       font-family: inherit;
     }
@@ -50,7 +50,7 @@
       border-radius: 4px;
       border: 1px solid #5c0808;
       font: inherit;
-      font-size: 14px;
+      font-size: var(--fs-md);
       font-weight: 700;
       text-decoration: none;
       display: inline-flex;
@@ -270,7 +270,7 @@
 </script>
 
 <script type="module">
-  import { getPublishedArticles, articleSection } from '../backend/firebase/firestore.js';
+  import { getPublishedArticles, articleSection, toTitleCaseName } from '../backend/firebase/firestore.js';
 
   const fallbackGrads = [
     "linear-gradient(135deg,#1a0a0a,#3a1a1a)",
@@ -312,8 +312,8 @@
     const heroImg = document.querySelector('.hero-img');
     heroImg.style.background = 'linear-gradient(135deg,#1a0a0a,#1a1a2e)';
     heroImg.innerHTML = '';
-    document.getElementById('articleGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">No matching articles.</div>';
-    document.getElementById('latestList').innerHTML = '<div style="padding:24px;color:#999;font-size:13px;">Try another search or section filter.</div>';
+    document.getElementById('articleGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">No matching articles.</div>';
+    document.getElementById('latestList').innerHTML = '<div style="padding:24px;color:var(--text-muted);font-size:var(--fs-sm);">Try another search or section filter.</div>';
   }
 
   function renderArticles(articles) {
@@ -351,11 +351,11 @@
             <div class="card-section">${articleSection(a).toUpperCase()}</div>
             <div class="card-title">${truncate(a.title, 80)}</div>
             <div class="card-excerpt">${truncate(a.excerpt || '', 100)}</div>
-            <div class="card-author">by ${a.writerName || a.authorName || 'Unknown'}</div>
+            <div class="card-author">by ${toTitleCaseName(a.writerName || a.authorName || 'Unknown')}</div>
           </div>
         </a>`).join('');
     } else {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">No more articles in this selection.</div>';
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">No more articles in this selection.</div>';
     }
 
     const latestArticles = articles.slice(0, 7);
@@ -368,7 +368,7 @@
         <div class="latest-info">
           <div class="latest-section">${articleSection(a).toUpperCase()}</div>
           <div class="latest-title">${truncate(a.title, 60)}</div>
-          <div class="latest-author">by ${a.writerName || a.authorName || 'Unknown'}</div>
+          <div class="latest-author">by ${toTitleCaseName(a.writerName || a.authorName || 'Unknown')}</div>
         </div>
       </a>`).join('');
   }
@@ -396,7 +396,7 @@
     if (!articles.length) {
       document.getElementById('heroCard').hidden = true;
       document.getElementById('articleGrid').innerHTML =
-        '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">No published articles yet.</div>';
+        '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">No published articles yet.</div>';
     } else {
       renderArticles(articles);
       if (new URLSearchParams(window.location.search).get('section')) filterArticles();
@@ -404,7 +404,7 @@
   } catch (e) {
     console.error('Failed to load articles:', e);
     document.getElementById('articleGrid').innerHTML =
-      '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">Failed to load articles.</div>';
+      '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">Failed to load articles.</div>';
   }
 
   searchInput.addEventListener('input', filterArticles);

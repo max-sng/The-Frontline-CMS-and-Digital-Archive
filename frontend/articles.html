@@ -4,128 +4,57 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Articles — The Frontline CMS</title>
+  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
   <link rel="stylesheet" href="shared.css">
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <style>
     .modal-overlay { position:fixed;inset:0;background:rgba(30,10,10,0.6);z-index:500;display:flex;align-items:stretch;justify-content:stretch;padding:0;overflow:hidden; }
-    .notif-button { position:relative;border:none;background:transparent;color:var(--text-main);width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer; }
-    .notif-button:hover { background:rgba(0,0,0,.05); }
-    .notif-panel { position:absolute;top:68px;right:24px;width:340px;max-height:420px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 48px rgba(0,0,0,.12);z-index:1001;padding:12px; }
-    .notif-panel.hidden { display:none; }
-    .notif-item { padding:10px 12px;border-bottom:1px solid #f1f1f1; }
-    .notif-item:last-child { border-bottom:none; }
-    .notif-item.unread { background:#eef6ff; }
-    .notif-item-title { font-weight:700;font-size:13px;margin-bottom:4px; }
-    .notif-item-message { font-size:12px;color:var(--text-muted);line-height:1.5; }
-    .notif-panel-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
-    .notif-panel-header button { border:none;background:none;color:var(--red);font-weight:700;cursor:pointer;font-size:12px; }
     .modal-overlay.hidden { display:none; }
-    .editor-modal {
-      background: #fff;
-      border-radius: 0;
-      width: 100%;
-      max-width: none;
-      height: 100vh;
-      height: 100dvh;
-      padding: 24px 32px;
-      position: relative;
-      margin: 0;
-      box-shadow: none;
-      overflow-y: auto;
-    }
-    .editor-modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 22px;
-      gap: 18px;
-    }
-    .editor-modal-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text-main);
-    }
-    .editor-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 300px;
-      gap: 28px;
-      align-items: start;
-    }
-    .editor-grid > div:first-child {
-      background: #fff;
-      border-radius: var(--radius-lg);
-      padding: 0 0 0 0;
-      box-shadow: none;
-    }
-    .editor-grid > div:last-child {
-      background: #f7f8fa;
-      border-radius: 18px;
-      border: 2px solid #e0e3ea;
-      padding: 24px 16px 24px 16px;
-      width: 300px;
-      min-width: 300px;
-      max-width: 300px;
-      box-sizing: border-box;
-      box-shadow: 0 6px 32px rgba(0,0,0,0.10);
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      margin-top: 18px;
-      align-self: flex-start;
-    }
-    .form-group { margin-bottom:15px; }
-    .form-label { font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:6px;display:block; }
-    .form-label .opt { font-weight:400;color:var(--text-muted);font-size:12px; }
-    .form-input,.form-textarea,.form-select { width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:13.5px;color:var(--text-main);background:#fff;outline:none;font-family:var(--font);transition:border-color 0.15s; }
-    .form-input:focus,.form-textarea:focus,.form-select:focus { border-color:var(--red); }
-    .form-input::placeholder,.form-textarea::placeholder { color:#bbb; }
-    .form-select { appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px; }
-    .editor-toolbar { display:flex;align-items:center;gap:2px;padding:8px 10px;border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-md) var(--radius-md) 0 0;background:var(--bg-surface);flex-wrap:wrap; }
-    .toolbar-btn { padding:5px 7px;border:none;background:transparent;border-radius:4px;font-size:13px;color:var(--text-sub);cursor:pointer;font-family:var(--font);transition:background 0.12s;display:flex;align-items:center;justify-content:center;min-width:28px;height:28px; }
-    .toolbar-btn:hover { background:#e0e0e0; }
-    .toolbar-divider { width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0; }
-    .editor-content {
-      min-height: 120px;
-      max-height: 260px;
-      border: 1px solid var(--border);
-      border-radius: 0 0 var(--radius-md) var(--radius-md);
-      padding: 18px 18px 18px 18px;
-      font-size: 15px;
-      color: var(--text-main);
-      outline: none;
-      background: #fff;
-      line-height: 1.7;
-      font-family: var(--font);
-      width: 100%;
-      box-sizing: border-box;
-      overflow-y: auto;
-      transition: min-height 0.2s, max-height 0.2s;
-    }
-    .ql-editor { min-height: 320px; max-height: 55vh; overflow-y: auto; padding-bottom: 8px; }
-    #quill-editor { min-height: 340px !important; }
-    .articles-toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
-    .articles-toolbar .media-search { width:min(340px,100%); }
-    #delete-confirm-overlay { align-items:center;justify-content:center;padding:16px; }
-    #delete-confirm-overlay .editor-modal { width:min(400px,100%);height:auto;max-width:400px;border-radius:var(--radius-xl); }
-    /* Section tag pills, suggestions, cutline and preview styles live in shared.css. */
-    .cover-upload-zone { border:2px dashed #f0b8b8;border-radius:var(--radius-md);background:#fff5f5;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background 0.15s;position:relative;overflow:hidden; }
-    .cover-upload-zone:hover { background:#ffe8e8; }
-    .cover-upload-zone input[type="file"] { display:none; }
-    .cover-preview-img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none; }
-    .editor-footer { display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap; }
-    .editor-alert { display:none;padding:9px 14px;border-radius:var(--radius-md);font-size:12.5px;font-weight:500;margin-bottom:14px;align-items:center;gap:8px; }
+
+    /* Full-screen article editor */
+    .editor-modal { background:#fff;width:100%;height:100vh;height:100dvh;padding:24px 32px;position:relative;overflow-y:auto; }
+    .editor-modal-header { display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px; }
+    .editor-modal-title { font-size:var(--fs-2xl);font-weight:600;color:var(--text-main); }
+    .editor-footer { display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap; }
+    .btn-outline.btn-reject { color:var(--red-bright); }
+    .btn-outline.btn-reject:hover { background:var(--red-tint);border-color:var(--red-tint-line); }
+
+    /* Title + rich-text editor, then the article details panel underneath */
+    .editor-grid { display:flex;flex-direction:column;gap:24px; }
+    #quill-toolbar { border:1px solid var(--border);border-bottom:0;border-radius:14px 14px 0 0;background:#fff;overflow:hidden; }
+    #quill-editor { min-height:340px !important; }
+    .ql-editor { min-height:320px;max-height:55vh;overflow-y:auto;padding-bottom:8px; }
+
+    /* Details: cover photo on the left, metadata fields on the right */
+    .editor-details { display:grid;grid-template-columns:minmax(260px, 340px) minmax(0, 1fr);column-gap:24px;align-items:start;padding:24px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg); }
+    .editor-details > * { grid-column:2;min-width:0; }
+    .editor-details > .details-cover { grid-column:1;grid-row:1 / span 8;margin-bottom:0; }
+    .editor-details > .details-wide { grid-column:1 / -1;margin-top:8px; }
+    .editor-details .cover-upload-zone { min-height:320px; }
+    .editor-people-row { display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:0 16px; }
+    #correspondent-fields { display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap:16px; }
+    .editor-modal .form-input, .editor-modal .form-select, .editor-modal .form-textarea { border-radius:10px;background:var(--bg-surface); }
+    .editor-modal .cover-upload-zone { border-radius:14px; }
+
+    .editor-alert { display:none;padding:9px 14px;border-radius:var(--radius-md);font-size:var(--fs-sm);font-weight:500;margin-bottom:14px;align-items:center;gap:8px; }
     .editor-alert.show { display:flex; }
     .editor-alert.success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
-    .editor-alert.error   { background:#fef2f2;border:1px solid #fecaca;color:#b91c1c; }
+    .editor-alert.error { background:var(--red-tint);border:1px solid var(--red-tint-line);color:var(--red); }
+
+    #delete-confirm-overlay { align-items:center;justify-content:center;padding:16px; }
+    #delete-confirm-overlay .editor-modal { width:min(400px,100%);height:auto;max-width:400px;border-radius:var(--radius-xl); }
+
     @media (max-width: 1024px) {
-      .editor-modal { padding: 18px 24px; }
-      .editor-grid { grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; }
-      .editor-grid > div:last-child { width:280px;min-width:280px;max-width:280px;border-radius:var(--radius-lg); }
+      .editor-modal { padding:18px 24px; }
+      .editor-details { grid-template-columns:minmax(220px, 280px) minmax(0, 1fr);padding:20px; }
     }
     @media (max-width: 768px) {
-      .editor-modal { padding: 12px 16px; }
-      .editor-grid { grid-template-columns: 1fr; gap: 10px; }
-      .editor-grid > div:last-child { width:auto;min-width:0;max-width:none; }
+      .editor-modal { padding:12px 16px; }
+      .editor-details { grid-template-columns:1fr;padding:16px; }
+      .editor-details > *, .editor-details > .details-cover, .editor-details > .details-wide { grid-column:1;grid-row:auto; }
+      .editor-details > .details-cover { margin-bottom:15px; }
+      .editor-details .cover-upload-zone { min-height:200px; }
+      .editor-people-row, #correspondent-fields { grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -134,7 +63,7 @@
 
   <aside class="cms-sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <img src="assets/forefront-white.png" alt="The Frontline"
+      <img src="assets/frontline-cms-logo.png" width="994" height="369" alt="The Frontline — CMS and digital archive for The Forefront"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="logo-fallback">The Frontline</span>
     </div>
@@ -143,27 +72,37 @@
         <li><a href="dashboard.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>
           Dashboard</a></li>
-        <li class="active"><a href="articles.html">
+        <li class="nav-group open"><a class="adviser-parent" href="articles.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
-          Articles</a></li>
-        <li id="li-media"><a href="media.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 8l5 3-5 3V8z" fill="white"/></svg>
+          Articles</a>
+          <button type="button" class="nav-toggle adviser-toggle" aria-expanded="true">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
+          <span>Articles</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav">
+            <li class="active"><a href="articles.html">View Article</a></li>
+            <li id="li-approval-queue"><a href="approval-queue.html">Approval Queue</a></li>
+          </ul></li>
+        <li><a href="media.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2zm0 2v10h12V5H4zm1.5 8l3-4 2.2 2.6 1.6-1.9L14.5 13h-9z" clip-rule="evenodd"/></svg>
           Media</a></li>
-        <li id="li-archive"><a href="archive.html">
+        <li><a href="archive.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 5h12v9a1 1 0 01-1 1H5a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>
           Archive</a></li>
-        <li id="li-correspondents"><a href="correspondents.html">
+        <li class="non-adviser-only"><a href="correspondents.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
           Correspondents</a></li>
-        <li id="li-settings"><a href="settings.html">
+        <li id="li-user-management" class="nav-group admin-only"><button type="button" class="nav-toggle" aria-expanded="false">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 9a3 3 0 100-6 3 3 0 000 6zm-5 8a5 5 0 0110 0v1H2v-1zm12-8a3 3 0 100-6 3 3 0 000 6zm1 1h-1a4.97 4.97 0 00-2.2 1.2A4.9 4.9 0 0115 17v1h3v-1a4 4 0 00-3-4.2z"/></svg>
+          <span>User Management</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav" hidden>
+            <li><a href="correspondents.html">Correspondents</a></li>
+            <li><a href="user-management.html">Role and Status</a></li>
+          </ul></li>
+      </ul>
+      <ul class="nav-foot">
+        <li><a href="settings.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
           Settings</a></li>
-        <li id="li-approval-queue" style="display:none"><a href="approval-queue.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2v6l5 3"/></svg>
-          Approval Queue</a></li>
-        <li id="li-user-management" style="display:none"><a href="user-management.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 18a7 7 0 0114 0H2z"/></svg>
-          User Management</a></li>
       </ul>
     </nav>
   </aside>
@@ -212,7 +151,8 @@
           let openRequestTimeout = null;
           const reportStartupError = event => {
             const detail = event?.message || event?.reason?.message || event?.reason || 'Check that the backend modules are reachable.';
-            loadError.textContent = `Article tools failed to initialize: ${detail}`;
+            loadError.textContent = "The article editor couldn't start. Refresh the page; if it keeps happening, check your connection.";
+            console.error('Article editor failed to initialize:', detail);
             loadError.style.display = 'block';
           };
           window.addEventListener('error', reportStartupError, true);
@@ -252,10 +192,10 @@
   <div class="editor-modal">
     <div class="editor-modal-header">
       <span class="editor-modal-title" id="editor-title">New Article</span>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-outline btn-sm" id="editor-exit-btn" type="button">Exit</button>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
         <div id="review-avatar" style="display:none;"></div>
         <button class="btn btn-red btn-sm" id="publish-btn" style="display:none;">Publish</button>
+        <div class="editor-footer" id="editor-footer"></div>
       </div>
     </div>
     <div class="editor-alert" id="editor-alert"><span id="editor-alert-msg"></span></div>
@@ -323,11 +263,11 @@
               <button class="ql-clean"></button>
             </span>
           </div>
-          <div id="quill-editor" style="min-height:280px;border:1px solid var(--border);border-radius:0 0 var(--radius-md) var(--radius-md);background:#fff;padding:10px;"></div>
+          <div id="quill-editor" style="min-height:280px;border:1px solid var(--border);border-radius:0 0 14px 14px;background:#fff;padding:10px;overflow:hidden;"></div>
         </div>
       </div>
-      <div>
-        <div class="form-group">
+      <div class="editor-details">
+        <div class="form-group details-tags">
           <label class="form-label" for="tag-input">Section Tags</label>
           <div class="tags-field">
             <div class="tags-wrap" id="tags-wrap">
@@ -340,6 +280,7 @@
           </div>
         </div>
         <div id="editorial-fields">
+          <div class="editor-people-row">
           <div class="form-group">
             <label class="form-label">Writer</label>
             <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on">
@@ -352,17 +293,6 @@
             <label class="form-label">Photojournalist</label>
             <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on">
           </div>
-          <div class="form-group">
-            <label class="form-label">Writer</label>
-            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Artist</label>
-            <input type="text" class="form-input" id="artist-name" spellcheck="true" autocorrect="on">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Photojournalist</label>
-            <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Assign to Correspondent</label>
@@ -395,7 +325,7 @@
             <div><label class="form-label">Submitted</label><input type="text" class="form-input" id="review-submitted" readonly></div>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group details-cover">
           <label class="form-label">Cover Photo</label>
           <label class="cover-upload-zone" id="cover-zone">
             <input type="file" accept="image/*" id="cover-file-input">
@@ -410,21 +340,20 @@
           <label class="form-label">Cutline</label>
           <textarea class="form-textarea cutline-input" id="article-cutline" placeholder="Enter photo description..." rows="3"></textarea>
         </div>
-        <div class="form-group" id="feedback-group" style="display:none;">
-          <label class="form-label">Editor's Notes / Feedback</label>
+        <div class="form-group details-wide" id="feedback-group" style="display:none;">
+          <label class="form-label" for="editor-feedback">Notes for the writer</label>
           <div id="feedback-thread" style="max-height:180px;overflow:auto;margin-bottom:8px;padding:8px;border:1px solid var(--border);border-radius:6px;background:#fafafa;display:none"></div>
-          <textarea class="form-textarea" id="editor-feedback" placeholder="Leave notes or revision requests..." rows="4"></textarea>
+          <textarea class="form-textarea" id="editor-feedback" placeholder="What should the writer change or keep?" rows="4"></textarea>
         </div>
       </div>
     </div>
-    <div class="editor-footer" id="editor-footer"></div>
   </div>
 </div>
 
 <div class="modal-overlay hidden" id="delete-confirm-overlay">
   <div class="editor-modal" style="max-width:400px;text-align:center;">
-    <div style="font-size:18px;font-weight:600;margin-bottom:18px;">Are you sure you want to delete this item?</div>
-    <div style="color:#b91c1c;margin-bottom:24px;">This action cannot be undone.</div>
+    <div style="font-size:var(--fs-xl);font-weight:600;margin-bottom:18px;">Are you sure you want to delete this item?</div>
+    <div style="color:var(--red);margin-bottom:24px;">This action cannot be undone.</div>
     <div style="display:flex;justify-content:center;gap:18px;">
       <button class="btn btn-outline" id="delete-cancel" type="button">Cancel</button>
       <button class="btn btn-red" id="delete-confirm" type="button">Delete</button>
@@ -485,7 +414,7 @@
     if (!user) throw new Error('Not authenticated');
   } catch (e) {
     console.error('User authentication failed:', e);
-    document.getElementById('articles-content').innerHTML = '<p class="empty-msg">Authentication error. Please log in again.</p>';
+    document.getElementById('articles-content').innerHTML = '<p class="empty-msg">Your session has ended. Log in again to see your articles.</p>';
     throw e;
   }
   const userDisplayName = (window.toTitleCaseName || (v => v))(user.name || [user.firstName, user.surname].filter(Boolean).join(' ').trim() || 'User');
@@ -665,7 +594,7 @@
       document.getElementById('articles-content').innerHTML = `
         <div class="empty-state">
           <div class="empty-state-title">No articles yet</div>
-          <div class="empty-state-sub">Create your first article to get started</div>
+          <div class="empty-state-sub">Articles you write or are assigned will appear here.</div>
           ${user.role !== 'adviser' ? '<button class="btn btn-red" id="empty-new-btn">Create</button>' : ''}
         </div>`;
       document.getElementById('empty-new-btn')?.addEventListener('click', () => openEditor(editorModeFor()));
@@ -684,38 +613,37 @@
         || ['draft', 'assigned', 'pending', 'reviewed'].includes(status);
       rows += `
         <tr>
-          <td class="title-cell" data-label="Title">${escapeHtml(a.title || 'Untitled')}</td>
+          <td data-label="Writer" title="${escapeHtml(toTitleCaseName(a.writerName || a.authorName || '—'))}">${escapeHtml(toTitleCaseName(a.writerName || a.authorName || '—'))}</td>
           <td data-label="Section">${escapeHtml(sectionOf(a).toUpperCase())}</td>
-          <td data-label="Writer" title="${escapeHtml(a.writerName || a.authorName || '—')}">${escapeHtml(a.writerName || a.authorName || '—')}</td>
+          <td class="title-cell" data-label="Title">${escapeHtml(a.title || 'Untitled')}</td>
           <td data-label="Status">
             ${user.role === 'correspondent'
-              ? `<span class="status-badge status-readonly ${status}" aria-label="Status: ${escapeHtml(statusLabels[status])}"><span>${escapeHtml(statusLabels[status])}</span></span>`
+              ? `<span class="status-badge status-readonly ${status}" aria-label="Status: ${escapeHtml(statusLabels[status])}"><span class="status-pill-dot dot-${status}"></span><span>${escapeHtml(statusLabels[status])}</span></span>`
               : `<div class="status-dropdown" id="dd-${i}">
-                  <button type="button" class="status-badge ${status}" id="badge-${i}" aria-label="Change status, currently ${escapeHtml(statusLabels[status])}"><span>${escapeHtml(statusLabels[status])}</span></button>
+                  <button type="button" class="status-badge ${status}" id="badge-${i}" aria-label="Change status, currently ${escapeHtml(statusLabels[status])}"><span class="status-pill-dot dot-${status}"></span><span>${escapeHtml(statusLabels[status])}</span></button>
                   <div class="status-menu" id="menu-${i}">
                     ${['draft', 'pending', 'reviewed', 'published', 'assigned', 'pending_adviser'].filter(nextStatus => canShowStatusOption(nextStatus, a)).map(nextStatus => `<div class="status-option opt-${nextStatus} ${status===nextStatus?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="${nextStatus}"><span class="status-dot dot-${nextStatus}"></span>${escapeHtml(statusLabels[nextStatus])}</div>`).join('')}
                   </div>
                 </div>`}
           </td>
-          <td data-label="Options">
-            <div class="options-cell">
-              ${canEdit ? `<button class="edit-btn" data-i="${i}" data-id="${escapeHtml(a.id)}">Edit</button>` : ''}
-              ${user.role === 'adviser' ? `<button class="del-btn" data-id="${escapeHtml(a.id)}" title="Delete"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : ''}
+          <td data-label="Action" style="text-align:center">
+            <div class="options-cell" style="justify-content:center">
+              ${canEdit ? `<button class="edit-btn edit-btn--icon" type="button" data-i="${i}" data-id="${escapeHtml(a.id)}" aria-label="Edit article" title="Edit"><svg width="16" height="16" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"><path d="M300 68H100a78 78 0 00-78 78v266a78 78 0 0078 78h266a78 78 0 0078-78V230"/><path d="M182 272 392 42q33-30 68 3q30 32 2 65L262 328l-97 40z"/><path d="M236 258l32 32"/></svg></button>` : ''}
             </div>
           </td>
         </tr>`;
     });
 
     document.getElementById('articles-content').innerHTML = `
-      <div style="overflow-x:auto;overflow-y:visible;">
-        <table class="articles-table" style="table-layout:fixed;width:100%;">
+      <div class="table-wrap">
+        <table class="articles-table" style="table-layout:fixed;width:100%;border:0;border-radius:0;">
           <colgroup>
-            <col style="width:35%"><col style="width:15%">
-            <col style="width:20%"><col style="width:16%"><col style="width:14%">
+            <col style="width:18%"><col style="width:12%">
+            <col style="width:38%"><col style="width:18%"><col style="width:14%">
           </colgroup>
           <thead><tr>
-            <th>Article Title</th><th>Section</th>
-            <th>Writer Name</th><th>Status</th><th></th>
+            <th>Writer</th><th>Section</th>
+            <th>Title</th><th>Status</th><th style="text-align:center">Action</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -741,6 +669,7 @@
           const menuHeight = 210;
           const spaceBelow = window.innerHeight - rect.bottom;
 
+          menu.classList.toggle('opens-up', spaceBelow < menuHeight);
           if (spaceBelow < menuHeight) {
             // Open upward
             menu.style.top    = 'auto';
@@ -770,13 +699,19 @@
         // Save to Firestore
         const result = await updateArticleStatus(docId, status);
         if (result.success) {
+          // Update the pill in place: dot colour, label, accessible name, then the confirm pulse.
           badgeEl.className = 'status-badge ' + status;
-          badgeEl.querySelector('span').textContent = statusLabels[status];
+          badgeEl.querySelector('.status-pill-dot').className = 'status-pill-dot dot-' + status;
+          badgeEl.querySelector('span:last-child').textContent = statusLabels[status];
+          badgeEl.setAttribute('aria-label', `Change status, currently ${statusLabels[status]}`);
+          void badgeEl.offsetWidth; // restart the animation if the same pill changes twice quickly
+          badgeEl.classList.add('is-updated');
+          badgeEl.addEventListener('animationend', () => badgeEl.classList.remove('is-updated'), { once: true });
           menuEl.querySelectorAll('.status-option').forEach(o => o.classList.remove('is-selected'));
           opt.classList.add('is-selected');
           showToast(`Status updated to ${statusLabels[status]}.`, 'success');
         } else {
-          showToast(result.error || 'Failed to update status.', 'error');
+          showToast(result.error || "Couldn't change the status. Try again.", 'error');
         }
         return;
       }
@@ -827,16 +762,14 @@
     const result = await deleteArticle(articleId);
     confirmBtn.disabled = false;
     if (result.success) showToast('Article deleted.', 'success');
-    else showToast(result.error || 'Failed to delete article.', 'error');
+    else showToast(result.error || "Couldn't delete the article. Try again.", 'error');
     hideDeleteConfirmModal();
   });
 
   function closeAllMenus() {
     document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
-    document.querySelectorAll('.status-dropdown').forEach(d => d.classList.remove('drop-up'));
   }
 
-  // Function to receive pop-out edits
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#articles-content')) closeAllMenus();
   });
@@ -911,15 +844,15 @@
             header.style.fontWeight = '700';
             header.textContent = it.fromName || it.fromUid || 'Unknown user';
             const metadata = document.createElement('span');
-            metadata.style.cssText = 'font-weight:400;color:#777;font-size:12px';
+            metadata.style.cssText = 'font-weight:400;color:var(--text-muted);font-size:var(--fs-xs)';
             metadata.textContent = ` (${it.role || ''}) — ${ts}`;
             header.appendChild(metadata);
             const message = document.createElement('div');
-            message.style.cssText = 'margin-top:6px;color:#222';
+            message.style.cssText = 'margin-top:6px;color:var(--ink)';
             message.textContent = it.message || '';
             d.append(header, message);
             d.style.padding = '8px 6px';
-            d.style.borderBottom = '1px solid #eee';
+            d.style.borderBottom = '1px solid var(--bg-surface)';
             feedbackThread.appendChild(d);
           });
           feedbackThread.style.display = '';
@@ -949,7 +882,7 @@
 
     if (mode === 'correspondent') {
       title.textContent = article ? 'Edit Article' : 'Write Article';
-      cf.style.display = 'block';
+      cf.style.display = '';
       const isSubmitted = article && !['draft', 'assigned', 'reviewed'].includes(article.status);
       const saveStatus = isSubmitted
         ? article.status
@@ -965,34 +898,30 @@
 
     } else if (mode === 'review') {
       title.textContent = 'Review Article';
-      if (user.role === 'adviser') ef.style.display = 'block';
-      rd.style.display = fg.style.display = 'block';
+      if (user.role === 'adviser') ef.style.display = '';
+      rd.style.display = fg.style.display = '';
       // Only adviser may publish; other reviewers forward to adviser
       if (article) {
         document.getElementById('review-due').value       = article.dueDate || '';
         document.getElementById('review-submitted').value = article.submittedAt?.toDate?.().toLocaleDateString() || '';
       }
+      // One main action per view (red); everything else is an outline button.
       if (user.role === 'adviser') {
-        pb.style.display = 'flex';
-        pb.onclick = () => saveArticle('published');
         footer.innerHTML = `
           <button class="btn btn-outline" onclick="closeEditor()">Cancel</button>
-          <button class="btn btn-danger" id="btn-reject">Reject</button>
-          <button class="btn btn-warn" id="btn-revision">Request revision</button>
-          <button class="btn btn-success" id="btn-approve">Approved for publishing</button>`;
+          <button class="btn btn-outline btn-reject" id="btn-reject">Reject</button>
+          <button class="btn btn-outline" id="btn-revision">Request revision</button>
+          <button class="btn btn-red" id="btn-approve">Approve and publish</button>`;
         document.getElementById('btn-reject').addEventListener('click',   () => saveArticle('draft'));
         document.getElementById('btn-revision').addEventListener('click', () => saveArticle('reviewed'));
         document.getElementById('btn-approve').addEventListener('click',  () => saveArticle('published'));
       } else {
-        // Non-adviser reviewers: do not show direct publish, instead allow forwarding
-        pb.style.display = 'flex';
-        pb.textContent = 'Forward to Adviser';
-        pb.onclick = () => saveArticle('pending_adviser');
+        // Non-adviser reviewers can't publish; their main action forwards to the adviser.
         footer.innerHTML = `
           <button class="btn btn-outline" onclick="closeEditor()">Cancel</button>
-          <button class="btn btn-danger" id="btn-reject">Reject</button>
-          <button class="btn btn-warn" id="btn-revision">Request revision</button>
-          <button class="btn btn-success" id="btn-forward">Forward to Adviser</button>`;
+          <button class="btn btn-outline btn-reject" id="btn-reject">Reject</button>
+          <button class="btn btn-outline" id="btn-revision">Request revision</button>
+          <button class="btn btn-red" id="btn-forward">Forward to adviser</button>`;
         document.getElementById('btn-reject').addEventListener('click',   () => saveArticle('draft'));
         document.getElementById('btn-revision').addEventListener('click', () => saveArticle('reviewed'));
         document.getElementById('btn-forward').addEventListener('click',  () => saveArticle('pending_adviser'));
@@ -1001,17 +930,14 @@
     } else {
       // Editorial — create/assign; editorial cannot directly publish
       title.textContent = article ? 'Edit Article' : 'New Article';
-      ef.style.display  = 'block';
-      pb.style.display  = user.role === 'adviser' ? 'none' : 'flex';
-      if (user.role !== 'adviser') {
-        pb.textContent = 'Send to Adviser';
-        pb.onclick = () => saveArticle('pending_adviser');
-      }
+      ef.style.display  = '';
       footer.innerHTML = `
         <button class="btn btn-outline" onclick="closeEditor()">Cancel</button>
         <button class="btn btn-outline" id="btn-save-draft">Save draft</button>
+        ${user.role !== 'adviser' ? '<button class="btn btn-outline" id="btn-send-adviser">Send to adviser</button>' : ''}
         <button class="btn btn-red" id="btn-assign">Assign article</button>`;
       document.getElementById('btn-save-draft').addEventListener('click', () => saveArticle('draft'));
+      document.getElementById('btn-send-adviser')?.addEventListener('click', () => saveArticle('pending_adviser'));
       document.getElementById('btn-assign').addEventListener('click',     () => saveArticle('assigned'));
     }
 
@@ -1020,7 +946,6 @@
 
     document.getElementById('editor-overlay').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-    document.getElementById('editor-exit-btn').onclick = closeEditor;
 
   }
 
@@ -1038,7 +963,7 @@
   async function saveArticle(status) {
     if (isSavingArticle) return;
     isSavingArticle = true;
-    const actionButtons = document.querySelectorAll('#editor-footer button, #publish-btn, #editor-exit-btn');
+    const actionButtons = document.querySelectorAll('#editor-footer button, #publish-btn');
     actionButtons.forEach(button => { button.disabled = true; });
 
     try {
@@ -1048,12 +973,12 @@
       const cutline = document.getElementById('article-cutline').value.trim();
 
       if (!title) {
-        showEditorAlert('Please enter an article title.', 'error');
+        showEditorAlert('Add a title before saving.', 'error');
         return;
       }
 
       if (!quill.getText().trim() && !quill.root.querySelector('img, iframe')) {
-        showEditorAlert('Please enter article content.', 'error');
+        showEditorAlert('Write the article before saving.', 'error');
         return;
       }
 
@@ -1082,7 +1007,7 @@
         photojournalistName: document.getElementById('photojournalist-name').value.trim(),
       };
       if (!data.writerName) {
-        showEditorAlert('Please enter the writer name.', 'error');
+        showEditorAlert("Add the writer's name before saving.", 'error');
         return;
       }
       if (!editingId) {
@@ -1094,7 +1019,7 @@
 
       const fileInput = document.getElementById('cover-file-input');
       if (fileInput.files[0]) {
-        showEditorAlert('Uploading image...', 'success');
+        showEditorAlert('Uploading cover photo…', 'success');
         const { uploadImage } = await import('../backend/firebase/imgbb.js');
         const imgResult = await uploadImage(fileInput.files[0]);
         if (!imgResult.success) throw new Error(imgResult.error || 'Cover image upload failed.');
@@ -1157,24 +1082,6 @@
   document.getElementById('editor-overlay').addEventListener('click', function(e) {
     if (e.target === this) closeEditor();
   });
-
-  function execFormatCmd(cmd) {
-    // Backwards-compatible helper: prefer Quill if initialized
-    if (typeof quill !== 'undefined' && quill) {
-      switch (cmd) {
-        case 'bold': quill.format('bold', true); break;
-        case 'italic': quill.format('italic', true); break;
-        case 'underline': quill.format('underline', true); break;
-        case 'strikeThrough': quill.format('strike', true); break;
-        case 'justifyLeft': quill.format('align', 'left'); break;
-        case 'justifyCenter': quill.format('align', 'center'); break;
-        case 'justifyRight': quill.format('align', 'right'); break;
-        default: break;
-      }
-    } else {
-      document.execCommand(cmd, false, null);
-    }
-  }
 
   // Cover photo preview
   document.getElementById('cover-file-input').addEventListener('change', function(e) {
@@ -1339,21 +1246,21 @@
             ? `<img src="${escapeHtml(user.photoURL)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" alt="">`
             : '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2e1a0a,#4a2e1a);"></div>'}</div>
           <div class="meta-info">
-            <div class="meta-name">${escapeHtml(writerName)}</div>
+            <div class="meta-name">${escapeHtml(toTitleCaseName(writerName))}</div>
             <div class="meta-role">Writer</div>
-            ${artistName ? `<div class="meta-role">Artist: ${escapeHtml(artistName)}</div>` : ''}
-            ${photojournalistName ? `<div class="meta-role">Photojournalist: ${escapeHtml(photojournalistName)}</div>` : ''}
+            ${artistName ? `<div class="meta-role">Artist: ${escapeHtml(toTitleCaseName(artistName))}</div>` : ''}
+            ${photojournalistName ? `<div class="meta-role">Photojournalist: ${escapeHtml(toTitleCaseName(photojournalistName))}</div>` : ''}
           </div>
           <div class="meta-date">${existing?.status === 'published' ? 'Published on' : 'To be published'} ${escapeHtml(dateLabel)}</div>
         </div>
         ${coverSrc
           ? `<figure class="article-figure">
               <img src="${escapeHtml(coverSrc)}" alt="${escapeHtml(title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;">
-              ${cutline ? `<figcaption style="font-size:12px;color:#888;margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
+              ${cutline ? `<figcaption style="font-size:var(--fs-xs);color:var(--text-muted);margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
             </figure>`
           : `<figure class="article-figure">
               <div class="article-hero-img" style="background:linear-gradient(135deg,#1a0a2e,#2e1a4a,#0a1a2e);width:100%;aspect-ratio:16/9;border-radius:4px;"></div>
-              ${cutline ? `<figcaption style="font-size:12px;color:#888;margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
+              ${cutline ? `<figcaption style="font-size:var(--fs-xs);color:var(--text-muted);margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
             </figure>`}
         <div class="article-body">${hasContent ? content : '<p>No content available.</p>'}</div>
       </div></main></body></html>`;
@@ -1389,13 +1296,13 @@
   }, error => {
     console.error('Real-time article updates failed:', error);
     document.getElementById('articles-content').innerHTML =
-      '<p class="empty-msg">Failed to load articles. Check your connection and refresh the page.</p>';
-    showToast('Could not load articles. Please check your connection.', 'error');
+      '<p class="empty-msg">Articles couldn’t load. Check your connection and refresh the page.</p>';
+    showToast("Articles couldn’t load. Check your connection and refresh the page.", 'error');
   }).catch(error => {
     console.error('Article services could not be loaded:', error);
     document.getElementById('articles-content').innerHTML =
-      '<p class="empty-msg">Article services could not be loaded. Check the backend path and your connection, then refresh.</p>';
-    showToast('Could not connect to article services.', 'error');
+      '<p class="empty-msg">Articles couldn’t load. Check your connection and refresh the page.</p>';
+    showToast("Articles couldn’t load. Check your connection and refresh the page.", 'error');
   });
   loadCorrespondents();
   document.getElementById('articles-search').addEventListener('input', buildTable);

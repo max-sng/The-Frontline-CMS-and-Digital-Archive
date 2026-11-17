@@ -4,22 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Correspondents – The Frontline CMS</title>
+  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
   <link rel="stylesheet" href="shared.css">
   <style>
-    /* Compact pill tabs that wrap instead of forcing the page to scroll sideways. */
-    .section-tabs { display:flex;flex-wrap:wrap;gap:6px;padding-bottom:14px;margin-bottom:18px;border-bottom:1px solid var(--border); }
-    .section-tab { height:32px;padding:0 14px;min-width:64px;font-size:12.5px;font-weight:500;color:var(--text-sub);cursor:pointer;border:1px solid transparent;border-radius:var(--radius-full);background:transparent;transition:color 0.15s,background 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font);flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; }
-    .section-tab:hover { color:var(--text-main);background:var(--bg-surface); }
-    .section-tab.active { color:#fff;background:var(--red);border-color:var(--red);font-weight:600; }
+    /* Section tabs: one row that scrolls sideways (scrollbar hidden). The divider lives on the
+       non-scrolling bar, so it stays put as the separator between the tabs and the table. */
+    .section-bar { position:relative;border-bottom:1px solid var(--border);margin-bottom:16px; }
+    .section-tabs { display:flex;flex-wrap:nowrap;gap:4px;padding:6px 6px 12px;margin:-6px -6px 0;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth;scroll-padding-inline:24px; }
+    .section-tabs::-webkit-scrollbar { display:none; }
+    .section-bar.fade-end .section-tabs { -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 48px),transparent); }
+    .section-bar.fade-start .section-tabs { -webkit-mask-image:linear-gradient(to left,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(to left,#000 calc(100% - 48px),transparent); }
+    .section-bar.fade-start.fade-end .section-tabs { -webkit-mask-image:linear-gradient(to right,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(to right,transparent,#000 48px,#000 calc(100% - 48px),transparent); }
+    @media (prefers-reduced-motion: reduce) { .section-tabs { scroll-behavior:auto; } }
+    .section-tab { height:28px;padding:0 14px;min-width:64px;font-size:var(--fs-sm);font-weight:500;color:var(--text-sub);cursor:pointer;border:1px solid transparent;border-radius:var(--radius-full);background:transparent;transition:color 0.15s,background 0.15s,border-color 0.15s,box-shadow 0.2s,transform 0.12s var(--ease-out);white-space:nowrap;font-family:var(--font);flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; }
+    .section-tab:hover { color:var(--text-main);background:var(--border-light); }
+    .section-tab.active { color:var(--red);background:var(--bg-white);border-color:transparent;font-weight:600;box-shadow:0 1px 2px rgba(18,18,18,0.06),0 3px 10px rgba(18,18,18,0.08); }
+    .section-tab:active { transform:scale(0.97); }
+    @media (prefers-reduced-motion: reduce) { .section-tab:active { transform:none; } }
     .section-tab:focus-visible { outline:2px solid var(--red);outline-offset:2px; }
     #corrTable td { overflow:hidden;text-overflow:ellipsis; }
-    .corr-avatar { width:34px;height:34px;border-radius:50%;background:var(--bg-dark2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:12px;font-weight:600;flex-shrink:0;overflow:hidden; }
+    .corr-avatar { width:34px;height:34px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;color:#fff;font-size:var(--fs-xs);font-weight:600;flex-shrink:0;overflow:hidden; }
     .corr-avatar img { width:100%;height:100%;object-fit:cover; }
-    .corr-name { max-width:180px;font-size:13px;font-weight:600;color:var(--text-main);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-    .corr-role { font-size:11.5px;color:var(--text-muted);margin-top:1px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .corr-name { max-width:180px;font-size:var(--fs-sm);font-weight:600;color:var(--text-main);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .user-cell { display:flex;align-items:center;gap:10px; }
     .pagination { display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-top:20px; }
-    .page-btn { width:30px;height:30px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-white);color:var(--text-sub);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;transition:background 0.12s; }
+    .page-btn { width:30px;height:30px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-white);color:var(--text-sub);font-size:var(--fs-sm);font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;transition:background 0.12s; }
     .page-btn:hover { background:var(--bg-surface); }
     .page-btn.active { background:var(--red);color:#fff;border-color:var(--red); }
     .page-btn:disabled { opacity:0.4;cursor:not-allowed; }
@@ -27,17 +36,17 @@
     .modal-overlay.open { display:flex; }
     .modal-box { background:var(--bg-white);border-radius:var(--radius-xl);width:480px;max-width:95vw;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.2); }
     .modal-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:20px; }
-    .modal-title { font-size:18px;font-weight:700;color:var(--text-main); }
-    .modal-close { background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;line-height:1;padding:0;font-family:var(--font); }
+    .modal-title { font-size:var(--fs-xl);font-weight:700;color:var(--text-main); }
+    .modal-close { background:none;border:none;font-size:var(--fs-2xl);color:var(--text-muted);cursor:pointer;line-height:1;padding:0;font-family:var(--font); }
     .modal-close:hover { color:var(--text-main); }
     .modal-footer { display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border); }
-    .alert { display:none;padding:10px 14px;border-radius:var(--radius-md);font-size:13px;font-weight:500;margin-bottom:16px;align-items:center;gap:8px;line-height:1.4; }
+    .alert { display:none;padding:10px 14px;border-radius:var(--radius-md);font-size:var(--fs-sm);font-weight:500;margin-bottom:16px;align-items:center;gap:8px;line-height:1.4; }
     .alert.show { display:flex; }
     .alert-success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
-    .alert-error   { background:#fef2f2;border:1px solid #fecaca;color:#b91c1c; }
+    .alert-error   { background:var(--red-tint);border:1px solid var(--red-tint-line);color:var(--red); }
     .alert-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
     .alert-success .alert-dot { background:#22c55e; }
-    .alert-error   .alert-dot { background:#ef4444; }
+    .alert-error   .alert-dot { background:var(--red-bright); }
   </style>
 </head>
 <body>
@@ -45,7 +54,7 @@
 
   <aside class="cms-sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <img src="assets/forefront-white.png" alt="The Frontline"
+      <img src="assets/frontline-cms-logo.png" width="994" height="369" alt="The Frontline — CMS and digital archive for The Forefront"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="logo-fallback">The Frontline</span>
     </div>
@@ -54,18 +63,34 @@
         <li><a href="dashboard.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>
           Dashboard</a></li>
-        <li><a href="articles.html">
+        <li class="nav-group"><a class="adviser-parent" href="articles.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
-          Articles</a></li>
+          Articles</a>
+          <button type="button" class="nav-toggle adviser-toggle" aria-expanded="false">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
+          <span>Articles</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav" hidden>
+            <li><a href="articles.html">View Article</a></li>
+            <li id="li-approval-queue"><a href="approval-queue.html">Approval Queue</a></li>
+          </ul></li>
         <li><a href="media.html">
-          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 8l5 3-5 3V8z" fill="white"/></svg>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2zm0 2v10h12V5H4zm1.5 8l3-4 2.2 2.6 1.6-1.9L14.5 13h-9z" clip-rule="evenodd"/></svg>
           Media</a></li>
         <li><a href="archive.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 5h12v9a1 1 0 01-1 1H5a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>
           Archive</a></li>
-        <li class="active"><a href="correspondents.html">
+        <li class="active non-adviser-only"><a href="correspondents.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
           Correspondents</a></li>
+        <li id="li-user-management" class="nav-group admin-only open"><button type="button" class="nav-toggle" aria-expanded="true">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 9a3 3 0 100-6 3 3 0 000 6zm-5 8a5 5 0 0110 0v1H2v-1zm12-8a3 3 0 100-6 3 3 0 000 6zm1 1h-1a4.97 4.97 0 00-2.2 1.2A4.9 4.9 0 0115 17v1h3v-1a4 4 0 00-3-4.2z"/></svg>
+          <span>User Management</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav">
+            <li class="active"><a href="correspondents.html">Correspondents</a></li>
+            <li><a href="user-management.html">Role and Status</a></li>
+          </ul></li>
+      </ul>
+      <ul class="nav-foot">
         <li><a href="settings.html">
           <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
           Settings</a></li>
@@ -102,6 +127,7 @@
         </button>
       </div>
 
+      <div class="section-bar" id="sectionBar">
       <div class="section-tabs" id="sectionTabs">
         <button class="section-tab active" data-section="All" aria-pressed="true">All</button>
         <button class="section-tab" data-section="Editorial Board">Editorial Board</button>
@@ -115,7 +141,9 @@
         <button class="section-tab" data-section="Arts">Arts</button>
         <button class="section-tab" data-section="Broadcasting">Broadcasting</button>
       </div>
+      </div>
 
+      <div class="table-wrap">
       <table class="articles-table" id="corrTable" style="table-layout:fixed;width:100%">
         <thead>
           <tr>
@@ -129,6 +157,7 @@
           <tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);">Loading...</td></tr>
         </tbody>
       </table>
+      </div>
 
       <div class="pagination" id="pagination"></div>
     </main>
@@ -172,7 +201,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" id="cancelModalBtn">Cancel</button>
-      <button class="btn btn-red" id="submitBtn">Add Correspondent</button>
+      <button class="btn btn-red" id="submitBtn">Add correspondent</button>
     </div>
   </div>
 </div>
@@ -249,11 +278,10 @@
                   <div class="corr-avatar">${c.photoURL ? `<img src="${escapeHtml(c.photoURL)}" alt="">` : escapeHtml(ini(name))}</div>
                   <div style="min-width:0">
                     <div class="corr-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-                    <div class="corr-role">${escapeHtml(c.section || '—')}</div>
                   </div>
                 </div>
               </td>
-              <td data-label="Section">${escapeHtml(c.section || '—')}</td>
+              <td data-label="Section">${escapeHtml(toTitleCaseName(c.section || '—'))}</td>
               <td data-label="Email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.email || '')}">${escapeHtml(c.email||'—')}</td>
               <td>
                 <div class="options-cell">
@@ -263,7 +291,7 @@
               </td>
             </tr>`;
         }).join('')
-      : `<tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13.5px;">${searchQuery ? 'No correspondents match your search.' : 'No correspondents found in this section.'}</td></tr>`;
+      : `<tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);font-size:var(--fs-md);">${searchQuery ? 'No correspondents match your search.' : 'No correspondents found in this section.'}</td></tr>`;
 
     const pag = document.getElementById('pagination');
     if (total <= 1) { pag.innerHTML = ''; return; }
@@ -283,10 +311,10 @@
     if (approve) window.approveUser(approve.dataset.approveId);
   });
   window.approveUser = async id => {
-    if (!confirm('Approve this editorial account?')) return;
+    if (!confirm('Approve this editorial board account? They will be able to review and assign articles.')) return;
     const result = await approveEditorial(id);
-    if (result.success) { showToast('Account approved.', 'success'); loadUsers(); }
-    else showToast('Failed to approve.', 'error');
+    if (result.success) { showToast('Editorial account approved.', 'success'); loadUsers(); }
+    else showToast("Couldn't approve this account. Try again.", 'error');
   };
 
   document.getElementById('sectionTabs').addEventListener('click', e => {
@@ -298,7 +326,28 @@
     activeSection = btn.dataset.section;
     page = 1;
     render();
+    btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   });
+
+  // Tabs scroll sideways with the scrollbar hidden: map the mouse wheel to horizontal scroll,
+  // and fade whichever edge still has tabs beyond it.
+  (function initSectionScroller() {
+    const bar  = document.getElementById('sectionBar');
+    const tabs = document.getElementById('sectionTabs');
+    const update = () => {
+      const max = tabs.scrollWidth - tabs.clientWidth;
+      bar.classList.toggle('fade-start', tabs.scrollLeft > 2);
+      bar.classList.toggle('fade-end', tabs.scrollLeft < max - 2);
+    };
+    tabs.addEventListener('wheel', e => {
+      if (tabs.scrollWidth <= tabs.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      tabs.scrollBy({ left: e.deltaY, behavior: 'instant' });
+    }, { passive: false });
+    tabs.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
 
   const modal       = document.getElementById('addModal');
   const clearAlerts = () => ['alertSuccess','alertError'].forEach(id => document.getElementById(id).classList.remove('show'));
@@ -318,7 +367,7 @@
     const sec       = document.getElementById('fieldSection').value;
 
     if (!firstName||!surname||!email||!sec) {
-      document.getElementById('alertErrorMsg').textContent = 'Please fill in all fields.';
+      document.getElementById('alertErrorMsg').textContent = 'Enter a first name, surname and email address.';
       document.getElementById('alertError').classList.add('show');
       return;
     }
@@ -344,10 +393,10 @@
       clearForm();
       loadUsers();
     } catch(e) {
-      document.getElementById('alertErrorMsg').textContent = 'Failed to add. Please try again.';
+      document.getElementById('alertErrorMsg').textContent = "Couldn't add this correspondent. Try again.";
       document.getElementById('alertError').classList.add('show');
     } finally {
-      btn.textContent = 'Add Correspondent';
+      btn.textContent = 'Add correspondent';
       btn.disabled = false;
     }
   });

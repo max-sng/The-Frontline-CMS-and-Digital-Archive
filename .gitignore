@@ -2,4 +2,11 @@
 frontend/oracleJdk-26/
 /h *
 CHANGES.md
+PRODUCT.md
 node_modules/
+react-login/dist/
+.impeccable/
+.agents/
+.claude/
+.codex/
+.devin/

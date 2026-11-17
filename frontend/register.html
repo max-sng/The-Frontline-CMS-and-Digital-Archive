@@ -20,7 +20,7 @@
       display: flex;
       align-items: center;
       gap: 7px;
-      font-size: 11.5px;
+      font-size: var(--fs-xs);
       color: var(--text-muted);
       padding: 2px 0;
       transition: color 0.15s;
@@ -38,7 +38,7 @@
     /* Disabled terms checkbox */
     #terms:disabled { cursor: not-allowed; opacity: 0.4; }
     .terms-hint {
-      font-size: 10.5px; color: var(--text-muted);
+      font-size: var(--fs-xs); color: var(--text-muted);
       margin: -10px 0 14px; padding-left: 21px;
     }
     .terms-hint.hidden { display: none; }
@@ -47,7 +47,7 @@
     .modal-read-btn {
       display: inline-flex; align-items: center; gap: 7px;
       padding: 9px 20px; border-radius: var(--radius-md);
-      font-size: 13px; font-weight: 700; font-family: var(--font);
+      font-size: var(--fs-sm); font-weight: 700; font-family: var(--font);
       border: none; transition: background 0.2s, color 0.2s, opacity 0.2s;
     }
     .modal-read-btn.locked {
@@ -192,7 +192,7 @@
         <p class="terms-hint" id="terms-hint">Please open and read both links above to enable this checkbox.</p>
         <div class="btn-row">
           <button class="back-btn" onclick="goStep(2)">Back</button>
-          <button class="next-btn" id="create-btn" onclick="validateStep3()">Create Account</button>
+          <button class="next-btn" id="create-btn" onclick="validateStep3()">Create account</button>
         </div>
         <p class="auth-bottom">Already have an account? <a href="login.html">Log in</a></p>
       </div>
@@ -318,19 +318,19 @@
       const first = document.getElementById('reg-firstname').value.trim();
       const last  = document.getElementById('reg-surname').value.trim();
       const email = document.getElementById('reg-email').value.trim().toLowerCase();
-      if (!first || !last) { showError('Please enter your first name and surname.'); return; }
-      if (!email || !email.includes('@')) { showError('Please enter a valid email address.'); return; }
+      if (!first || !last) { showError('Enter your first name and surname.'); return; }
+      if (!email || !email.includes('@')) { showError('Enter a valid email address, like name@gordoncollege.edu.ph.'); return; }
       if (!/^[^@]+@gordoncollege\.edu\.ph$/.test(email)) {
-        showError('Please use your Gordon College email address.');
+        showError('Use your Gordon College email address (ending in @gordoncollege.edu.ph).');
         return;
       }
       window.goStep(2);
     };
 
     window.validateStep2 = function() {
-      if (!selectedRole) { showError('Please select a role to continue.'); return; }
+      if (!selectedRole) { showError('Choose a role to continue.'); return; }
       if (selectedRole === 'correspondent' && !document.getElementById('reg-section').value) {
-        showError('Please select your section.'); return;
+        showError('Choose your section.'); return;
       }
       window.goStep(3);
     };
@@ -385,15 +385,15 @@
       const terms    = document.getElementById('terms').checked;
       const btn      = document.getElementById('create-btn');
 
-      if (!password) { showError('Please create a password.'); return; }
+      if (!password) { showError('Create a password.'); return; }
       if (!checkPasswordRules(password)) {
         document.getElementById('pw-rules').classList.add('visible');
-        showError('Your password does not meet all the requirements listed above.'); return;
+        showError("Your password doesn't meet every requirement above yet."); return;
       }
-      if (password !== confirm) { showError('Passwords do not match.'); return; }
-      if (!terms) { showError('Please agree to the Terms & Conditions and Privacy Policy.'); return; }
+      if (password !== confirm) { showError("The passwords don't match."); return; }
+      if (!terms) { showError('Agree to the Terms & Conditions and Privacy Policy to continue.'); return; }
 
-      btn.textContent = 'Creating account...';
+      btn.textContent = 'Creating account…';
       btn.disabled = true;
 
       const result = await registerUser({
@@ -407,7 +407,7 @@
 
       if (result.success) {
         document.getElementById('step3').classList.remove('active');
-        document.getElementById('step-label').textContent = 'ACCOUNT CREATED';
+        document.getElementById('step-label').textContent = 'Account created';
         document.querySelectorAll('.step-seg').forEach(s => s.className = 'step-seg done');
         if (selectedRole === 'editorial') {
           document.getElementById('success-msg').textContent =
@@ -417,7 +417,7 @@
         hideError();
       } else {
         showError(result.error);
-        btn.textContent = 'Create Account';
+        btn.textContent = 'Create account';
         btn.disabled = false;
       }
     };

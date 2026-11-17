@@ -3,68 +3,92 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>User Management — The Frontline</title>
+  <title>Role and Status — The Frontline</title>
+  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
   <link rel="stylesheet" href="shared.css">
-  <style>
-    .users { max-width:980px;margin:28px auto;padding:12px; }
-    .cms-content .users { margin:0 auto; padding:0; }
-    .page-heading { display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px; }
-    .page-heading h1 { margin:0;line-height:1.2; }
-    .page-heading + .muted { margin:0 0 18px; }
-    .back-btn { color:var(--red);border-color:rgba(81,11,11,0.28);background:#fff8f8;font-weight:700; }
-    .back-btn:hover { color:#fff;background:var(--red);border-color:var(--red);transform:translateX(-2px); }
-    .back-icon { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(81,11,11,0.1);font-size:16px;line-height:1;transition:background 0.15s; }
-    .back-btn:hover .back-icon { background:rgba(255,255,255,0.18); }
-    .user-row { display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:#fff; }
-    .user-row > div:first-child { min-width:0; flex:1; }
-    .user-name { line-height:1.35; overflow-wrap:anywhere; }
-    .user-meta { font-size:13px;color:var(--text-sub); }
-    .user-actions { display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end; }
-    .user-actions .btn { min-height:36px;white-space:nowrap; }
-    .role-select { min-width:130px; }
-    .current-account-label { color:var(--text-muted);font-size:12px;font-weight:600;padding:0 6px;white-space:nowrap; }
-    @media (max-width:600px) {
-      .users { margin:18px auto;padding:10px; }
-      .user-row { align-items:stretch;flex-direction:column;gap:12px; }
-      .user-actions { justify-content:flex-start; }
-    }
-  </style>
-</head>
+  </head>
 <body>
 <div class="cms-wrapper">
   <aside class="cms-sidebar" id="sidebar">
-    <div class="sidebar-logo"><img src="assets/forefront-white.png" alt="The Frontline" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="logo-fallback">The Frontline</span></div>
-    <nav class="sidebar-nav"><ul>
-      <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="articles.html">Articles</a></li>
-      <li><a href="media.html">Media</a></li>
-      <li><a href="archive.html">Archive</a></li>
-      <li><a href="correspondents.html">Correspondents</a></li>
-      <li><a href="settings.html">Settings</a></li>
-      <li><a href="approval-queue.html">Approval Queue</a></li>
-      <li class="active"><a href="user-management.html">User Management</a></li>
-    </ul></nav>
+    <div class="sidebar-logo"><img src="assets/frontline-cms-logo.png" width="994" height="369" alt="The Frontline — CMS and digital archive for The Forefront" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="logo-fallback">The Frontline</span></div>
+    <nav class="sidebar-nav">
+      <ul>
+        <li><a href="dashboard.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>
+          Dashboard</a></li>
+        <li class="nav-group"><a class="adviser-parent" href="articles.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
+          Articles</a>
+          <button type="button" class="nav-toggle adviser-toggle" aria-expanded="false">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"/></svg>
+          <span>Articles</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav" hidden>
+            <li><a href="articles.html">View Article</a></li>
+            <li id="li-approval-queue"><a href="approval-queue.html">Approval Queue</a></li>
+          </ul></li>
+        <li><a href="media.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2zm0 2v10h12V5H4zm1.5 8l3-4 2.2 2.6 1.6-1.9L14.5 13h-9z" clip-rule="evenodd"/></svg>
+          Media</a></li>
+        <li><a href="archive.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 5h12v9a1 1 0 01-1 1H5a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>
+          Archive</a></li>
+        <li class="non-adviser-only"><a href="correspondents.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+          Correspondents</a></li>
+        <li id="li-user-management" class="nav-group admin-only open"><button type="button" class="nav-toggle" aria-expanded="true">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 9a3 3 0 100-6 3 3 0 000 6zm-5 8a5 5 0 0110 0v1H2v-1zm12-8a3 3 0 100-6 3 3 0 000 6zm1 1h-1a4.97 4.97 0 00-2.2 1.2A4.9 4.9 0 0115 17v1h3v-1a4 4 0 00-3-4.2z"/></svg>
+          <span>User Management</span><span class="nav-chevron" aria-hidden="true"></span></button>
+          <ul class="sub-nav">
+            <li><a href="correspondents.html">Correspondents</a></li>
+            <li class="active"><a href="user-management.html">Role and Status</a></li>
+          </ul></li>
+      </ul>
+      <ul class="nav-foot">
+        <li><a href="settings.html">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+          Settings</a></li>
+      </ul>
+    </nav>
   </aside>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <div class="cms-main">
     <header class="cms-topbar">
       <button class="topbar-hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
-      <div class="search-wrap"><input type="text" placeholder="Search" readonly></div>
-      <div class="topbar-user"><div class="user-text"><div class="user-name" id="topbar-username">Loading...</div><div class="user-role" id="topbar-role">Adviser</div></div><div class="user-avatar" id="topbar-avatar">A</div></div>
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+        <input type="text" placeholder="Search" readonly>
+      </div>
+      <div class="topbar-user"><div class="user-text"><div class="user-name" id="topbar-username">Loading...</div><div class="user-role" id="topbar-role">Adviser</div></div><div class="user-avatar" id="topbar-avatar"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg></div></div>
     </header>
-    <main class="cms-content"><div class="users">
-    <div class="page-heading">
-      <h1>User Management</h1>
-      <a class="btn btn-outline back-btn" href="dashboard.html"><span class="back-icon">&larr;</span><span>Back to Dashboard</span></a>
-    </div>
-    <p class="muted">Adviser-only: manage user roles and deactivate accounts.</p>
-    <div id="users-list">Loading…</div>
-    </div></main>
+        <main class="cms-content">
+      <div class="page-header">
+        <h1 class="page-title">Role and Status</h1>
+      </div>
+      <div class="articles-toolbar">
+        <div class="media-search">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+          <input type="search" id="users-search" placeholder="Search users..." aria-label="Search users" autocomplete="off">
+        </div>
+      </div>
+      <div id="users-list">Loading…</div>
+    </main>
   </div>
 </div>
 
+<dialog class="confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+  <form method="dialog">
+    <h2 class="confirm-title" id="confirm-title"></h2>
+    <div class="confirm-body" id="confirm-body"></div>
+    <p class="confirm-error" id="confirm-error" role="alert"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" type="submit" value="cancel" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-red" type="button" id="confirm-ok"></button>
+    </div>
+  </form>
+</dialog>
+
   <script src="cms.js"></script>
-  <script type="module">
+    <script type="module">
     import { requireAuth, logoutUser, deactivateUser, changeUserRole } from '../backend/firebase/auth.js';
     import { getAllUsers, approveEditorial } from '../backend/firebase/firestore.js';
 
@@ -72,47 +96,106 @@
     if (!user) throw new Error('Not authorised');
     document.getElementById('topbar-username').textContent = user.name || user.firstName || 'Admin';
     document.getElementById('topbar-role').textContent = 'Adviser';
+    if (user.photoURL) document.getElementById('topbar-avatar').innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     window.__frontlineLogout = logoutUser;
+
+    const STATUS_DOTS = { active: 'dot-published', deactivated: 'dot-draft', invited: 'dot-reviewed', pending: 'dot-pending' };
+    const ROLE_LABELS = { adviser: 'Adviser', editorial: 'Editorial', correspondent: 'Correspondent' };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[character]);
+    }
+
+    // Hierarchy: your own account first, then Adviser → Editorial → pending Editorial → Correspondent.
+    // Within a role, active accounts come before deactivated ones, then alphabetical by name.
+    const ROLE_RANK = { adviser: 0, editorial: 1, pending_editorial: 2, correspondent: 3 };
+    function displayName(u) {
+      return toTitleCaseName(u.name || [u.firstName, u.surname].filter(Boolean).join(' ') || '') || 'User';
+    }
+    function sortUsers(list) {
+      return [...list].sort((a, b) =>
+        (b.id === user.uid) - (a.id === user.uid)
+        || (ROLE_RANK[a.role] ?? 4) - (ROLE_RANK[b.role] ?? 4)
+        || ((a.status === 'deactivated') - (b.status === 'deactivated'))
+        || displayName(a).localeCompare(displayName(b))
+      );
+    }
+
+    function applyFilter(query) {
+      const q = (query || '').toLocaleLowerCase();
+      document.querySelectorAll('#users-list tbody tr').forEach(row => {
+        row.style.display = !q || row.textContent.toLocaleLowerCase().includes(q) ? '' : 'none';
+      });
+    }
 
     async function loadUsers() {
       const container = document.getElementById('users-list');
       container.textContent = 'Loading…';
       try {
-        const all = await getAllUsers();
-        if (!all.length) { container.innerHTML = '<div class="empty-state"><div class="empty-state-title">No users found</div></div>'; return; }
-        container.innerHTML = '';
-        all.forEach(u => {
-          const row = document.createElement('div');
-          row.className = 'user-row';
-
+        const all = sortUsers(await getAllUsers());
+        if (!all.length) { container.innerHTML = '<div class="empty-state empty-state-plain"><div class="empty-state-title">No users found</div></div>'; return; }
+        const rows = all.map(u => {
           const isPendingEditorial = u.role === 'pending_editorial';
           const isCurrentUser = u.id === user.uid;
-          const displayRole = isPendingEditorial ? 'Editorial registration pending' : (u.role || 'correspondent');
+          const name = displayName(u);
+          const status = u.status || 'active';
 
-          row.innerHTML = `
-            <div>
-              <div class="user-name" style="font-weight:700">${toTitleCaseName(u.name || [u.firstName, u.surname].filter(Boolean).join(' ') || '') || 'User'}</div>
-              <div class="user-meta">${u.email} · Role: ${displayRole} · Status: ${u.status || 'active'}</div>
-            </div>
-            <div class="user-actions">
-              ${isPendingEditorial ? 
-                `<button class="btn btn-red" data-uid="${u.id}" data-act="approve">Approve Editorial</button>` : 
-                `<select data-uid="${u.id}" class="role-select" ${isCurrentUser ? 'disabled' : ''}>
-                  <option value="adviser">Adviser</option>
-                  <option value="editorial">Editorial</option>
-                  <option value="correspondent">Correspondent</option>
-                </select>
-                ${isCurrentUser
-                  ? '<span class="current-account-label">Current account</span>'
-                  : `<button class="btn btn-outline" data-uid="${u.id}" data-act="change">Change</button>
-                     <button class="btn btn-danger" data-uid="${u.id}" data-act="deactivate">Deactivate</button>`}`}
-            </div>`;
-          container.appendChild(row);
-          if (!isPendingEditorial) row.querySelector('.role-select').value = u.role || 'correspondent';
+          const isDeactivated = status === 'deactivated';
+
+          // Own account and pending registrations show a read-only pill; everyone else gets an
+          // inline dropdown that saves on change.
+          const roleCell = (isPendingEditorial || isCurrentUser)
+            ? `<span class="status-badge status-readonly role-readonly"><span>${isPendingEditorial ? 'Editorial (pending)' : escapeHtml(ROLE_LABELS[u.role] || 'Correspondent')}</span></span>`
+            : `<select data-uid="${escapeHtml(u.id)}" data-name="${escapeHtml(name)}" class="role-select users-role-select" aria-label="Role for ${escapeHtml(name)}">
+                 <option value="adviser">Adviser</option>
+                 <option value="editorial">Editorial</option>
+                 <option value="correspondent">Correspondent</option>
+               </select>`;
+
+          const actions = isPendingEditorial
+            ? `<button class="btn btn-red" type="button" data-uid="${escapeHtml(u.id)}" data-act="approve">Approve</button>`
+            : isCurrentUser
+              ? '<span class="current-account-label">Current account</span>'
+              : isDeactivated
+                ? '<span class="current-account-label">—</span>'
+                : `<button class="btn btn-red" type="button" data-uid="${escapeHtml(u.id)}" data-name="${escapeHtml(name)}" data-act="deactivate">Deactivate</button>`;
+
+          return `
+          <tr class="user-row" data-role-value="${escapeHtml(u.role || 'correspondent')}">
+            <td data-label="Name">${escapeHtml(name)}</td>
+            <td data-label="Email">${escapeHtml(u.email || '—')}</td>
+            <td data-label="Role">${roleCell}</td>
+            <td data-label="Status"><span class="status-badge status-readonly"><span class="status-pill-dot ${STATUS_DOTS[status] || 'dot-pending'}"></span><span>${escapeHtml(status.charAt(0).toUpperCase() + status.slice(1))}</span></span></td>
+            <td data-label="Action" style="text-align:center"><div class="options-cell" style="justify-content:center">${actions}</div></td>
+          </tr>`;
+        }).join('');
+        container.innerHTML = `
+          <div class="table-wrap">
+            <table class="articles-table" style="table-layout:fixed;width:100%;border:0;border-radius:0;">
+              <colgroup>
+                <col style="width:18%"><col style="width:32%"><col style="width:18%"><col style="width:18%"><col style="width:14%">
+              </colgroup>
+              <thead><tr>
+                <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th style="text-align:center">Action</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+        // Set each role dropdown to the user's current role (pending editorial rows have none)
+        all.forEach(u => {
+          const sel = container.querySelector(`select[data-uid="${CSS.escape(u.id)}"]`);
+          if (sel) sel.value = sel.dataset.current = u.role || 'correspondent';
         });
-
+        applyFilter(document.getElementById('users-search').value);
       } catch (e) {
-        container.innerHTML = '<div class="empty-state"><div class="empty-state-title">Failed to load users</div></div>';
+        console.error('Failed to load users:', e);
+        container.innerHTML = '<div class="empty-state empty-state-plain"><div class="empty-state-title">Users couldn’t load. Refresh the page to try again.</div></div>';
       }
     }
 
@@ -121,34 +204,108 @@
       if (!btn) return;
       const uid = btn.dataset.uid;
       const act = btn.dataset.act;
-      if (act === 'change') {
-        const sel = document.querySelector(`select[data-uid="${uid}"]`);
-        const newRole = sel.value;
-        btn.disabled = true; btn.textContent = 'Saving...';
-        const r = await changeUserRole(uid, newRole);
-        if (r.success) { btn.textContent = 'Saved'; } else { btn.textContent = 'Failed'; btn.disabled = false; }
-        await loadUsers();
-      } else if (act === 'deactivate') {
-        if (!confirm('Deactivate this user?')) return;
-        btn.disabled = true; btn.textContent = 'Deactivating...';
-        const r = await deactivateUser(uid);
-        if (r.success) { btn.textContent = 'Deactivated'; } else { btn.textContent = 'Failed'; btn.disabled = false; }
-        await loadUsers();
+      if (act === 'deactivate') {
+        const name = escapeHtml(btn.dataset.name || 'this user');
+        openConfirm({
+          title: `Deactivate ${name}?`,
+          body: `<p>Their account will be marked as deactivated and they'll get a notification that an adviser deactivated it.</p>`,
+          confirmLabel: 'Deactivate',
+          busyLabel: 'Deactivating…',
+          action: () => deactivateUser(uid),
+        });
       } else if (act === 'approve') {
         btn.disabled = true; btn.textContent = 'Approving...';
         const r = await approveEditorial(uid);
-        if (r.success) { btn.textContent = 'Approved'; } else { btn.textContent = 'Failed'; btn.disabled = false; }
+        if (r.success) { btn.textContent = 'Approved'; showToast('Editorial account approved.', 'success'); }
+        else { btn.textContent = 'Approve'; btn.disabled = false; showToast(r.error || "Couldn't approve this account. Try again.", 'error'); return; }
         await loadUsers();
       }
     });
 
+    /* ── Confirm dialog ──
+       openConfirm({ title, body (trusted HTML), confirmLabel, busyLabel, action, onCancel })
+       `action` returns { success, error }. Success closes the dialog and reloads the list;
+       failure keeps it open with the error so the adviser can retry or cancel. */
+    const dlg = document.getElementById('confirm-dialog');
+    const dlgOk = document.getElementById('confirm-ok');
+    const dlgCancel = document.getElementById('confirm-cancel');
+    const dlgError = document.getElementById('confirm-error');
+    let pending = null;
+
+    function openConfirm(opts) {
+      pending = opts;
+      document.getElementById('confirm-title').innerHTML = opts.title;
+      document.getElementById('confirm-body').innerHTML = opts.body;
+      dlgOk.textContent = opts.confirmLabel;
+      dlgOk.disabled = false; dlgCancel.disabled = false;
+      dlgError.classList.remove('visible'); dlgError.textContent = '';
+      dlg.returnValue = '';
+      dlg.showModal();
+      dlgOk.focus();
+    }
+
+    dlgOk.addEventListener('click', async () => {
+      if (!pending) return;
+      const opts = pending;
+      dlgOk.disabled = true; dlgCancel.disabled = true;
+      dlgOk.textContent = opts.busyLabel || 'Saving…';
+      let r;
+      try { r = await opts.action(); } catch (err) { r = { success: false, error: err?.message }; }
+      if (r?.success) {
+        pending = null;
+        dlg.close('done');
+        await loadUsers();
+        return;
+      }
+      dlgError.textContent = `${r?.error || 'Something went wrong.'} Please try again.`;
+      dlgError.classList.add('visible');
+      dlgOk.textContent = opts.confirmLabel;
+      dlgOk.disabled = false; dlgCancel.disabled = false;
+    });
+
+    // Esc, Cancel, or backdrop click: undo whatever the dialog was asking about.
+    dlg.addEventListener('close', () => {
+      if (dlg.returnValue !== 'done' && pending) pending.onCancel?.();
+      pending = null;
+    });
+    dlg.addEventListener('cancel', e => { if (dlgOk.disabled) e.preventDefault(); });
+    dlg.addEventListener('click', e => { if (e.target === dlg && !dlgOk.disabled) dlg.close('cancel'); });
+
+    const ROLE_SUMMARY = {
+      adviser: 'Advisers give final approval before anything is published, approve editorial registrations, and manage users and site settings.',
+      editorial: 'Editorial board members review submissions, assign stories, send approved work to the adviser, and manage correspondents and media.',
+      correspondent: 'Correspondents draft articles, attach photos and cutlines, and submit their work for review.',
+    };
+    const ARROW = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+
+    // Role dropdown asks for confirmation before saving; cancelling restores the previous role.
+    document.getElementById('users-list').addEventListener('change', (e) => {
+      const sel = e.target.closest('select.users-role-select');
+      if (!sel) return;
+      const previous = sel.dataset.current;
+      const next = sel.value;
+      const name = escapeHtml(sel.dataset.name || 'this user');
+      openConfirm({
+        title: `Change ${name}'s role?`,
+        body: `
+          <div class="confirm-change">
+            <span class="status-badge">${escapeHtml(ROLE_LABELS[previous] || previous)}</span>
+            ${ARROW}
+            <span class="status-badge is-new">${escapeHtml(ROLE_LABELS[next] || next)}</span>
+          </div>
+          <p style="margin-top:12px">${ROLE_SUMMARY[next] || ''}</p>`,
+        confirmLabel: 'Change role',
+        busyLabel: 'Saving…',
+        action: () => changeUserRole(sel.dataset.uid, next),
+        onCancel: () => { sel.value = previous; },
+      });
+    });
+
+    document.getElementById('users-search').addEventListener('input', e => applyFilter(e.target.value));
     // Topbar search (wired in cms.js) filters the user list by name, email, role or status.
     document.addEventListener('frontline:search', e => {
       e.preventDefault();
-      const q = (e.detail?.query || '').toLocaleLowerCase();
-      document.querySelectorAll('#users-list .user-row').forEach(row => {
-        row.style.display = !q || row.textContent.toLocaleLowerCase().includes(q) ? '' : 'none';
-      });
+      applyFilter(e.detail?.query || '');
     });
 
     loadUsers();

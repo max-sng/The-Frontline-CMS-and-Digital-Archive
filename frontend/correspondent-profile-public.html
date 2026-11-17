@@ -8,19 +8,19 @@
   <meta name="description" content="Read published work and correspondent profile pages on The Frontline." id="metaDescription">
   <style>
     .profile-main { max-width:1100px;margin:0 auto;padding:32px 20px 48px; }
-    .profile-name { font-size:28px;font-weight:800;color:var(--text-main);margin-bottom:3px; }
-    .profile-subtitle { font-size:12px;color:var(--text-muted);margin-bottom:20px; }
+    .profile-name { font-size:var(--fs-3xl);font-weight:600;color:var(--text-main);margin-bottom:3px; }
+    .profile-subtitle { font-size:var(--fs-xs);color:var(--text-muted);margin-bottom:20px; }
     .profile-body { display:flex;gap:28px;align-items:flex-start;margin-bottom:32px; }
     .profile-photo-wrap { width:190px;height:240px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#1c2333;display:flex;align-items:center;justify-content:center; }
     .profile-photo-wrap img { width:100%;height:100%;object-fit:cover;display:block; }
     .profile-photo-initials { font-size:56px;font-weight:800;color:rgba(255,255,255,0.2); }
     .profile-bio { flex:1; }
-    .bio-label { font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-main);margin-bottom:10px; }
-    .bio-text { font-size:13.5px;color:var(--text-sub);line-height:1.75; }
+    .bio-label { font-size:var(--fs-2xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-main);margin-bottom:10px; }
+    .bio-text { font-size:var(--fs-md);color:var(--text-sub);line-height:1.75; }
     .bio-text p { margin-bottom:12px; }
     .bio-text p:last-child { margin-bottom:0; }
     .work-header { display:flex;align-items:center;gap:12px;margin-bottom:16px; }
-    .work-title { font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-main);white-space:nowrap; }
+    .work-title { font-size:var(--fs-2xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-main);white-space:nowrap; }
     .work-rule { flex:1;height:1px;background:linear-gradient(to right,var(--red) 20%,#e2e5ea 100%); }
     .work-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
     .work-card { display:flex;gap:12px;align-items:flex-start;text-decoration:none; }
@@ -28,9 +28,9 @@
     .work-thumb { width:120px;height:80px;flex-shrink:0;border-radius:3px;background:#1c2333;overflow:hidden; }
     .work-thumb img { width:100%;height:100%;object-fit:cover; }
     .work-thumb-inner { width:100%;height:100%; }
-    .work-card-section { font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--red);margin-bottom:4px; }
-    .work-card-title { font-size:13px;font-weight:700;color:var(--text-main);line-height:1.35;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color 0.12s; }
-    .work-card-author { font-size:11.5px;color:var(--text-muted); }
+    .work-card-section { font-size:var(--fs-2xs);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--red);margin-bottom:4px; }
+    .work-card-title { font-size:var(--fs-sm);font-weight:700;color:var(--text-main);line-height:1.35;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color 0.12s; }
+    .work-card-author { font-size:var(--fs-xs);color:var(--text-muted); }
     .profile-empty { padding:48px 24px; text-align:center; color:#666; }
     @media (max-width:600px) {
       .profile-body { flex-direction:column; }
@@ -266,7 +266,7 @@
       const articles = await getPublishedArticlesByAuthor(userId, 12);
       const workGrid = document.getElementById('workGrid');
       if (!articles.length) {
-        workGrid.innerHTML = `<p style="color:#999;font-size:14px;">No published articles found for this correspondent.</p>`;
+        workGrid.innerHTML = `<p style="color:var(--text-muted);font-size:var(--fs-md);">No published articles found for this correspondent.</p>`;
       } else {
         workGrid.innerHTML = articles.map((article, i) => `
           <a href="article-view.html?id=${article.id}" class="work-card">
@@ -279,7 +279,7 @@
             <div>
               <div class="work-card-section">${escapeHtml(articleSection(article).toUpperCase())}</div>
               <div class="work-card-title">${escapeHtml(article.title || 'Untitled')}</div>
-              <div class="work-card-author">by ${escapeHtml(article.writerName || article.authorName || user.name || 'Unknown')}</div>
+              <div class="work-card-author">by ${escapeHtml(toTitleCaseName(article.writerName || article.authorName || user.name || 'Unknown'))}</div>
             </div>
           </a>`).join('');
       }

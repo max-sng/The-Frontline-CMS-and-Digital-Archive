@@ -1,8 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 /* ============================================================
    THE FRONTLINE — AUTH PAGES
    ============================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -12,9 +11,11 @@
   --border:     #e0e3e8;
   --text-main:  #161616;
   --text-sub:   #4a4a4a;
-  --text-muted: #888888;
-  --bg-input:   #f5f5f5;
-  --font:       'DM Sans', sans-serif;
+  --text-muted:  #6e6e6e;
+  --bg-input:   #f9f9f9;
+  --font:       'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --fs-2xs: 11px;  --fs-xs: 12px;  --fs-sm: 13px;  --fs-md: 14px;
+  --fs-lg: 16px;  --fs-xl: 18px;  --fs-2xl: 22px; --fs-3xl: 28px;
   --radius-md:  8px;
   --radius-lg:  14px;
   --radius-xl:  20px;
@@ -84,15 +85,15 @@ a { text-decoration: none; color: inherit; }
 
 /* ── Titles ── */
 .auth-title {
-  font-size: 22px;
-  font-weight: 800;
+  font-size: var(--fs-2xl);
+  font-weight: 600;
   color: var(--text-main);
   text-align: center;
   margin-bottom: 4px;
 }
 
 .auth-subtitle {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
   text-align: center;
   margin-bottom: 24px;
@@ -105,7 +106,7 @@ a { text-decoration: none; color: inherit; }
   border-top: 1px solid var(--border);
   width: 100%;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
 }
 
@@ -115,7 +116,7 @@ a { text-decoration: none; color: inherit; }
 .auth-field { margin-bottom: 13px; }
 
 .auth-label {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -146,7 +147,7 @@ a { text-decoration: none; color: inherit; }
   padding: 10px 40px 10px 36px; /* right padding for eye toggle */
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   color: var(--text-main);
   background: var(--bg-input);
   outline: none;
@@ -154,7 +155,7 @@ a { text-decoration: none; color: inherit; }
   transition: border-color 0.15s, background 0.15s;
 }
 .auth-input:focus { border-color: var(--red); background: #fff; }
-.auth-input::placeholder { color: #c5c5c5; }
+.auth-input::placeholder { color: var(--text-muted); }
 
 /* Eye toggle button */
 .eye-toggle {
@@ -195,9 +196,9 @@ a { text-decoration: none; color: inherit; }
 
 .remember-left { display: flex; align-items: center; gap: 7px; }
 .remember-left input[type="checkbox"] { width: 13px; height: 13px; accent-color: var(--red); cursor: pointer; }
-.remember-left label { font-size: 13px; color: var(--text-sub); cursor: pointer; }
+.remember-left label { font-size: var(--fs-sm); color: var(--text-sub); cursor: pointer; }
 
-.forgot-link { font-size: 13px; color: #1a6fa0; }
+.forgot-link { font-size: var(--fs-sm); color: #1a6fa0; }
 .forgot-link:hover { text-decoration: underline; }
 
 /* ══════════════════════════════
@@ -211,7 +212,7 @@ a { text-decoration: none; color: inherit; }
   color: #fff;
   border: none;
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 700;
   cursor: pointer;
   font-family: var(--font);
@@ -224,17 +225,17 @@ a { text-decoration: none; color: inherit; }
   flex: 1; padding: 10px;
   background: transparent; color: var(--text-sub);
   border: 1px solid var(--border); border-radius: var(--radius-md);
-  font-size: 13px; font-weight: 600;
+  font-size: var(--fs-sm); font-weight: 600;
   cursor: pointer; font-family: var(--font);
   transition: background 0.15s;
 }
-.back-btn:hover { background: #f4f5f7; }
+.back-btn:hover { background: #f9f9f9; }
 
 .next-btn {
   flex: 1; padding: 10px;
   background: var(--red); color: #fff;
   border: none; border-radius: var(--radius-md);
-  font-size: 13px; font-weight: 700;
+  font-size: var(--fs-sm); font-weight: 700;
   cursor: pointer; font-family: var(--font);
   transition: background 0.15s;
 }
@@ -242,7 +243,7 @@ a { text-decoration: none; color: inherit; }
 
 .btn-row { display: flex; gap: 10px; margin-bottom: 13px; }
 
-.auth-bottom { font-size: 13px; color: var(--text-muted); text-align: center; }
+.auth-bottom { font-size: var(--fs-sm); color: var(--text-muted); text-align: center; }
 .auth-bottom a { color: #1a6fa0; }
 .auth-bottom a:hover { text-decoration: underline; }
 
@@ -257,7 +258,7 @@ a { text-decoration: none; color: inherit; }
 .step-seg.done    { background: var(--red); opacity: 0.5; }
 .step-seg.pending { background: #e0e3e8; }
 .step-label {
-  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.6px; color: var(--text-muted);
   text-align: center; margin-bottom: 16px;
 }
@@ -269,7 +270,7 @@ a { text-decoration: none; color: inherit; }
    ROLE CARDS
    ══════════════════════════════ */
 
-.role-label { font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: block; }
+.role-label { font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: block; }
 .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 .role-card {
   border: 1.5px solid var(--border); border-radius: var(--radius-lg);
@@ -279,11 +280,11 @@ a { text-decoration: none; color: inherit; }
   text-align: center; background: #fff;
 }
 .role-card:hover    { border-color: #c0c0c0; background: #fafafa; }
-.role-card.selected { border-color: var(--red); background: #fff8f8; }
+.role-card.selected { border-color: var(--red); background: #ededed; }
 .role-card svg      { color: var(--text-sub); width: 22px; height: 22px; }
 .role-card.selected svg { color: var(--red); }
-.role-card-name { font-size: 12.5px; font-weight: 700; color: var(--text-main); }
-.role-card-desc { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+.role-card-name { font-size: var(--fs-sm); font-weight: 700; color: var(--text-main); }
+.role-card-desc { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.4; }
 
 /* ══════════════════════════════
    NOTICES & ALERTS
@@ -292,7 +293,7 @@ a { text-decoration: none; color: inherit; }
 .notice-box {
   background: #fef9e7; border: 1px solid #f0c040;
   border-radius: var(--radius-md); padding: 9px 12px;
-  font-size: 11px; color: #7d6608; margin-bottom: 12px;
+  font-size: var(--fs-xs); color: #7d6608; margin-bottom: 12px;
   line-height: 1.5; display: none;
 }
 .notice-box.visible { display: block; }
@@ -308,7 +309,7 @@ a { text-decoration: none; color: inherit; }
 .section-select {
   width: 100%; padding: 10px 14px 10px 36px;
   border: 1px solid var(--border); border-radius: var(--radius-md);
-  font-size: 13px; color: var(--text-main);
+  font-size: var(--fs-sm); color: var(--text-main);
   background: var(--bg-input); outline: none;
   font-family: var(--font); appearance: none; cursor: pointer;
   transition: border-color 0.15s;
@@ -319,17 +320,17 @@ a { text-decoration: none; color: inherit; }
   display: flex; align-items: center; gap: 8px;
   background: #e9f7ef; border: 1px solid #a9dfbf;
   border-radius: var(--radius-md); padding: 8px 12px;
-  font-size: 12px; color: #1a7a40; font-weight: 500;
+  font-size: var(--fs-xs); color: #1a7a40; font-weight: 500;
   margin-bottom: 14px; width: 100%;
 }
 
 .reset-alert {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; border-radius: var(--radius-md);
-  font-size: 12px; font-weight: 500; margin-bottom: 8px; width: 100%;
+  font-size: var(--fs-xs); font-weight: 500; margin-bottom: 8px; width: 100%;
 }
 .reset-alert.success { background: #e9f7ef; border: 1px solid #a9dfbf; color: #1a7a40; }
-.reset-alert.error   { background: #fde8e8; border: 1px solid #f5b8b8; color: #c0392b; }
+.reset-alert.error   { background: #ededed; border: 1px solid #d9d9d9; color: #c0392b; }
 .reset-alert.hidden  { display: none; }
 
 /* ══════════════════════════════
@@ -341,7 +342,7 @@ a { text-decoration: none; color: inherit; }
   width: 13px; height: 13px; margin-top: 3px;
   accent-color: var(--red); flex-shrink: 0; cursor: pointer;
 }
-.terms-row label { font-size: 11.5px; color: var(--text-sub); line-height: 1.5; }
+.terms-row label { font-size: var(--fs-xs); color: var(--text-sub); line-height: 1.5; }
 .terms-row a { color: var(--red); text-decoration: underline; }
 .terms-row a:hover { color: var(--red-hover); }
 
@@ -361,11 +362,11 @@ a { text-decoration: none; color: inherit; }
   color: #1a7a40; margin-bottom: 16px;
 }
 .success-title {
-  font-size: 20px; font-weight: 800;
+  font-size: var(--fs-2xl); font-weight: 600;
   color: var(--text-main); margin-bottom: 8px;
 }
 .success-msg {
-  font-size: 13px; color: var(--text-muted);
+  font-size: var(--fs-sm); color: var(--text-muted);
   line-height: 1.6; margin-bottom: 20px;
 }
 
@@ -397,11 +398,11 @@ a { text-decoration: none; color: inherit; }
   flex-shrink: 0;
 }
 .modal-title {
-  font-size: 16px; font-weight: 800; color: var(--text-main);
+  font-size: var(--fs-lg); font-weight: 600; color: var(--text-main);
 }
 .modal-close {
   background: none; border: none; cursor: pointer;
-  font-size: 22px; color: var(--text-muted);
+  font-size: var(--fs-2xl); color: var(--text-muted);
   line-height: 1; padding: 2px 6px;
   border-radius: 4px; transition: background 0.15s, color 0.15s;
   font-family: var(--font);
@@ -410,11 +411,11 @@ a { text-decoration: none; color: inherit; }
 
 .modal-body {
   padding: 20px 24px; overflow-y: auto; flex: 1;
-  font-size: 13px; color: var(--text-sub); line-height: 1.7;
+  font-size: var(--fs-sm); color: var(--text-sub); line-height: 1.7;
 }
 .modal-body p { margin-bottom: 12px; }
 .modal-body h4 {
-  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.5px; color: var(--text-main);
   margin: 16px 0 6px;
 }

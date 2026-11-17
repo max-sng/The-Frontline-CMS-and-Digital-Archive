@@ -1,6 +1,6 @@
 /* ============================================================
    THE FRONTLINE CMS — SHARED INTERACTIONS
-   cms.js — included in all CMA pages
+   cms.js — included on every CMS page
    ============================================================ */
 
 /* ── Mobile sidebar ── */
@@ -20,86 +20,18 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
-/* ── Status dropdown ── */
-function toggleStatusMenu(i, e) {
-  e.stopPropagation();
-  const menu   = document.getElementById('menu-' + i);
-  const dd     = document.getElementById('dd-' + i);
-  const isOpen = menu.classList.contains('open');
-
-  // Close all open menus first
-  document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
-  document.querySelectorAll('.status-dropdown').forEach(d => d.classList.remove('drop-up'));
-
-  if (!isOpen) {
-    // Check if dropdown would go off screen bottom
-    const rect        = dd.getBoundingClientRect();
-    const menuHeight  = 180; // approximate height of menu
-    const spaceBelow  = window.innerHeight - rect.bottom;
-    if (spaceBelow < menuHeight) dd.classList.add('drop-up');
-    menu.classList.add('open');
-  }
-}
-
-function selectStatus(i, status, event) {
-  if (event) { event.stopPropagation(); event.preventDefault(); }
-  const labels = {
-    draft: 'Draft', pending: 'Pending',
-    reviewed: 'Reviewed', published: 'Published', assigned: 'Assigned'
-  };
-  const dd    = document.getElementById('dd-' + i);
-  const badge = dd.querySelector('.status-badge');
-  badge.className = 'status-badge ' + status;
-
-  const labelSpan = badge.querySelector('span');
-  if (labelSpan) {
-    labelSpan.textContent = labels[status];
-  }
-
-  const menu = document.getElementById('menu-' + i);
-  menu.querySelectorAll('.status-option').forEach(o => o.classList.remove('is-selected'));
-  const opt = menu.querySelector('.opt-' + status);
-  if (opt) opt.classList.add('is-selected');
-  menu.classList.remove('open');
-  dd.classList.remove('drop-up');
-}
-
-/* Close dropdowns on outside click */
+/* Close any open status menu on an outside click */
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.status-dropdown')) {
     document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
-    document.querySelectorAll('.status-dropdown').forEach(d => d.classList.remove('drop-up'));
   }
 });
-
-/* ── Rich text toolbar ── */
-function execCmd(cmd) {
-  const editor = document.getElementById('editor-content');
-  if (editor) { editor.focus({ preventScroll: true }); document.execCommand(cmd, false, null); }
-}
-
-/* ── Tag removal ── */
-function removeTag(btn) { btn.closest('.section-tag').remove(); }
-
-/* ── Cover photo preview ── */
-function previewCover(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const preview = document.getElementById('cover-preview');
-  const btn = document.querySelector('.cover-upload-btn');
-  if (preview) { preview.src = URL.createObjectURL(file); preview.style.display = 'block'; }
-  if (btn) btn.style.display = 'none';
-}
 
 /* ── Media upload ── */
 function handleMediaUpload(e) {
   const files = e.target.files;
   if (!files || !files.length) return;
   handleMediaFiles(files).finally(() => { e.target.value = ''; });
-}
-
-function escapeMediaText(value) {
-  return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 }
 
 function createMediaThumb(item) {
@@ -271,14 +203,14 @@ function showToast(msg, type = 'success') {
       transform:translateY(8px);
       transition:opacity 0.2s,transform 0.2s;
       display:flex;align-items:center;gap:8px;
-      font-family:'DM Sans',sans-serif;
+      font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
     `;
     document.body.appendChild(toast);
   }
 
   const colors = {
-    success: { bg: '#1a1a1a', dot: '#22c55e' },
-    error:   { bg: '#c0392b', dot: '#fff' },
+    success: { bg: 'var(--ink)', dot: '#22c55e' },
+    error:   { bg: 'var(--red-bright)', dot: '#fff' },
     warn:    { bg: '#b7950b', dot: '#fff' },
   };
   const c = colors[type] || colors.success;
@@ -413,6 +345,10 @@ function initSidebarAccess() {
       node.replaceWith(label);
     });
   });
+  const isAdviser = user?.role === 'adviser';
+  document.querySelectorAll('.admin-only').forEach(item => { item.style.display = isAdviser ? '' : 'none'; });
+  document.querySelectorAll('.adviser-parent').forEach(link => { link.style.display = isAdviser ? 'none' : ''; });
+  document.querySelectorAll('.non-adviser-only').forEach(item => { item.style.display = isAdviser ? 'none' : ''; });
   if (!user || !['editorial','adviser'].includes(user.role)) {
     const corrLink = document.querySelector('a[href="correspondents.html"]');
     if (corrLink) corrLink.closest('li').style.display = 'none';
@@ -433,7 +369,7 @@ function initTopbarDropdown() {
   if (!document.getElementById('topbar-dd-styles')) {
     const s = document.createElement('style');
     s.id = 'topbar-dd-styles';
-    s.textContent = `.topbar-dd-item:hover{background:#f7f8fa!important;}`;
+    s.textContent = `.topbar-dd-item:hover{background:var(--bg-surface)!important;}`;
     document.head.appendChild(s);
   }
 
@@ -441,26 +377,26 @@ function initTopbarDropdown() {
   dropdown.id = 'topbar-dropdown';
   dropdown.style.cssText = [
     'display:none', 'position:absolute', 'top:calc(100% + 8px)', 'right:0',
-    'background:#fff', 'border:1px solid #e5e7eb', 'border-radius:10px',
+    'background:#fff', 'border:1px solid var(--border)', 'border-radius:10px',
     'box-shadow:0 4px 20px rgba(0,0,0,.12)', 'min-width:180px',
-    'z-index:1000', 'overflow:hidden', "font-family:'DM Sans',sans-serif"
+    'z-index:1000', 'overflow:hidden', "font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
   ].join(';');
 
   dropdown.innerHTML = `
     <a href="settings.html#account" class="topbar-dd-item"
        style="display:flex;align-items:center;gap:10px;padding:11px 16px;
-              color:#1a1a1a;text-decoration:none;font-size:13px;font-weight:500;">
+              color:var(--ink);text-decoration:none;font-size:13px;font-weight:500;">
       <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
       </svg>
       Account Settings
     </a>
-    <div style="height:1px;background:#f3f4f6;margin:0 12px;"></div>
+    <div style="height:1px;background:var(--bg-surface);margin:0 12px;"></div>
     <button id="topbar-logout-btn" class="topbar-dd-item"
             style="display:flex;align-items:center;gap:10px;padding:11px 16px;
                    color:#e74c3c;background:none;border:none;width:100%;
                    cursor:pointer;font-size:13px;font-weight:500;
-                   font-family:'DM Sans',sans-serif;text-align:left;">
+                   font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;text-align:left;">
       <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h6a1 1 0 100-2H4V5h5a1 1 0 100-2H3zm10.293 3.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L14.586 11H7a1 1 0 110-2h7.586l-1.293-1.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
       </svg>
@@ -632,3 +568,76 @@ document.addEventListener('DOMContentLoaded', () => {
   initMediaSearch();
   initMediaLibrary();
 });
+
+/* ── Sidebar sub-menus ──
+   A group stays open across page changes until the user closes it: open groups are remembered
+   for the session and restored on every page. The group holding the current page always opens.
+   Runs as soon as cms.js loads (it sits after the sidebar on every page), not on DOMContentLoaded,
+   which waits for Firebase and would make restored groups pop open late. */
+const NAV_OPEN_KEY = 'frontline:navOpen';
+function readOpenGroups() {
+  try { return new Set(JSON.parse(sessionStorage.getItem(NAV_OPEN_KEY) || '[]')); } catch { return new Set(); }
+}
+function writeOpenGroups(set) {
+  try { sessionStorage.setItem(NAV_OPEN_KEY, JSON.stringify([...set])); } catch { /* storage unavailable */ }
+}
+function initSidebarToggles() {
+  const saved = readOpenGroups();
+  document.querySelectorAll('.sidebar-nav .nav-toggle').forEach(btn => {
+    const group = btn.closest('li');
+    const sub = group.querySelector(':scope > .sub-nav');
+    if (!sub || btn.dataset.toggleBound) return;
+    btn.dataset.toggleBound = 'true';
+    const id = group.id || sub.querySelector('a')?.getAttribute('href') || btn.textContent.trim();
+    const setOpen = open => {
+      sub.hidden = !open;
+      group.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', String(open));
+    };
+    if (sub.querySelector('li.active')) { setOpen(true); saved.add(id); writeOpenGroups(saved); }
+    else if (saved.has(id)) setOpen(true);
+    // Clear the class once the last (most delayed) item has finished sliding in.
+    sub.addEventListener('animationend', e => {
+      if (e.target === sub.querySelector(':scope > li:last-child')) sub.classList.remove('is-opening');
+    });
+    btn.addEventListener('click', () => {
+      const open = sub.hidden;
+      setOpen(open);
+      sub.classList.toggle('is-opening', open); // slide in on a click-open only; closing is instant
+      const current = readOpenGroups();
+      open ? current.add(id) : current.delete(id);
+      writeOpenGroups(current);
+    });
+  });
+}
+initSidebarToggles();
+
+/* ── Fill the topbar name/role from the session immediately, so it doesn't flash
+      "Loading..." on every page while Firebase loads. Page scripts still refresh it. ── */
+(function prefillTopbarUser() {
+  try {
+    const u = JSON.parse(sessionStorage.getItem('user') || 'null');
+    if (!u) return;
+    const nameEl = document.getElementById('topbar-username');
+    const roleEl = document.getElementById('topbar-role');
+    const name = u.name || [u.firstName, u.surname].filter(Boolean).join(' ');
+    if (nameEl && name) nameEl.textContent = typeof toTitleCaseName === 'function' ? toTitleCaseName(name) : name;
+    const labels = { adviser: 'Adviser', editorial: 'Editorial Board', correspondent: 'Correspondent' };
+    if (roleEl && labels[u.role]) roleEl.textContent = labels[u.role];
+  } catch (e) { /* session unavailable: keep the placeholder */ }
+})();
+
+/* ── Tables wider than the screen slide sideways inside .table-wrap (scrollbar hidden).
+      Over such a table the mouse wheel scrolls it left/right; at either end the wheel
+      goes back to scrolling the page, so it never traps the reader. ── */
+document.addEventListener('wheel', e => {
+  const wrap = e.target.closest?.('.table-wrap');
+  if (!wrap || e.ctrlKey) return;
+  const max = wrap.scrollWidth - wrap.clientWidth;
+  if (max <= 1 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // fits, or trackpad already scrolling sideways
+  const atStart = wrap.scrollLeft <= 0 && e.deltaY < 0;
+  const atEnd = wrap.scrollLeft >= max - 1 && e.deltaY > 0;
+  if (atStart || atEnd) return;
+  e.preventDefault();
+  wrap.scrollLeft += e.deltaY;
+}, { passive: false });
