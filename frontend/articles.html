@@ -107,12 +107,7 @@
     .articles-toolbar .media-search { width:min(340px,100%); }
     #delete-confirm-overlay { align-items:center;justify-content:center;padding:16px; }
     #delete-confirm-overlay .editor-modal { width:min(400px,100%);height:auto;max-width:400px;border-radius:var(--radius-xl); }
-    .tags-wrap { border:1px solid var(--border);border-radius:var(--radius-md);padding:7px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:42px;background:#fff; }
-    .section-tag { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--radius-full);font-size:12px;font-weight:500;color:var(--text-sub);background:var(--bg-surface); }
-    .tag-x { background:none;border:none;font-size:14px;color:var(--text-muted);cursor:pointer;line-height:1;padding:0;margin-left:2px; }
-    .tag-x:hover { color:var(--red); }
-    .tag-input { border:none;outline:none;font-size:12px;font-family:var(--font);color:var(--text-main);background:transparent;min-width:120px;padding:2px 4px; }
-    .tag-input::placeholder { color:#ccc; }
+    /* Section tag pills, suggestions, cutline and preview styles live in shared.css. */
     .cover-upload-zone { border:2px dashed #f0b8b8;border-radius:var(--radius-md);background:#fff5f5;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background 0.15s;position:relative;overflow:hidden; }
     .cover-upload-zone:hover { background:#ffe8e8; }
     .cover-upload-zone input[type="file"] { display:none; }
@@ -204,7 +199,7 @@
       <div class="articles-toolbar">
         <div class="media-search">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-          <input type="search" id="articles-search" placeholder="Search articles..." aria-label="Search articles" />
+          <input type="search" id="articles-search" name="articles-search" placeholder="Search articles..." aria-label="Search articles" autocomplete="off" />
         </div>
       </div>
       <p id="article-editor-load-error" role="alert" style="display:none;color:var(--red);margin:-10px 0 16px;">
@@ -282,11 +277,16 @@
                 <option value="serif"></option>
                 <option value="monospace"></option>
               </select>
-              <select class="ql-size">
-                <option value="small"></option>
+              <select class="ql-size" title="Font size">
+                <option value="12px"></option>
+                <option value="14px"></option>
                 <option selected></option>
-                <option value="large"></option>
-                <option value="huge"></option>
+                <option value="16px"></option>
+                <option value="18px"></option>
+                <option value="20px"></option>
+                <option value="24px"></option>
+                <option value="28px"></option>
+                <option value="32px"></option>
               </select>
               <select class="ql-header">
                 <option value="1"></option>
@@ -330,24 +330,31 @@
         </div>
       </div>
       <div>
-        <!-- ══ DELETE CONFIRMATION MODAL ══ -->
-        <div class="modal-overlay hidden" id="delete-confirm-overlay">
-          <div class="editor-modal" style="max-width:400px;text-align:center;">
-            <div style="font-size:18px;font-weight:600;margin-bottom:18px;">Are you sure you want to delete this item?</div>
-            <div style="color:#b91c1c;margin-bottom:24px;">This action cannot be undone.</div>
-            <div style="display:flex;justify-content:center;gap:18px;">
-              <button class="btn btn-gray" id="delete-cancel">Cancel</button>
-              <button class="btn btn-red" id="delete-confirm">Delete</button>
-            </div>
-          </div>
-        </div>
         <div class="form-group">
-          <label class="form-label">Section Tags</label>
-          <div class="tags-wrap" id="tags-wrap">
-            <input class="tag-input" id="tag-input" placeholder="Type a section and press Enter..." tabindex="-1" />
+          <label class="form-label" for="tag-input">Section Tags</label>
+          <div class="tags-field">
+            <div class="tags-wrap" id="tags-wrap">
+              <input class="tag-input" id="tag-input" name="section-tag-search" type="text"
+                     placeholder="Select sections..." autocomplete="off" autocorrect="off"
+                     autocapitalize="off" spellcheck="false" role="combobox"
+                     aria-autocomplete="list" aria-expanded="false" aria-controls="tag-suggestions" />
+            </div>
+            <div class="tag-suggestions" id="tag-suggestions" role="listbox"></div>
           </div>
         </div>
         <div id="editorial-fields">
+          <div class="form-group">
+            <label class="form-label">Writer</label>
+            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Artist</label>
+            <input type="text" class="form-input" id="artist-name" spellcheck="true" autocorrect="on" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Photojournalist</label>
+            <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on" />
+          </div>
           <div class="form-group">
             <label class="form-label">Writer</label>
             <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on" />
@@ -404,7 +411,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Cutline</label>
-          <textarea class="form-textarea" id="article-cutline" placeholder="Enter photo description..." rows="3"></textarea>
+          <textarea class="form-textarea cutline-input" id="article-cutline" placeholder="Enter photo description..." rows="3"></textarea>
         </div>
         <div class="form-group" id="feedback-group" style="display:none;">
           <label class="form-label">Editor's Notes / Feedback</label>
@@ -414,6 +421,32 @@
       </div>
     </div>
     <div class="editor-footer" id="editor-footer"></div>
+  </div>
+</div>
+
+<!-- ══ DELETE CONFIRMATION MODAL ══ -->
+<div class="modal-overlay hidden" id="delete-confirm-overlay">
+  <div class="editor-modal" style="max-width:400px;text-align:center;">
+    <div style="font-size:18px;font-weight:600;margin-bottom:18px;">Are you sure you want to delete this item?</div>
+    <div style="color:#b91c1c;margin-bottom:24px;">This action cannot be undone.</div>
+    <div style="display:flex;justify-content:center;gap:18px;">
+      <button class="btn btn-outline" id="delete-cancel" type="button">Cancel</button>
+      <button class="btn btn-red" id="delete-confirm" type="button">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ARTICLE PREVIEW MODAL ══ -->
+<div class="preview-overlay hidden" id="preview-overlay" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
+  <div class="preview-modal">
+    <div class="preview-modal-header">
+      <div>
+        <div class="preview-modal-title" id="preview-modal-title">Article Preview</div>
+        <div class="preview-modal-note">This is how the article will look when published. Unsaved changes are included.</div>
+      </div>
+      <button class="btn btn-outline btn-sm" id="preview-close-btn" type="button">Close preview</button>
+    </div>
+    <iframe class="preview-frame" id="preview-frame" title="Article preview"></iframe>
   </div>
 </div>
 
@@ -460,7 +493,7 @@
     document.getElementById('articles-content').innerHTML = '<p class="empty-msg">Authentication error. Please log in again.</p>';
     throw e;
   }
-  const userDisplayName = user.name || [user.firstName, user.surname].filter(Boolean).join(' ').trim() || 'User';
+  const userDisplayName = (window.toTitleCaseName || (v => v))(user.name || [user.firstName, user.surname].filter(Boolean).join(' ').trim() || 'User');
 
   // ── Topbar ──
   document.getElementById('topbar-username').textContent = user.name || user.firstName || 'User';
@@ -481,6 +514,17 @@
   } else if (user.role === 'correspondent') {
     document.body.classList.add('correspondent-view');
   }
+
+  // Sections offered in the editor (same list as the Correspondents page, plus General
+  // for articles without a specific section).
+  const SECTIONS = ['General', 'News', 'Opinion-Editorial', 'DevComm', 'Feature', 'Literary', 'Photojournalism', 'Sports', 'Arts', 'Broadcasting'];
+  const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'];
+  const toTitleCase = value => (typeof window.toTitleCaseName === 'function' ? window.toTitleCaseName(value) : value);
+  const sectionOf = article => {
+    const section = String(article?.section || '').replace(/^#+/, '').trim();
+    const firstTag = Array.isArray(article?.tags) ? String(article.tags[0] || '').replace(/^#+/, '').trim() : '';
+    return section || firstTag || 'General';
+  };
 
   // ── State ──
   const statusLabels = { draft:'Draft', pending:'Pending', reviewed:'Reviewed', published:'Published', assigned:'Assigned', pending_adviser:'Awaiting Final Approval', pending_editorial:'Awaiting Editorial Review' };
@@ -510,7 +554,13 @@
     // Keep article creation usable when the optional sanitizer CDN is unavailable.
     const parsed = new DOMParser().parseFromString(String(content || ''), 'text/html');
     const allowedTags = new Set(['P','BR','STRONG','B','EM','I','U','S','H1','H2','H3','BLOCKQUOTE','PRE','SUB','SUP','SPAN','DIV','UL','OL','LI','A','IMG']);
-    const allowedAttributes = new Set(['href','src','alt','title','class']);
+    const allowedAttributes = new Set(['href','src','alt','title','class','style']);
+    const allowedStyles = new Set(['font-size','color','background-color','text-align']);
+    const cleanStyle = value => value.split(';').map(rule => rule.trim()).filter(rule => {
+      const [prop, ...rest] = rule.split(':');
+      const val = rest.join(':').trim().toLowerCase();
+      return allowedStyles.has((prop || '').trim().toLowerCase()) && val && !/url\(|expression|javascript:/.test(val);
+    }).join('; ');
     const cleanNode = node => {
       Array.from(node.childNodes).forEach(child => {
         if (child.nodeType !== Node.ELEMENT_NODE) return;
@@ -525,6 +575,9 @@
           const safeUrl = /^(https?:|mailto:)/i.test(value) || value.startsWith('/') || value.startsWith('#');
           if (!allowedAttributes.has(name) || ((name === 'href' || name === 'src') && !safeUrl)) {
             child.removeAttribute(attribute.name);
+          } else if (name === 'style') {
+            const style = cleanStyle(value);
+            if (style) child.setAttribute('style', style); else child.removeAttribute('style');
           }
         });
         cleanNode(child);
@@ -560,7 +613,7 @@
       corrs.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = c.name || `${c.firstName} ${c.surname}`;
+        opt.textContent = toTitleCase(c.name || [c.firstName, c.surname].filter(Boolean).join(' ') || c.email || 'Correspondent');
         sel.appendChild(opt);
       });
     } catch (e) {
@@ -589,6 +642,11 @@
       };
       return;
     }
+    // Numeric font sizes are stored as inline styles (e.g. style="font-size:18px"),
+    // so they render identically on the published article page.
+    const SizeStyle = Quill.import('attributors/style/size');
+    SizeStyle.whitelist = FONT_SIZES;
+    Quill.register(SizeStyle, true);
     quill = new Quill('#quill-editor', {
       theme: 'snow',
       modules: {
@@ -603,8 +661,8 @@
   // ── Build table ──
   function buildTable() {
     const query = document.getElementById('articles-search').value.trim().toLocaleLowerCase();
-    visibleArticles = articlesData.filter(article => [
-      article.title, article.section, article.writerName, article.authorName,
+    visibleArticles = articlesData.filter(article => !query || [
+      article.title, sectionOf(article), ...(Array.isArray(article.tags) ? article.tags : []), article.writerName, article.authorName,
       article.artistName, article.photojournalistName, article.status
     ].some(value => String(value || '').toLocaleLowerCase().includes(query)));
 
@@ -632,7 +690,7 @@
       rows += `
         <tr>
           <td class="title-cell" data-label="Title">${escapeHtml(a.title || 'Untitled')}</td>
-          <td data-label="Section">${escapeHtml((a.section || '—').toUpperCase())}</td>
+          <td data-label="Section">${escapeHtml(sectionOf(a).toUpperCase())}</td>
           <td data-label="Writer" title="${escapeHtml(a.writerName || a.authorName || '—')}">${escapeHtml(a.writerName || a.authorName || '—')}</td>
           <td data-label="Status">
             ${user.role === 'correspondent'
@@ -741,43 +799,42 @@
       // Delete button
       const delBtn = e.target.closest('.del-btn');
       if (delBtn) {
-        const id = delBtn.dataset.id;
-        showDeleteConfirmModal(id);
+        showDeleteConfirmModal(delBtn.dataset.id);
         return;
-      }
-      // ── Delete Confirmation Modal ──
-      function showDeleteConfirmModal(articleId) {
-        const overlay = document.getElementById('delete-confirm-overlay');
-        overlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-
-        function cleanup() {
-          overlay.classList.add('hidden');
-          document.body.style.overflow = '';
-          document.getElementById('delete-cancel').removeEventListener('click', onCancel);
-          document.getElementById('delete-confirm').removeEventListener('click', onConfirm);
-        }
-
-        function onCancel() {
-          cleanup();
-        }
-
-        async function onConfirm() {
-          const result = await deleteArticle(articleId);
-          if (result.success) {
-            showToast('Article deleted.', 'success');
-            loadArticles();
-          } else {
-            showToast('Failed to delete article.', 'error');
-          }
-          cleanup();
-        }
-
-        document.getElementById('delete-cancel').addEventListener('click', onCancel);
-        document.getElementById('delete-confirm').addEventListener('click', onConfirm);
       }
     });
   }
+
+  // ── Delete Confirmation Modal ──
+  // The modal used to live inside the hidden editor overlay, so it never appeared, while every
+  // click on a delete icon stacked another "confirm" listener. Opening the editor later revealed it,
+  // and one click on Delete soft-deleted every article clicked before. Now there is one modal at
+  // page level, one pending article, and listeners bound once.
+  let pendingDeleteId = null;
+  const deleteOverlay = document.getElementById('delete-confirm-overlay');
+  function showDeleteConfirmModal(articleId) {
+    pendingDeleteId = articleId;
+    deleteOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function hideDeleteConfirmModal() {
+    pendingDeleteId = null;
+    deleteOverlay.classList.add('hidden');
+    if (document.getElementById('editor-overlay').classList.contains('hidden')) document.body.style.overflow = '';
+  }
+  document.getElementById('delete-cancel').addEventListener('click', hideDeleteConfirmModal);
+  deleteOverlay.addEventListener('click', e => { if (e.target === deleteOverlay) hideDeleteConfirmModal(); });
+  document.getElementById('delete-confirm').addEventListener('click', async () => {
+    const articleId = pendingDeleteId;
+    if (!articleId) return hideDeleteConfirmModal();
+    const confirmBtn = document.getElementById('delete-confirm');
+    confirmBtn.disabled = true;
+    const result = await deleteArticle(articleId);
+    confirmBtn.disabled = false;
+    if (result.success) showToast('Article deleted.', 'success');
+    else showToast(result.error || 'Failed to delete article.', 'error');
+    hideDeleteConfirmModal();
+  });
 
   function closeAllMenus() {
     document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
@@ -878,8 +935,8 @@
       ensureQuill();
       quill.root.innerHTML = '';
       document.getElementById('article-cutline').value   = '';
-      document.getElementById('editorial-writer-name').value = user.name || `${user.firstName || ''} ${user.surname || ''}`.trim();
-      document.getElementById('writer-name').value = user.name || `${user.firstName || ''} ${user.surname || ''}`.trim();
+      document.getElementById('editorial-writer-name').value = userDisplayName;
+      document.getElementById('writer-name').value = userDisplayName;
       document.getElementById('artist-name').value = '';
       document.getElementById('photojournalist-name').value = '';
       document.getElementById('editor-feedback').value = '';
@@ -892,6 +949,8 @@
       // Clear tags
       document.querySelectorAll('#tags-wrap .section-tag').forEach(t => t.remove());
     }
+    document.getElementById('tag-input').value = '';
+    closeTagSuggestions();
 
     if (mode === 'correspondent') {
       title.textContent = article ? 'Edit Article' : 'Write Article';
@@ -961,6 +1020,9 @@
       document.getElementById('btn-assign').addEventListener('click',     () => saveArticle('assigned'));
     }
 
+    footer.insertAdjacentHTML('afterbegin', '<button class="btn btn-outline" id="btn-preview" type="button">Preview</button>');
+    document.getElementById('btn-preview').addEventListener('click', openPreview);
+
     document.getElementById('editor-overlay').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     document.getElementById('editor-exit-btn').onclick = closeEditor;
@@ -968,6 +1030,8 @@
   }
 
   function closeEditor() {
+    closePreview();
+    closeTagSuggestions();
     document.getElementById('editor-overlay').classList.add('hidden');
     document.body.style.overflow = '';
     editingId = null;
@@ -998,8 +1062,7 @@
         return;
       }
 
-      const tags = Array.from(document.querySelectorAll('#tags-wrap .section-tag'))
-        .map(tag => tag.textContent.replace('×', '').trim());
+      const tags = getSelectedSections();
       const existingArticle = editingId
         ? articlesData.find(article => article.id === editingId)
         : null;
@@ -1013,7 +1076,7 @@
         title,
         content,
         cutline,
-        section: tags[0] || '',
+        section: tags[0] || 'General',
         tags,
         assignedTo: assignee,
         dueDate: dueDate || existingArticle?.dueDate || null,
@@ -1127,31 +1190,190 @@
     preview.style.display = 'block';
   });
 
-  // Tag input
-  document.getElementById('tag-input').addEventListener('keydown', function(e) {
-    if ((e.key === 'Enter' || e.key === ',') && this.value.trim()) {
-      e.preventDefault();
-      addSectionTag(this.value.trim());
-      this.value = '';
-    }
-  });
+  // ── Section tags: pills inside the input + suggestions directly below ──
+  const tagInput = document.getElementById('tag-input');
+  const tagsWrap = document.getElementById('tags-wrap');
+  const tagSuggestions = document.getElementById('tag-suggestions');
+  let activeSuggestion = -1;
+
+  function cleanSectionName(value) {
+    const cleaned = String(value || '').replace(/^#+/, '').replace(/\s+/g, ' ').trim();
+    if (!cleaned) return '';
+    return SECTIONS.find(section => section.toLowerCase() === cleaned.toLowerCase()) || cleaned;
+  }
+
+  function getSelectedSections() {
+    return Array.from(tagsWrap.querySelectorAll('.section-tag')).map(tag => tag.dataset.value).filter(Boolean);
+  }
 
   function addSectionTag(value) {
-    value = value.trim();
+    value = cleanSectionName(value);
     if (!value) return;
-    const input = document.getElementById('tag-input');
+    if (getSelectedSections().some(existing => existing.toLowerCase() === value.toLowerCase())) return;
     const tag = document.createElement('span');
     tag.className = 'section-tag';
-    tag.append(document.createTextNode(`${value} `));
+    tag.dataset.value = value;
+    const label = document.createElement('span');
+    label.className = 'section-tag-label';
+    label.textContent = value;
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
     removeButton.className = 'tag-x';
-    removeButton.setAttribute('aria-label', `Remove ${value} tag`);
+    removeButton.setAttribute('aria-label', `Remove ${value}`);
     removeButton.textContent = '×';
-    removeButton.addEventListener('click', () => tag.remove());
-    tag.appendChild(removeButton);
-    document.getElementById('tags-wrap').insertBefore(tag, input);
+    removeButton.addEventListener('click', e => {
+      e.stopPropagation();
+      tag.remove();
+      tagInput.focus();
+      renderTagSuggestions();
+    });
+    tag.append(label, removeButton);
+    tagsWrap.insertBefore(tag, tagInput);
   }
+
+  function availableSections() {
+    const selected = getSelectedSections().map(s => s.toLowerCase());
+    const query = cleanSectionName(tagInput.value).toLowerCase();
+    return SECTIONS.filter(section => !selected.includes(section.toLowerCase())
+      && (!query || section.toLowerCase().includes(query)));
+  }
+
+  function renderTagSuggestions() {
+    const options = availableSections();
+    tagSuggestions.replaceChildren();
+    if (activeSuggestion >= options.length) activeSuggestion = options.length - 1;
+    if (!options.length) {
+      const empty = document.createElement('div');
+      empty.className = 'tag-suggestion-empty';
+      empty.textContent = getSelectedSections().length === SECTIONS.length ? 'All sections selected' : 'No matching section';
+      tagSuggestions.appendChild(empty);
+    }
+    options.forEach((section, index) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'tag-suggestion' + (index === activeSuggestion ? ' is-active' : '');
+      option.setAttribute('role', 'option');
+      option.textContent = section;
+      // mousedown keeps focus in the input so the list stays open for multiple picks
+      option.addEventListener('mousedown', e => {
+        e.preventDefault();
+        addSectionTag(section);
+        tagInput.value = '';
+        activeSuggestion = -1;
+        renderTagSuggestions();
+      });
+      tagSuggestions.appendChild(option);
+    });
+    tagSuggestions.classList.add('open');
+    tagInput.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeTagSuggestions() {
+    tagSuggestions.classList.remove('open');
+    tagInput.setAttribute('aria-expanded', 'false');
+    activeSuggestion = -1;
+  }
+
+  tagsWrap.addEventListener('mousedown', e => {
+    if (e.target === tagsWrap) { e.preventDefault(); tagInput.focus(); }
+  });
+  tagInput.addEventListener('focus', renderTagSuggestions);
+  tagInput.addEventListener('input', () => { activeSuggestion = 0; renderTagSuggestions(); });
+  tagInput.addEventListener('blur', () => setTimeout(closeTagSuggestions, 120));
+  tagInput.addEventListener('keydown', e => {
+    const options = availableSections();
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeSuggestion = Math.min(options.length - 1, activeSuggestion + 1);
+      renderTagSuggestions();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeSuggestion = Math.max(0, activeSuggestion - 1);
+      renderTagSuggestions();
+    } else if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const pick = options[activeSuggestion] || options.find(s => s.toLowerCase() === cleanSectionName(tagInput.value).toLowerCase()) || (tagInput.value.trim() ? options[0] : null);
+      if (pick) {
+        addSectionTag(pick);
+        tagInput.value = '';
+        activeSuggestion = -1;
+        renderTagSuggestions();
+      }
+    } else if (e.key === 'Backspace' && !tagInput.value) {
+      const tags = tagsWrap.querySelectorAll('.section-tag');
+      if (tags.length) { tags[tags.length - 1].remove(); renderTagSuggestions(); }
+    } else if (e.key === 'Escape') {
+      closeTagSuggestions();
+    }
+  });
+
+  // ── Article preview (uses the public article-view.html design and current unsaved values) ──
+  const previewOverlay = document.getElementById('preview-overlay');
+  const previewFrame = document.getElementById('preview-frame');
+
+  function openPreview() {
+    ensureQuill();
+    const title = document.getElementById('article-title').value.trim() || 'Untitled';
+    const sections = getSelectedSections();
+    const section = sections[0] || 'General';
+    const writerName = (user.role === 'correspondent'
+      ? document.getElementById('writer-name').value
+      : document.getElementById('editorial-writer-name').value).trim() || userDisplayName;
+    const artistName = document.getElementById('artist-name').value.trim();
+    const photojournalistName = document.getElementById('photojournalist-name').value.trim();
+    const cutline = document.getElementById('article-cutline').value.trim();
+    const coverEl = document.getElementById('cover-preview');
+    const coverSrc = coverEl.style.display !== 'none' && coverEl.getAttribute('src') ? coverEl.src : '';
+    const content = sanitizeArticleContent(quill.root.innerHTML);
+    const hasContent = quill.getText().trim() || quill.root.querySelector('img, iframe');
+    const existing = editingId ? articlesData.find(article => article.id === editingId) : null;
+    const publishedAt = existing?.publishedAt?.toDate?.() || new Date();
+    const dateLabel = publishedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const base = new URL('.', window.location.href).href;
+
+    previewFrame.srcdoc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />
+      <base href="${escapeHtml(base)}" target="_blank" />
+      <link rel="stylesheet" href="frontline.css" />
+      <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
+      </head><body>
+      <main class="article-main"><div class="article-wrap">
+        <div class="article-section-tag">${escapeHtml(section)}</div>
+        <h1 class="article-title">${escapeHtml(title)}</h1>
+        <div class="article-meta">
+          <div class="meta-avatar">${user.photoURL
+            ? `<img src="${escapeHtml(user.photoURL)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" alt="" />`
+            : '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2e1a0a,#4a2e1a);"></div>'}</div>
+          <div class="meta-info">
+            <div class="meta-name">${escapeHtml(writerName)}</div>
+            <div class="meta-role">Writer</div>
+            ${artistName ? `<div class="meta-role">Artist: ${escapeHtml(artistName)}</div>` : ''}
+            ${photojournalistName ? `<div class="meta-role">Photojournalist: ${escapeHtml(photojournalistName)}</div>` : ''}
+          </div>
+          <div class="meta-date">${existing?.status === 'published' ? 'Published on' : 'To be published'} ${escapeHtml(dateLabel)}</div>
+        </div>
+        ${coverSrc
+          ? `<figure class="article-figure">
+              <img src="${escapeHtml(coverSrc)}" alt="${escapeHtml(title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;" />
+              ${cutline ? `<figcaption style="font-size:12px;color:#888;margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
+            </figure>`
+          : `<figure class="article-figure">
+              <div class="article-hero-img" style="background:linear-gradient(135deg,#1a0a2e,#2e1a4a,#0a1a2e);width:100%;aspect-ratio:16/9;border-radius:4px;"></div>
+              ${cutline ? `<figcaption style="font-size:12px;color:#888;margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
+            </figure>`}
+        <div class="article-body">${hasContent ? content : '<p>No content available.</p>'}</div>
+      </div></main></body></html>`;
+    previewOverlay.classList.remove('hidden');
+    document.getElementById('preview-close-btn').focus();
+  }
+
+  function closePreview() {
+    previewOverlay.classList.add('hidden');
+  }
+  document.getElementById('preview-close-btn').addEventListener('click', closePreview);
+  previewOverlay.addEventListener('click', e => { if (e.target === previewOverlay) closePreview(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !previewOverlay.classList.contains('hidden')) closePreview();
+  });
 
   // Register page actions before awaiting Firestore requests.
   window.__frontlineRegisterArticleEditor(() => {

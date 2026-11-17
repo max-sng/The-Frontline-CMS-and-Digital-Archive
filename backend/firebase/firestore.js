@@ -13,6 +13,39 @@ import { db } from "./firebase-config.js";
 
 const FIRESTORE_READ_TIMEOUT_MS = 10000;
 
+// Proper Title Case for person names ("samantha sunga" -> "Samantha Sunga").
+// Handles hyphens and apostrophes ("anne-marie o'neil" -> "Anne-Marie O'Neil").
+export function toTitleCaseName(value) {
+  if (typeof value !== 'string') return value;
+  return value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase()
+    .replace(/(^|[\s\-'’])(\p{L})/gu, (_, sep, letter) => sep + letter.toLocaleUpperCase());
+}
+
+// Normalizes only the name fields of a user payload; email and other fields are untouched.
+export function normalizeUserNames(data) {
+  if (!data || typeof data !== 'object') return data;
+  const next = { ...data };
+  if (typeof next.firstName === 'string') next.firstName = toTitleCaseName(next.firstName);
+  if (typeof next.surname === 'string') next.surname = toTitleCaseName(next.surname);
+  if (typeof next.name === 'string') next.name = toTitleCaseName(next.name);
+  return next;
+}
+
+// Every article without a section is treated as "General" everywhere it is shown or filtered.
+export function articleSection(article) {
+  const section = String(article?.section || '').replace(/^#+/, '').trim();
+  if (section) return section;
+  const firstTag = Array.isArray(article?.tags) ? String(article.tags[0] || '').replace(/^#+/, '').trim() : '';
+  return firstTag || 'General';
+}
+
+function articleTimestamp(article) {
+  return article?.publishedAt?.toMillis?.() || article?.createdAt?.toMillis?.() || 0;
+}
+
 function withFirestoreTimeout(promise) {
   return Promise.race([
     promise,
@@ -102,25 +135,13 @@ export function subscribeUserProfile(userUid, onChange, onError = () => {}) {
 }
 
 // Get published articles (CDA)
+// Published articles are fetched with a single equality filter and sorted in the browser.
+// An orderBy("publishedAt") query needs a composite index (missing in this project) and
+// silently excludes any published article that has no publishedAt field.
 export async function getPublishedArticles(limitCount = 20) {
   try {
-    try {
-      const q = query(
-        collection(db, "articles"),
-        where("status", "==", "published"),
-        orderBy("publishedAt", "desc"),
-        limit(limitCount)
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (queryError) {
-      console.warn("Ordered published article query failed; using fallback.", queryError);
-      const snap = await getDocs(query(collection(db, "articles"), where("status", "==", "published")));
-      return snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (b.publishedAt?.toMillis?.() || 0) - (a.publishedAt?.toMillis?.() || 0))
-        .slice(0, limitCount);
-    }
+    const articles = await getAllPublishedArticles();
+    return articles.slice(0, limitCount);
   } catch (e) {
     console.error("getPublishedArticles error:", e);
     throw e;
@@ -135,7 +156,7 @@ export async function getAllPublishedArticles() {
     )));
     return snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (b.publishedAt?.toMillis?.() || 0) - (a.publishedAt?.toMillis?.() || 0));
+      .sort((a, b) => articleTimestamp(b) - articleTimestamp(a));
   } catch (e) {
     console.error("getAllPublishedArticles error:", e);
     throw e;
@@ -151,11 +172,7 @@ export async function getPublishedArticlesByAuthor(authorId, limitCount = 20) {
     )));
     return snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => {
-        const timeA = a.publishedAt?.toMillis?.() || 0;
-        const timeB = b.publishedAt?.toMillis?.() || 0;
-        return timeB - timeA;
-      })
+      .sort((a, b) => articleTimestamp(b) - articleTimestamp(a))
       .slice(0, limitCount);
   } catch (e) {
     console.error("getPublishedArticlesByAuthor error:", e);
@@ -433,7 +450,7 @@ export async function getUser(uid) {
 export async function updateUser(uid, data) {
   try {
     await updateDoc(doc(db, "users", uid), {
-      ...data,
+      ...normalizeUserNames(data),
       updatedAt: serverTimestamp()
     });
     return { success: true };
@@ -618,8 +635,12 @@ export async function logAuditEntry(entry) {
 
 export async function createMediaItem(item) {
   try {
+    if (!item?.uploadedBy) return { success: false, error: 'You must be signed in to save media.' };
     const ref = await addDoc(collection(db, 'media'), {
-      ...item,
+      filename: String(item.filename || 'image'),
+      url: String(item.url || ''),
+      thumb: String(item.thumb || item.url || ''),
+      uploadedBy: item.uploadedBy,
       createdAt: serverTimestamp()
     });
     return { success: true, id: ref.id };
@@ -632,10 +653,10 @@ export async function createMediaItem(item) {
 export async function getMediaItems(limitCount = 60) {
   try {
     const q = query(collection(db, 'media'), orderBy('createdAt', 'desc'), limit(limitCount));
-    const snap = await getDocs(q);
+    const snap = await withFirestoreTimeout(getDocs(q));
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (e) {
     console.error('getMediaItems error', e);
-    return [];
+    throw e;
   }
 }

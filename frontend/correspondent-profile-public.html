@@ -174,7 +174,7 @@
   </footer>
 
 <script type="module">
-  import { getPublishedArticlesByAuthor, getUser } from '../backend/firebase/firestore.js';
+  import { getPublishedArticlesByAuthor, getUser, toTitleCaseName, articleSection } from '../backend/firebase/firestore.js';
 
   // ── Live date ──
   const d = new Date();
@@ -220,7 +220,8 @@
 
   async function renderProfile() {
     const params = new URLSearchParams(window.location.search);
-    const userId = params.get('uid');
+    // Accept ?uid= (current links) and ?id= (older links).
+    const userId = params.get('uid') || params.get('id');
     if (!userId) {
       const main = document.querySelector('.profile-main');
       if (main) {
@@ -236,6 +237,7 @@
 
     try {
       const user = await getUser(userId);
+      if (user) user.name = toTitleCaseName(user.name || [user.firstName, user.surname].filter(Boolean).join(' ') || '') || 'Correspondent';
       if (!user) {
         const main = document.querySelector('.profile-main');
       if (main) {
@@ -251,7 +253,8 @@
 
       document.title = `${user.name || 'Correspondent'} – The Frontline`;
       document.getElementById('profName').textContent = user.name || 'Unknown Correspondent';
-      document.getElementById('profSubtitle').textContent = `${user.role || 'Correspondent'} • ${user.section || 'News'}`;
+      const roleLabels = { adviser: 'Adviser', editorial: 'Editorial Board', correspondent: 'Correspondent' };
+      document.getElementById('profSubtitle').textContent = [roleLabels[user.role] || 'Correspondent', user.section].filter(Boolean).join(' • ');
       document.getElementById('profInitials').textContent = initials(user.name || 'The Frontline');
       document.getElementById('workTitle').textContent = `More of ${user.name?.split(' ')[0] || 'this correspondent'}'s Work`;
 
@@ -278,7 +281,7 @@
               }
             </div>
             <div>
-              <div class="work-card-section">${(article.section || 'General').toUpperCase()}</div>
+              <div class="work-card-section">${escapeHtml(articleSection(article).toUpperCase())}</div>
               <div class="work-card-title">${escapeHtml(article.title || 'Untitled')}</div>
               <div class="work-card-author">by ${escapeHtml(article.writerName || article.authorName || user.name || 'Unknown')}</div>
             </div>

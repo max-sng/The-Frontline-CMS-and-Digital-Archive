@@ -17,10 +17,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { auth, db } from "./firebase-config.js";
-import { createNotification, logAuditEntry, getUsersByRole } from "./firestore.js";
+import { createNotification, logAuditEntry, getUsersByRole, toTitleCaseName } from "./firestore.js";
 
 // ── REGISTER ──────────────────────────────────────────────
 export async function registerUser({ firstName, surname, email, password, role, section }) {
+  firstName = toTitleCaseName(firstName || '');
+  surname = toTitleCaseName(surname || '');
   const normalizedEmail = email.trim().toLowerCase();
   const isEditorialSignup = role === 'editorial' || role === 'pending_editorial';
   let userCredential;

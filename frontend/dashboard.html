@@ -81,7 +81,7 @@
 <script src="cms.js"></script>
 <script type="module">
   import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
-  import { getPublishedArticles }    from '../backend/firebase/firestore.js';
+  import { getPublishedArticles, articleSection } from '../backend/firebase/firestore.js';
 
   // ── Auth guard ──
   const user = requireAuth(['correspondent', 'editorial', 'adviser']);
@@ -125,7 +125,7 @@
               : `<div class="card-img" style="background:#1a1a1a;"></div>`
             }
             <div class="card-body">
-              <div class="card-section">${(a.section || 'General').toUpperCase()}</div>
+              <div class="card-section">${articleSection(a).toUpperCase()}</div>
               <div class="card-title">${a.title || 'Untitled'}</div>
               <div class="card-excerpt">${a.excerpt || ''}</div>
               <div class="card-author">by ${a.writerName || a.authorName || 'Unknown'}</div>

@@ -94,85 +94,152 @@ function previewCover(e) {
 /* ── Media upload ── */
 function handleMediaUpload(e) {
   const files = e.target.files;
-  if (!files) return;
-  handleMediaFiles(files);
+  if (!files || !files.length) return;
+  handleMediaFiles(files).finally(() => { e.target.value = ''; });
+}
+
+function escapeMediaText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+}
+
+function createMediaThumb(item) {
+  const div = document.createElement('div');
+  div.className = 'media-thumb';
+  div.dataset.filename = (item.filename || '').toLowerCase();
+  div.dataset.url = item.url || '';
+  if (item.id) div.dataset.id = item.id;
+  const img = document.createElement('img');
+  img.src = item.thumb || item.url || '';
+  img.alt = item.filename || 'Uploaded media';
+  img.loading = 'lazy';
+  const hover = document.createElement('div');
+  hover.className = 'thumb-hover';
+  div.append(img, hover);
+  return div;
+}
+
+function updateMediaEmptyState() {
+  const grid = document.getElementById('media-grid');
+  const emptyState = document.getElementById('media-empty');
+  if (!grid || !emptyState) return;
+  const hasItems = grid.querySelector('.media-thumb') !== null;
+  emptyState.style.display = hasItems ? 'none' : 'flex';
 }
 
 async function handleMediaFiles(files) {
   const grid = document.getElementById('media-grid');
-  const emptyState = document.getElementById('media-empty');
-  if (emptyState) emptyState.style.display = 'none';
   if (!grid) return;
+  const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+  if (!user?.uid) {
+    showToast('Please sign in again before uploading.', 'error');
+    return;
+  }
 
-  for (const file of Array.from(files)) {
-    if (!file.type.startsWith('image/')) return;
-    const url = URL.createObjectURL(file);
-    const div = document.createElement('div');
-    div.className = 'media-thumb';
-    div.dataset.filename = file.name.toLowerCase();
-    div.innerHTML = `<img src="${url}" alt="${file.name}" /><div class="thumb-hover"></div><span class="uploading-label">Uploading...</span>`;
+  const images = Array.from(files).filter(file => file.type && file.type.startsWith('image/'));
+  const skipped = files.length - images.length;
+  if (skipped) showToast(`${skipped} file${skipped > 1 ? 's were' : ' was'} skipped because ${skipped > 1 ? 'they are' : 'it is'} not an image.`, 'warn');
+  if (!images.length) return;
+
+  const [{ uploadImage }, { createMediaItem }] = await Promise.all([
+    import('../backend/firebase/imgbb.js'),
+    import('../backend/firebase/firestore.js')
+  ]);
+
+  let uploaded = 0;
+  let failed = 0;
+  let lastError = '';
+  for (const file of images) {
+    const localUrl = URL.createObjectURL(file);
+    const div = createMediaThumb({ filename: file.name, url: localUrl });
+    const label = document.createElement('span');
+    label.className = 'uploading-label';
+    label.textContent = 'Uploading...';
+    div.appendChild(label);
     grid.prepend(div);
-    try {
-      const { uploadImage } = await import('../backend/firebase/imgbb.js');
-      const result = await uploadImage(file);
-      if (!result.success) throw new Error(result.error || 'Upload failed');
-      div.querySelector('img').src = result.thumb || result.url;
-      div.dataset.url = result.url;
-      div.querySelector('.uploading-label')?.remove();
+    updateMediaEmptyState();
 
-      const user = JSON.parse(sessionStorage.getItem('user') || 'null');
-      const { createMediaItem } = await import('../backend/firebase/firestore.js');
-      await createMediaItem({
+    try {
+      const result = await uploadImage(file);
+      if (!result.success) throw new Error(result.error || 'Upload failed.');
+      const saved = await createMediaItem({
         filename: file.name,
         url: result.url,
         thumb: result.thumb || result.url,
-        uploadedBy: user?.uid || null
+        uploadedBy: user.uid
       });
+      if (!saved.success) throw new Error(`Image uploaded, but it could not be saved to the library: ${saved.error || 'unknown error'}`);
+      div.querySelector('img').src = result.thumb || result.url;
+      div.dataset.url = result.url;
+      div.dataset.id = saved.id;
+      label.remove();
+      uploaded++;
     } catch (e) {
-      div.classList.add('upload-error');
-      const label = div.querySelector('.uploading-label');
-      if (label) label.textContent = 'Upload failed';
-      showToast(e.message || 'Upload failed.', 'error');
+      failed++;
+      lastError = e?.message || 'Upload failed.';
+      div.remove();
+      console.error('Media upload failed:', e);
+    } finally {
+      URL.revokeObjectURL(localUrl);
+      updateMediaEmptyState();
     }
+  }
+
+  if (uploaded && !failed) {
+    showToast(uploaded === 1 ? 'Image uploaded successfully.' : `${uploaded} images uploaded successfully.`, 'success');
+  } else if (uploaded && failed) {
+    showToast(`${uploaded} uploaded, ${failed} failed. ${lastError}`, 'warn');
+  } else if (failed) {
+    showToast(lastError || 'Upload failed.', 'error');
   }
 }
 
 async function initMediaLibrary() {
   const grid = document.getElementById('media-grid');
-  const emptyState = document.getElementById('media-empty');
   if (!grid) return;
   try {
     const { getMediaItems } = await import('../backend/firebase/firestore.js');
     const items = await getMediaItems();
-    if (!items.length) {
-      if (emptyState) emptyState.style.display = 'flex';
-      return;
-    }
-    if (emptyState) emptyState.style.display = 'none';
-    grid.innerHTML = '';
+    // Keep any uploads that started while the library was loading.
+    const existingIds = new Set(Array.from(grid.querySelectorAll('.media-thumb[data-id]')).map(el => el.dataset.id));
     items.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'media-thumb';
-      div.dataset.filename = (item.filename || '').toLowerCase();
-      div.dataset.url = item.url || '';
-      div.innerHTML = `<img src="${item.thumb || item.url}" alt="${item.filename || 'Uploaded media'}" /><div class="thumb-hover"></div>`;
-      grid.appendChild(div);
+      if (existingIds.has(item.id)) return;
+      grid.appendChild(createMediaThumb(item));
     });
   } catch (e) {
     console.error('Failed to load media library', e);
+    showToast('Could not load the media library. Please refresh the page.', 'error');
+  } finally {
+    updateMediaEmptyState();
   }
 }
 
 /* ── Media search by filename ── */
 function initMediaSearch() {
   const input = document.getElementById('media-search-input');
-  if (!input) return;
+  if (!input || input.dataset.searchBound) return;
+  input.dataset.searchBound = 'true';
   input.addEventListener('input', function () {
     const q = this.value.toLowerCase().trim();
-    document.querySelectorAll('.media-thumb').forEach(thumb => {
+    let visible = 0;
+    document.querySelectorAll('#media-grid .media-thumb').forEach(thumb => {
       const name = thumb.dataset.filename || '';
-      thumb.style.display = (!q || name.includes(q)) ? '' : 'none';
+      const show = !q || name.includes(q);
+      thumb.style.display = show ? '' : 'none';
+      if (show) visible++;
     });
+    let noMatch = document.getElementById('media-no-match');
+    const total = document.querySelectorAll('#media-grid .media-thumb').length;
+    if (total && !visible) {
+      if (!noMatch) {
+        noMatch = document.createElement('p');
+        noMatch.id = 'media-no-match';
+        noMatch.className = 'empty-msg';
+        noMatch.textContent = 'No media matches your search.';
+        document.getElementById('media-grid').after(noMatch);
+      }
+    } else if (noMatch) {
+      noMatch.remove();
+    }
   });
 }
 
@@ -241,6 +308,98 @@ function initHamburger() {
     ov.dataset.boundSidebar = 'true';
     ov.addEventListener('click', closeSidebar);
   }
+}
+
+/* ── Name formatting ── */
+function toTitleCaseName(value) {
+  if (typeof value !== 'string') return value;
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+    .replace(/(^|[\s\-'’])(\p{L})/gu, (_, sep, letter) => sep + letter.toLocaleUpperCase());
+}
+window.toTitleCaseName = toTitleCaseName;
+
+/* Keep the topbar name in Title Case whichever page script sets it. */
+function initTopbarNameFormatting() {
+  const nameEl = document.getElementById('topbar-username');
+  if (!nameEl || nameEl.dataset.titleCaseBound) return;
+  nameEl.dataset.titleCaseBound = 'true';
+  const apply = () => {
+    const text = nameEl.textContent;
+    if (!text || text === 'Loading...') return;
+    const formatted = toTitleCaseName(text);
+    if (formatted !== text) nameEl.textContent = formatted;
+  };
+  apply();
+  new MutationObserver(apply).observe(nameEl, { childList: true, characterData: true, subtree: true });
+}
+
+/* ── Topbar search ──
+   The topbar search is wired once here for every CMS page:
+   1. If the page has its own search box (Articles, Media, Archive), the query is mirrored into it,
+      so the page's existing filtering, empty states and pagination keep working.
+   2. Otherwise a "frontline:search" event is dispatched; pages such as Correspondents and
+      User Management listen for it.
+   3. Pages with neither get a generic text filter over their visible list items. */
+const PAGE_SEARCH_INPUTS = ['#articles-search', '#media-search-input', '#archive-search'];
+const GENERIC_SEARCH_ITEMS = '#dashboard-content .article-card, #queue .queue-item, .tab-panel .setting-row, .tab-panel .password-row, .tab-panel .danger-row';
+
+function runGenericSearch(query) {
+  const items = document.querySelectorAll(GENERIC_SEARCH_ITEMS);
+  if (!items.length) return;
+  const q = query.toLocaleLowerCase();
+  let visible = 0;
+  items.forEach(item => {
+    const show = !q || item.textContent.toLocaleLowerCase().includes(q);
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const host = document.querySelector('.cms-content');
+  let msg = document.getElementById('topbar-search-empty');
+  if (q && !visible) {
+    if (!msg && host) {
+      msg = document.createElement('p');
+      msg.id = 'topbar-search-empty';
+      msg.className = 'empty-msg';
+      host.appendChild(msg);
+    }
+    if (msg) msg.textContent = `No results for "${query}".`;
+  } else if (msg) {
+    msg.remove();
+  }
+}
+
+function initTopbarSearch() {
+  const input = document.querySelector('.cms-topbar .search-wrap input');
+  if (!input || input.dataset.searchBound) return;
+  input.dataset.searchBound = 'true';
+  input.removeAttribute('readonly');
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('type', 'search');
+  input.setAttribute('aria-label', 'Search this page');
+  input.value = '';
+
+  const pageInput = PAGE_SEARCH_INPUTS.map(sel => document.querySelector(sel)).find(Boolean);
+  if (pageInput) {
+    // Keep both boxes in sync in either direction.
+    pageInput.addEventListener('input', () => {
+      if (input.value !== pageInput.value) input.value = pageInput.value;
+    });
+  }
+
+  input.addEventListener('input', () => {
+    const query = input.value.trim();
+    if (pageInput) {
+      pageInput.value = input.value;
+      pageInput.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+    const event = new CustomEvent('frontline:search', { detail: { query }, cancelable: true });
+    const handled = !document.dispatchEvent(event) || window.__frontlineSearchHandled === true;
+    if (!handled) runGenericSearch(query);
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { input.value = ''; input.dispatchEvent(new Event('input')); }
+  });
 }
 
 /* ── Hide restricted sidebar links based on role ── */
@@ -445,7 +604,7 @@ async function initUserProfileSync() {
         ? `${roleLabel} · ${profile.status}`
         : roleLabel;
     }
-    if (nameEl) nameEl.textContent = profile.name || profile.firstName || 'User';
+    if (nameEl) nameEl.textContent = toTitleCaseName(profile.name || [profile.firstName, profile.surname].filter(Boolean).join(' ') || 'User');
     if (roleChanged) window.setTimeout(() => window.location.reload(), 250);
   }
 
@@ -463,6 +622,8 @@ async function initUserProfileSync() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initHamburger();
+  initTopbarNameFormatting();
+  initTopbarSearch();
   initSidebarAccess();
   initTopbarDropdown();
   initNotificationWidget();

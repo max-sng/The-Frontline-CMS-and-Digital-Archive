@@ -43,6 +43,10 @@
     .upload-hint { font-size:11.5px;color:var(--text-muted); }
     .form-row-2 { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
     .form-row-1 { margin-bottom:14px; }
+    /* Personal information: widths sized to their content, like "Academic year joined". */
+    #panel-account .form-row-2 { grid-template-columns:repeat(2, minmax(0, 240px)); justify-content:start; }
+    #panel-account .form-row-2.row-program { grid-template-columns:minmax(0, 300px) minmax(0, 180px); }
+    #panel-account .input-email { max-width:360px; }
     .field-hint { font-size:11.5px;color:var(--text-muted);margin-top:4px; }
     .form-input[readonly] { background:var(--bg-surface);color:var(--text-sub);cursor:default; }
     .password-row { background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
@@ -59,7 +63,7 @@
     .pw-alert.show { display:block; }
     .pw-alert.error { background:#fef2f2;border:1px solid #fecaca;color:#b91c1c; }
     .pw-alert.success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
-    @media (max-width:768px) { .form-row-2 { grid-template-columns:1fr; } .avatar-row { flex-direction:column;align-items:flex-start;gap:12px; } }
+    @media (max-width:768px) { .form-row-2, #panel-account .form-row-2, #panel-account .form-row-2.row-program { grid-template-columns:1fr; } #panel-account .input-email { max-width:none; } .avatar-row { flex-direction:column;align-items:flex-start;gap:12px; } }
 
     /* Profile view / edit mode */
     .profile-info-view { display:flex;flex-direction:column;gap:3px; }
@@ -204,10 +208,10 @@
         </div>
         <div class="form-row-1">
           <label class="form-label">Email address</label>
-          <input type="email" class="form-input" id="accEmail" readonly placeholder="email@gordoncollege.edu.ph" />
+          <input type="email" class="form-input input-email" id="accEmail" readonly placeholder="email@gordoncollege.edu.ph" />
           <div class="field-hint">Used for login and notifications</div>
         </div>
-        <div class="form-row-2">
+        <div class="form-row-2 row-program">
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Program</label>
             <input type="text" class="form-input" id="accProgram" readonly placeholder="Enter program" />
@@ -325,8 +329,8 @@
   import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
   import { getUser, updateUser, getPublicationSettings, updatePublicationSettings } from '../backend/firebase/firestore.js';
   import { updatePassword }          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-  import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-  import { auth, storage }           from '../backend/firebase/firebase-config.js';
+  import { auth }                    from '../backend/firebase/firebase-config.js';
+  import { uploadImage }             from '../backend/firebase/imgbb.js';
 
   // ── Auth guard ──
   const user = requireAuth(['correspondent', 'editorial', 'adviser']);
@@ -362,15 +366,15 @@
 
   // ── Load profile from Firestore ──
   const profile = await getUser(user.uid);
-  const displayName = ((profile?.firstName || user.firstName || '') + ' ' + (profile?.surname || user.surname || '')).trim();
+  const displayName = toTitleCaseName(((profile?.firstName || user.firstName || '') + ' ' + (profile?.surname || user.surname || '')).trim());
   const displayRole = user.role === 'adviser' ? 'Adviser' : user.role === 'editorial' ? 'Editorial Board' : `Correspondent${user.section ? ' - ' + user.section : ''}`;
 
   document.getElementById('profileViewName').textContent = displayName || 'User';
   document.getElementById('profileViewRole').textContent = displayRole;
 
   if (profile) {
-    document.getElementById('accFirstName').value = profile.firstName  || '';
-    document.getElementById('accSurname').value   = profile.surname    || '';
+    document.getElementById('accFirstName').value = toTitleCaseName(profile.firstName || '');
+    document.getElementById('accSurname').value   = toTitleCaseName(profile.surname || '');
     document.getElementById('accEmail').value     = profile.email      || '';
     document.getElementById('accProgram').value   = profile.program    || '';
     document.getElementById('accSection').value   = profile.section    || '';
@@ -421,7 +425,7 @@
 
   // ── Edit profile state ──
   let editing = false;
-  const editableFields = ['accFirstName','accSurname','accEmail','accProgram','accSection','accYear'];
+  const editableFields = ['accFirstName','accSurname','accProgram','accSection','accYear'];
 
   function setEditing(state) {
     editing = state;
@@ -458,8 +462,8 @@
   document.getElementById('cancelEditBtn').addEventListener('click', () => {
     setEditing(false);
     if (profile) {
-      document.getElementById('accFirstName').value = profile.firstName  || '';
-      document.getElementById('accSurname').value   = profile.surname    || '';
+      document.getElementById('accFirstName').value = toTitleCaseName(profile.firstName || '');
+      document.getElementById('accSurname').value   = toTitleCaseName(profile.surname || '');
       document.getElementById('accEmail').value     = profile.email      || '';
       document.getElementById('accProgram').value   = profile.program    || '';
       document.getElementById('accSection').value   = profile.section    || '';
@@ -491,25 +495,24 @@
 
     const photoFile = document.getElementById('photoInput').files[0];
     if (photoFile) {
-      try {
-        const storageRef = ref(storage, `profile-photos/${user.uid}`);
-        await uploadBytes(storageRef, photoFile);
-        photoURL = await getDownloadURL(storageRef);
-      } catch (e) {
-        showToast('Photo upload failed. Please try again.', 'error');
+      // Same upload path as the Media page (ImgBB, or Firebase Storage when no key is set).
+      const upload = await uploadImage(photoFile, { folder: 'profile-photos' });
+      if (upload.success) {
+        photoURL = upload.url;
+      } else {
+        showToast(upload.error || 'Photo upload failed. Please try again.', 'error');
         btn.textContent = 'Save changes';
         btn.disabled = false;
         return;
       }
     }
 
-    const firstName = document.getElementById('accFirstName').value.trim();
-    const surname   = document.getElementById('accSurname').value.trim();
+    const firstName = toTitleCaseName(document.getElementById('accFirstName').value);
+    const surname   = toTitleCaseName(document.getElementById('accSurname').value);
     const data = {
       firstName,
       surname,
       name:       `${firstName} ${surname}`.trim(),
-      email:      document.getElementById('accEmail').value.trim(),
       program:    document.getElementById('accProgram').value.trim(),
       section:    document.getElementById('accSection').value.trim(),
       yearJoined: document.getElementById('accYear').value.trim(),
@@ -518,6 +521,9 @@
 
     const result = await updateUser(user.uid, data);
     if (result.success) {
+      document.getElementById('accFirstName').value = firstName;
+      document.getElementById('accSurname').value = surname;
+      if (profile) Object.assign(profile, data);
       sessionStorage.setItem('user', JSON.stringify({ ...user, ...data }));
       document.getElementById('profileViewName').textContent = data.name || displayName;
       setEditing(false);
@@ -534,6 +540,7 @@
 
       showToast('Profile updated successfully.', 'success');
     } else {
+      console.error('Profile update failed:', result.error);
       showToast('Failed to update profile. Please try again.', 'error');
     }
 

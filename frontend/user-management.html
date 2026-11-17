@@ -91,7 +91,7 @@
 
           row.innerHTML = `
             <div>
-              <div class="user-name" style="font-weight:700">${u.name || (u.firstName + ' ' + u.surname) || 'User'}</div>
+              <div class="user-name" style="font-weight:700">${toTitleCaseName(u.name || [u.firstName, u.surname].filter(Boolean).join(' ') || '') || 'User'}</div>
               <div class="user-meta">${u.email} · Role: ${displayRole} · Status: ${u.status || 'active'}</div>
             </div>
             <div class="user-actions">
@@ -140,6 +140,15 @@
         if (r.success) { btn.textContent = 'Approved'; } else { btn.textContent = 'Failed'; btn.disabled = false; }
         await loadUsers();
       }
+    });
+
+    // Topbar search (wired in cms.js) filters the user list by name, email, role or status.
+    document.addEventListener('frontline:search', e => {
+      e.preventDefault();
+      const q = (e.detail?.query || '').toLocaleLowerCase();
+      document.querySelectorAll('#users-list .user-row').forEach(row => {
+        row.style.display = !q || row.textContent.toLocaleLowerCase().includes(q) ? '' : 'none';
+      });
     });
 
     loadUsers();

@@ -1,3 +1,5 @@
 .vercel
 frontend/oracleJdk-26/
 /h *
+CHANGES.md
+node_modules/

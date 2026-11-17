@@ -94,7 +94,9 @@ ul { list-style: none; }
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 299; }
 .sidebar-overlay.active { display: block; }
 
-.cms-main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+/* min-width:0 lets wide children (tab strips, tables) shrink or scroll inside the page
+   instead of stretching the whole page and causing horizontal scrolling. */
+.cms-main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
 
 /* ── Topbar ── */
 .cms-topbar {
@@ -220,6 +222,8 @@ ul { list-style: none; }
 .empty-state-title { font-size: 18px; font-weight: 700; color: var(--text-main); }
 .empty-state-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; }
 .empty-msg { text-align: center; padding: 60px 24px; font-size: 14px; color: var(--text-muted); }
+/* Empty state shown directly on the page background (no dashed or tinted box). */
+.empty-state.empty-state-plain { border: none; background: transparent; padding: 56px 24px; }
 
 /* ══════════════════════════════
    MEDIA
@@ -293,10 +297,44 @@ ul { list-style: none; }
 .form-input::placeholder, .form-textarea::placeholder { color: #bbb; }
 .form-select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
 
-.tags-wrap { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 7px 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 40px; background: #fff; }
-.section-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 12px; font-weight: 500; color: var(--text-sub); background: var(--bg-surface); }
-.tag-x { background: none; border: none; font-size: 14px; color: var(--text-muted); cursor: pointer; line-height: 1; padding: 0; margin-left: 2px; }
-.tag-x:hover { color: var(--red); }
+/* ── Section tags: gray pills inside the input, with suggestions directly below ── */
+.tags-field { position: relative; }
+.tags-wrap { position: relative; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 40px; background: #fff; cursor: text; transition: border-color 0.15s; }
+.tags-wrap:focus-within { border-color: var(--red); }
+.section-tag { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 6px 0 11px; border: none; border-radius: var(--radius-full); font-size: 12px; font-weight: 500; color: var(--text-main); background: #e9eaee; white-space: nowrap; max-width: 100%; }
+.section-tag-label { overflow: hidden; text-overflow: ellipsis; }
+.tag-x { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: none; border-radius: 50%; background: transparent; font-size: 14px; color: var(--text-muted); cursor: pointer; line-height: 1; padding: 0; }
+.tag-x:hover { color: var(--red); background: rgba(0,0,0,0.06); }
+.tag-input { flex: 1 1 90px; min-width: 90px; border: none; outline: none; font-size: 12.5px; font-family: var(--font); color: var(--text-main); background: transparent; padding: 3px 4px; height: 26px; }
+.tag-input::placeholder { color: #bbb; }
+.tag-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.10); max-height: 220px; overflow-y: auto; z-index: 50; padding: 4px; display: none; }
+.tag-suggestions.open { display: block; }
+.tag-suggestion { display: block; width: 100%; text-align: left; padding: 7px 10px; border: none; background: none; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-main); cursor: pointer; font-family: var(--font); }
+.tag-suggestion:hover, .tag-suggestion.is-active { background: var(--bg-surface); }
+.tag-suggestion-empty { padding: 8px 10px; font-size: 12.5px; color: var(--text-muted); }
+
+/* ── Fixed-size cutline ── */
+.form-textarea.cutline-input { resize: none; height: 84px; min-height: 84px; max-height: 84px; overflow-y: auto; border-radius: var(--radius-md); }
+
+/* ── Quill numeric font sizes ── */
+.ql-snow .ql-picker.ql-size { width: 72px; }
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before { content: attr(data-value) !important; }
+.ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item:not([data-value])::before { content: '15px' !important; }
+.ql-snow .ql-picker.ql-size .ql-picker-label { font-weight: 600; color: var(--text-main); }
+/* Unsized text uses the same 15px as the published article body (frontline.css .article-body). */
+.ql-editor { font-size: 15px; }
+
+/* ── Article preview modal ── */
+.preview-overlay { position: fixed; inset: 0; background: rgba(30,10,10,0.6); z-index: 700; display: flex; align-items: stretch; justify-content: center; padding: 24px; }
+.preview-overlay.hidden { display: none; }
+.preview-modal { background: #fff; border-radius: var(--radius-xl); width: 100%; max-width: 1100px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+.preview-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.preview-modal-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
+.preview-modal-note { font-size: 12px; color: var(--text-muted); }
+.preview-frame { flex: 1; width: 100%; border: 0; background: #fff; }
+@media (max-width: 768px) { .preview-overlay { padding: 0; } .preview-modal { border-radius: 0; } }
 
 .cover-upload-zone { border: 2px dashed #f0b8b8; border-radius: var(--radius-md); background: #fff5f5; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: background 0.15s; position: relative; overflow: hidden; }
 .cover-upload-zone:hover { background: #ffe8e8; }

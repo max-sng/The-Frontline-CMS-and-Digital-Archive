@@ -6,11 +6,13 @@
   <title>Correspondents – The Frontline CMS</title>
   <link rel="stylesheet" href="shared.css" />
   <style>
-    .section-tabs { display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;flex-wrap:nowrap;gap:0;overflow-x:auto;scrollbar-width:none; }
-    .section-tabs::-webkit-scrollbar { display:none; }
-    .section-tab { width:148px;height:38px;padding:0 10px;font-size:12.5px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-family:var(--font);flex:0 0 148px; }
-    .section-tab:hover { color:var(--text-main); }
-    .section-tab.active { color:var(--red);border-bottom-color:var(--red);font-weight:600; }
+    /* Compact pill tabs that wrap instead of forcing the page to scroll sideways. */
+    .section-tabs { display:flex;flex-wrap:wrap;gap:6px;padding-bottom:14px;margin-bottom:18px;border-bottom:1px solid var(--border); }
+    .section-tab { height:32px;padding:0 14px;min-width:64px;font-size:12.5px;font-weight:500;color:var(--text-sub);cursor:pointer;border:1px solid transparent;border-radius:var(--radius-full);background:transparent;transition:color 0.15s,background 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font);flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center; }
+    .section-tab:hover { color:var(--text-main);background:var(--bg-surface); }
+    .section-tab.active { color:#fff;background:var(--red);border-color:var(--red);font-weight:600; }
+    .section-tab:focus-visible { outline:2px solid var(--red);outline-offset:2px; }
+    #corrTable td { overflow:hidden;text-overflow:ellipsis; }
     .corr-avatar { width:34px;height:34px;border-radius:50%;background:var(--bg-dark2);display:flex;align-items:center;justify-content:center;color:#ccc;font-size:12px;font-weight:600;flex-shrink:0;overflow:hidden; }
     .corr-avatar img { width:100%;height:100%;object-fit:cover; }
     .corr-name { max-width:180px;font-size:13px;font-weight:600;color:var(--text-main);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
@@ -104,7 +106,7 @@
 
       <!-- Tabs -->
       <div class="section-tabs" id="sectionTabs">
-        <button class="section-tab active" data-section="All">All</button>
+        <button class="section-tab active" data-section="All" aria-pressed="true">All</button>
         <button class="section-tab" data-section="Editorial Board">Editorial Board</button>
         <button class="section-tab" data-section="News">News</button>
         <button class="section-tab" data-section="Opinion-Editorial">Opinion-Editorial</button>
@@ -202,6 +204,9 @@
   let page          = 1;
 
   const ini = n => (n || '?').split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[ch]);
+  const displayName = c => toTitleCaseName(c.name || [c.firstName, c.surname].filter(Boolean).join(' ') || '') || 'Unknown';
+  let searchQuery = '';
 
   async function loadUsers() {
     try {
@@ -214,9 +219,23 @@
   }
 
   function getFiltered() {
-    if (activeSection === 'All') return allUsers;
-    return allUsers.filter(u => u.section === activeSection);
+    const bySection = activeSection === 'All'
+      ? allUsers
+      : activeSection === 'Editorial Board'
+        ? allUsers.filter(u => u.role === 'editorial' || u.section === activeSection)
+        : allUsers.filter(u => u.section === activeSection);
+    if (!searchQuery) return bySection;
+    return bySection.filter(u => [displayName(u), u.email, u.section, u.role]
+      .some(value => String(value || '').toLocaleLowerCase().includes(searchQuery)));
   }
+
+  // Topbar search (wired in cms.js) filters by name, email, section or role.
+  document.addEventListener('frontline:search', e => {
+    e.preventDefault();
+    searchQuery = (e.detail?.query || '').toLocaleLowerCase();
+    page = 1;
+    render();
+  });
 
   function render() {
     const data  = getFiltered();
@@ -226,30 +245,30 @@
 
     document.getElementById('corrTableBody').innerHTML = slice.length
       ? slice.map(c => {
-          const name      = c.name || `${c.firstName||''} ${c.surname||''}`.trim() || 'Unknown';
+          const name      = displayName(c);
           const isPending = c.status === 'pending';
           return `
             <tr>
               <td data-label="User">
                 <div class="user-cell">
-                  <div class="corr-avatar">${ini(name)}</div>
-                  <div>
-                    <div class="corr-name">${name}</div>
-                    <div class="corr-role">${c.section || '—'}</div>
+                  <div class="corr-avatar">${c.photoURL ? `<img src="${escapeHtml(c.photoURL)}" alt="" />` : escapeHtml(ini(name))}</div>
+                  <div style="min-width:0">
+                    <div class="corr-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                    <div class="corr-role">${escapeHtml(c.section || '—')}</div>
                   </div>
                 </div>
               </td>
-              <td data-label="Section">${c.section || '—'}</td>
-              <td data-label="Email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.email||'—'}</td>
+              <td data-label="Section">${escapeHtml(c.section || '—')}</td>
+              <td data-label="Email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.email || '')}">${escapeHtml(c.email||'—')}</td>
               <td>
                 <div class="options-cell">
-                  <button class="edit-btn" onclick="viewProfile('${c.id}')">View</button>
-                  ${isPending ? `<button class="btn btn-red btn-sm" onclick="approveUser('${c.id}')">Approve</button>` : ''}
+                  <button class="edit-btn" type="button" data-view-id="${escapeHtml(c.id)}">View</button>
+                  ${isPending ? `<button class="btn btn-red btn-sm" type="button" data-approve-id="${escapeHtml(c.id)}">Approve</button>` : ''}
                 </div>
               </td>
             </tr>`;
         }).join('')
-      : `<tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13.5px;">No correspondents found in this section.</td></tr>`;
+      : `<tr><td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13.5px;">${searchQuery ? 'No correspondents match your search.' : 'No correspondents found in this section.'}</td></tr>`;
 
     const pag = document.getElementById('pagination');
     if (total <= 1) { pag.innerHTML = ''; return; }
@@ -260,7 +279,14 @@
   }
 
   window.goPage      = n  => { page = n; render(); };
-  window.viewProfile = id => { window.location.href = `correspondent-profile-public.html?id=${id}`; };
+  // The profile page reads ?uid= (it previously received ?id=, so every profile showed "not found").
+  window.viewProfile = id => { window.location.href = `correspondent-profile-public.html?uid=${encodeURIComponent(id)}`; };
+  document.getElementById('corrTableBody').addEventListener('click', e => {
+    const view = e.target.closest('[data-view-id]');
+    if (view) return window.viewProfile(view.dataset.viewId);
+    const approve = e.target.closest('[data-approve-id]');
+    if (approve) window.approveUser(approve.dataset.approveId);
+  });
   window.approveUser = async id => {
     if (!confirm('Approve this editorial account?')) return;
     const result = await approveEditorial(id);
@@ -271,8 +297,9 @@
   document.getElementById('sectionTabs').addEventListener('click', e => {
     const btn = e.target.closest('.section-tab');
     if (!btn) return;
-    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-pressed', 'false'); });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
     activeSection = btn.dataset.section;
     page = 1;
     render();
@@ -290,8 +317,8 @@
 
   document.getElementById('submitBtn').addEventListener('click', async () => {
     clearAlerts();
-    const firstName = document.getElementById('fieldFirstName').value.trim();
-    const surname   = document.getElementById('fieldSurname').value.trim();
+    const firstName = toTitleCaseName(document.getElementById('fieldFirstName').value);
+    const surname   = toTitleCaseName(document.getElementById('fieldSurname').value);
     const email     = document.getElementById('fieldEmail').value.trim();
     const sec       = document.getElementById('fieldSection').value;
 
@@ -300,7 +327,7 @@
       document.getElementById('alertError').classList.add('show');
       return;
     }
-    if (allUsers.some(u => u.email===email)) {
+    if (allUsers.some(u => (u.email || '').toLowerCase() === email.toLowerCase())) {
       document.getElementById('alertErrorMsg').textContent = 'This email is already registered.';
       document.getElementById('alertError').classList.add('show');
       return;

@@ -32,5 +32,9 @@ production domain. Firestore access rules are in
 firebase deploy --only firestore:rules
 ```
 
-Image uploads use Firebase Storage unless an ImgBB API key is configured in
-`backend/firebase/imgbb.js`.
+Image uploads (Media page, cover photos, profile photos) use ImgBB when an API
+key is set in `backend/firebase/imgbb.js`; otherwise they fall back to Firebase
+Storage. To use ImgBB, create a free key at https://api.imgbb.com/ and replace
+`YOUR_IMGBB_API_KEY`. To use Firebase Storage instead, enable Storage in the
+Firebase console (new buckets require the Blaze plan). Uploaded image details
+are saved to the Firestore `media` collection.
