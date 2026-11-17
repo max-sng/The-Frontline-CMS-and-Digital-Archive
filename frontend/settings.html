@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings – The Frontline CMS</title>
-  <link rel="stylesheet" href="shared.css" />
+  <link rel="stylesheet" href="shared.css">
   <style>
     .settings-tabs { display:none; }
     .settings-tab { padding:8px 16px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap;font-family:var(--font); }
@@ -77,11 +77,10 @@
 <body>
 <div class="cms-wrapper">
 
-  <!-- ══ SIDEBAR ══ -->
   <aside class="cms-sidebar" id="sidebar">
     <div class="sidebar-logo">
       <img src="assets/forefront-white.png" alt="The Frontline"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="logo-fallback">The Frontline</span>
     </div>
     <nav class="sidebar-nav">
@@ -103,7 +102,6 @@
   </aside>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- ══ MAIN ══ -->
   <div class="cms-main">
     <header class="cms-topbar">
       <button class="topbar-hamburger" id="hamburger" aria-label="Menu">
@@ -111,7 +109,7 @@
       </button>
       <div class="search-wrap">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-        <input type="text" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" />
+        <input type="text" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
       </div>
       <div class="topbar-user">
         <div class="user-text">
@@ -127,7 +125,6 @@
     <main class="cms-content">
       <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
 
-      <!-- ══ GENERAL ══ -->
       <div class="tab-panel" id="panel-general" hidden>
         <h2 class="settings-section-title">General</h2>
         <div class="setting-row">
@@ -152,22 +149,21 @@
             <div class="setting-desc">Allow students to view published articles</div>
           </div>
           <label class="toggle toggle-wrap">
-            <input type="checkbox" id="public-article-access" checked />
+            <input type="checkbox" id="public-article-access" checked>
             <span class="toggle-track"></span>
             <span class="toggle-thumb"></span>
           </label>
         </div>
       </div>
 
-      <!-- ══ ACCOUNT ══ -->
       <div class="tab-panel" id="panel-account">
         <h2 class="settings-section-title">Account</h2>
         <div class="avatar-row">
           <div class="avatar-left">
-            <input type="file" id="photoInput" accept="image/jpeg,image/png" style="display:none" />
+            <input type="file" id="photoInput" accept="image/jpeg,image/png" style="display:none">
             <div class="account-avatar" id="accountAvatar">
               <img id="avatarPreview" src="" alt=""
-                   style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:50%;" />
+                   style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:50%;">
               <svg id="avatarIcon" width="28" height="28" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
               </svg>
@@ -179,12 +175,10 @@
                 </svg>
               </div>
             </div>
-            <!-- View mode: name + role -->
             <div id="profileInfoView" class="profile-info-view">
               <div class="profile-view-name" id="profileViewName"></div>
               <div class="profile-view-role" id="profileViewRole"></div>
             </div>
-            <!-- Edit mode: upload controls -->
             <div id="profileUploadEdit" class="profile-upload-edit" style="display:none;">
               <a class="upload-link" href="#"
                  onclick="event.preventDefault();document.getElementById('photoInput').click()">Upload new photo</a>
@@ -199,31 +193,31 @@
         <div class="form-row-2">
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">First name</label>
-            <input type="text" class="form-input" id="accFirstName" readonly placeholder="Enter first name" />
+            <input type="text" class="form-input" id="accFirstName" readonly placeholder="Enter first name">
           </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Surname</label>
-            <input type="text" class="form-input" id="accSurname" readonly placeholder="Enter surname" />
+            <input type="text" class="form-input" id="accSurname" readonly placeholder="Enter surname">
           </div>
         </div>
         <div class="form-row-1">
           <label class="form-label">Email address</label>
-          <input type="email" class="form-input input-email" id="accEmail" readonly placeholder="email@gordoncollege.edu.ph" />
+          <input type="email" class="form-input input-email" id="accEmail" readonly placeholder="email@gordoncollege.edu.ph">
           <div class="field-hint">Used for login and notifications</div>
         </div>
         <div class="form-row-2 row-program">
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Program</label>
-            <input type="text" class="form-input" id="accProgram" readonly placeholder="Enter program" />
+            <input type="text" class="form-input" id="accProgram" readonly placeholder="Enter program">
           </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Section</label>
-            <input type="text" class="form-input" id="accSection" readonly placeholder="Enter section" />
+            <input type="text" class="form-input" id="accSection" readonly placeholder="Enter section">
           </div>
         </div>
         <div class="form-row-1" style="margin-top:14px">
           <label class="form-label">Academic year joined</label>
-          <input type="text" class="form-input" id="accYear" readonly placeholder="e.g. 2022–2023" style="max-width:220px" />
+          <input type="text" class="form-input" id="accYear" readonly placeholder="e.g. 2022–2023" style="max-width:220px">
           <div class="field-hint">Academic year you first joined the publication</div>
         </div>
 
@@ -233,7 +227,6 @@
         </div>
       </div>
 
-      <!-- ══ SECURITY ══ -->
       <div class="tab-panel" id="panel-security">
         <h2 class="settings-section-title">Security</h2>
         <div class="section-label" style="margin-bottom:16px">Login &amp; Password</div>
@@ -253,7 +246,6 @@
         </div>
       </div>
 
-      <!-- ══ NOTIFICATIONS ══ -->
       <div class="tab-panel" id="panel-notifications">
         <h2 class="settings-section-title">Notifications</h2>
         <div class="setting-row">
@@ -261,21 +253,21 @@
             <div class="setting-label">Article published</div>
             <div class="setting-desc">When one of your articles gets published</div>
           </div>
-          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-published" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-published" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
         </div>
         <div class="setting-row">
           <div>
             <div class="setting-label">Article returned for revision</div>
             <div class="setting-desc">When an editor sends your draft back with feedback</div>
           </div>
-          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-revision" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-revision" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
         </div>
         <div class="setting-row">
           <div>
             <div class="setting-label">New article assigned</div>
             <div class="setting-desc">When the editor assigns you a new piece to write</div>
           </div>
-          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-assigned" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          <label class="toggle toggle-wrap"><input type="checkbox" id="notification-assigned" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
         </div>
       </div>
 
@@ -283,7 +275,6 @@
   </div>
 </div>
 
-<!-- ══ EDIT FIELD MODAL ══ -->
 <div class="modal-overlay" id="editModal">
   <div class="modal-box">
     <div class="modal-header">
@@ -292,7 +283,7 @@
     </div>
     <div class="form-group">
       <label class="form-label" id="editModalLabel">Value</label>
-      <input type="text" class="form-input" id="editModalInput" />
+      <input type="text" class="form-input" id="editModalInput">
     </div>
     <div class="modal-footer-btns">
       <button class="btn btn-outline" onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button>
@@ -301,7 +292,6 @@
   </div>
 </div>
 
-<!-- ══ CHANGE PASSWORD MODAL ══ -->
 <div class="modal-overlay" id="pwModal">
   <div class="modal-box">
     <div class="modal-header">
@@ -311,11 +301,11 @@
     <div class="pw-alert" id="pwAlert"></div>
     <div class="form-group">
       <label class="form-label">New password</label>
-      <input type="password" class="form-input" id="pwNew" placeholder="At least 8 characters" />
+      <input type="password" class="form-input" id="pwNew" placeholder="At least 8 characters">
     </div>
     <div class="form-group">
       <label class="form-label">Confirm new password</label>
-      <input type="password" class="form-input" id="pwConfirm" placeholder="Repeat new password" />
+      <input type="password" class="form-input" id="pwConfirm" placeholder="Repeat new password">
     </div>
     <div class="modal-footer-btns">
       <button class="btn btn-outline" onclick="document.getElementById('pwModal').classList.remove('open')">Cancel</button>
@@ -361,7 +351,7 @@
 
   if (user.photoURL) {
     document.getElementById('topbar-avatar').innerHTML =
-      `<img src="${user.photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+      `<img src="${user.photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;">`;
   }
 
   // ── Load profile from Firestore ──
@@ -386,7 +376,7 @@
       prev.style.display = 'block';
       document.getElementById('avatarIcon').style.display = 'none';
       document.getElementById('topbar-avatar').innerHTML =
-        `<img src="${profile.photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+        `<img src="${profile.photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;">`;
     }
   }
 
@@ -476,7 +466,7 @@
       document.getElementById('avatarPreview').style.display = 'block';
       document.getElementById('avatarIcon').style.display   = 'none';
       document.getElementById('topbar-avatar').innerHTML =
-        `<img src="${currentPhotoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+        `<img src="${currentPhotoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;">`;
     } else {
       document.getElementById('avatarPreview').style.display = 'none';
       document.getElementById('avatarIcon').style.display    = '';
@@ -535,7 +525,7 @@
         prev.style.display = 'block';
         document.getElementById('avatarIcon').style.display = 'none';
         document.getElementById('topbar-avatar').innerHTML =
-          `<img src="${photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+          `<img src="${photoURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;">`;
       }
 
       showToast('Profile updated successfully.', 'success');
@@ -648,7 +638,7 @@
       document.getElementById('avatarIcon').style.display = 'none';
       // Live-preview the new photo in the topbar corner immediately
       document.getElementById('topbar-avatar').innerHTML =
-        `<img src="${dataURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;" />`;
+        `<img src="${dataURL}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;">`;
     };
     reader.readAsDataURL(file);
   });

@@ -1,19 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Archive — The Frontline CMS</title>
-  <link rel="stylesheet" href="shared.css" />
+  <link rel="stylesheet" href="shared.css">
 </head>
 <body>
 <div class="cms-wrapper">
 
-  <!-- ══ SIDEBAR ══ -->
   <aside class="cms-sidebar" id="sidebar">
     <div class="sidebar-logo">
       <img src="assets/forefront-white.png" alt="The Frontline"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="logo-fallback">The Frontline</span>
     </div>
     <nav class="sidebar-nav">
@@ -41,7 +40,6 @@
   </aside>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- ══ MAIN ══ -->
   <div class="cms-main">
     <header class="cms-topbar">
       <button class="topbar-hamburger" id="hamburger" aria-label="Menu">
@@ -49,7 +47,7 @@
       </button>
       <div class="search-wrap">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-        <input type="text" id="topbar-search" placeholder="Search" />
+        <input type="text" id="topbar-search" placeholder="Search">
       </div>
       <div class="topbar-user">
         <div class="user-text">
@@ -66,7 +64,7 @@
       <h1 class="page-title">Archive</h1>
       <div class="media-search" style="margin:12px 0 20px;width:min(340px,100%);">
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-        <input type="search" id="archive-search" name="archive-search" placeholder="Search archive..." aria-label="Search archive" autocomplete="off" />
+        <input type="search" id="archive-search" name="archive-search" placeholder="Search archive..." aria-label="Search archive" autocomplete="off">
       </div>
       <div id="archive-content"></div>
     </main>
@@ -158,7 +156,7 @@
   document.getElementById('topbar-username').textContent = user.name || user.firstName || 'User';
   document.getElementById('topbar-role').textContent = user.role === 'adviser' ? 'Adviser' : user.role === 'editorial' ? 'Editorial Board' : 'Correspondent';
   if (user.photoURL) {
-    document.getElementById('topbar-avatar').innerHTML = '<img src="' + user.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />';
+    document.getElementById('topbar-avatar').innerHTML = '<img src="' + user.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
   }
   window.__frontlineLogout = logoutUser;
 </script>

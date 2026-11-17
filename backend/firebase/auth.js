@@ -13,11 +13,25 @@ import {
 
 import {
   doc, setDoc, getDoc, serverTimestamp,
-  collection, query, where, getDocs, updateDoc
+  collection, query, where, getDocs, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { auth, db } from "./firebase-config.js";
 import { createNotification, logAuditEntry, getUsersByRole, toTitleCaseName } from "./firestore.js";
+
+// Remove the "invited" placeholder that an adviser created for this email, so the
+// correspondent does not appear twice. Failures are logged and do not block registration.
+async function removeInvitedDuplicates(normalizedEmail, uid) {
+  try {
+    const snap = await getDocs(query(collection(db, 'users'), where('status', '==', 'invited')));
+    const matches = snap.docs.filter(d => d.id !== uid && String(d.data().email || '').toLowerCase() === normalizedEmail);
+    for (const placeholder of matches) {
+      await deleteDoc(placeholder.ref);
+    }
+  } catch (error) {
+    console.error('Could not remove the invited placeholder record:', error);
+  }
+}
 
 // ── REGISTER ──────────────────────────────────────────────
 export async function registerUser({ firstName, surname, email, password, role, section }) {
@@ -65,6 +79,7 @@ export async function registerUser({ firstName, surname, email, password, role, 
       status: isEditorialSignup ? 'pending' : 'active',
       createdAt: serverTimestamp()
     });
+    await removeInvitedDuplicates(normalizedEmail, uid);
   } catch (error) {
     console.error('Account authentication succeeded but the user profile could not be saved:', error);
     return {

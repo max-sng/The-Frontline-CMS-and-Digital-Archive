@@ -44,9 +44,12 @@ service cloud.firestore {
             && request.resource.data.notificationPreferences.articleReturned is bool
             && request.resource.data.notificationPreferences.articleAssigned is bool))
       );
-      allow delete: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+      allow delete: if request.auth != null && (
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active')
+        // A new account may remove the invited placeholder that was created for the same email.
+        || (resource.data.status == 'invited' && resource.data.email == request.auth.token.email)
+      );
     }
 
     // Articles collection

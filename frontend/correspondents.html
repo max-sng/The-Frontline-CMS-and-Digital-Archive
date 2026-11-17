@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Correspondents – The Frontline CMS</title>
-  <link rel="stylesheet" href="shared.css" />
+  <link rel="stylesheet" href="shared.css">
   <style>
     /* Compact pill tabs that wrap instead of forcing the page to scroll sideways. */
     .section-tabs { display:flex;flex-wrap:wrap;gap:6px;padding-bottom:14px;margin-bottom:18px;border-bottom:1px solid var(--border); }
@@ -43,11 +43,10 @@
 <body>
 <div class="cms-wrapper">
 
-  <!-- ══ SIDEBAR ══ -->
   <aside class="cms-sidebar" id="sidebar">
     <div class="sidebar-logo">
       <img src="assets/forefront-white.png" alt="The Frontline"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="logo-fallback">The Frontline</span>
     </div>
     <nav class="sidebar-nav">
@@ -75,7 +74,6 @@
   </aside>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- ══ MAIN ══ -->
   <div class="cms-main">
     <header class="cms-topbar">
       <button class="topbar-hamburger" id="hamburger" aria-label="Menu">
@@ -83,7 +81,7 @@
       </button>
       <div class="search-wrap">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-        <input type="text" id="topbar-search" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" />
+        <input type="text" id="topbar-search" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
       </div>
       <div class="topbar-user">
         <div class="user-text">
@@ -104,7 +102,6 @@
         </button>
       </div>
 
-      <!-- Tabs -->
       <div class="section-tabs" id="sectionTabs">
         <button class="section-tab active" data-section="All" aria-pressed="true">All</button>
         <button class="section-tab" data-section="Editorial Board">Editorial Board</button>
@@ -119,7 +116,6 @@
         <button class="section-tab" data-section="Broadcasting">Broadcasting</button>
       </div>
 
-      <!-- Table — 4 columns only: User, Section, Email, View -->
       <table class="articles-table" id="corrTable" style="table-layout:fixed;width:100%">
         <thead>
           <tr>
@@ -139,7 +135,6 @@
   </div>
 </div>
 
-<!-- ══ ADD CORRESPONDENT MODAL ══ -->
 <div class="modal-overlay" id="addModal">
   <div class="modal-box">
     <div class="modal-header">
@@ -155,16 +150,16 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">First name</label>
-        <input type="text" class="form-input" id="fieldFirstName" placeholder="e.g. Alyssa Marie" />
+        <input type="text" class="form-input" id="fieldFirstName" placeholder="e.g. Alyssa Marie">
       </div>
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">Surname</label>
-        <input type="text" class="form-input" id="fieldSurname" placeholder="e.g. Alcantara" />
+        <input type="text" class="form-input" id="fieldSurname" placeholder="e.g. Alcantara">
       </div>
     </div>
     <div class="form-group" style="margin-top:16px">
       <label class="form-label">Email address</label>
-      <input type="email" class="form-input" id="fieldEmail" placeholder="e.g. 202612345@gordoncollege.edu.ph" />
+      <input type="email" class="form-input" id="fieldEmail" placeholder="e.g. 202612345@gordoncollege.edu.ph">
     </div>
     <div class="form-group" style="margin-top:16px">
       <label class="form-label">Section</label>
@@ -194,7 +189,7 @@
   document.getElementById('topbar-role').textContent = user.role === 'adviser' ? 'Adviser' : 'Editorial Board';
   if (user.photoURL) {
     document.getElementById('topbar-avatar').innerHTML =
-      `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+      `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
   }
   window.__frontlineLogout = logoutUser;
 
@@ -251,7 +246,7 @@
             <tr>
               <td data-label="User">
                 <div class="user-cell">
-                  <div class="corr-avatar">${c.photoURL ? `<img src="${escapeHtml(c.photoURL)}" alt="" />` : escapeHtml(ini(name))}</div>
+                  <div class="corr-avatar">${c.photoURL ? `<img src="${escapeHtml(c.photoURL)}" alt="">` : escapeHtml(ini(name))}</div>
                   <div style="min-width:0">
                     <div class="corr-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
                     <div class="corr-role">${escapeHtml(c.section || '—')}</div>
@@ -342,7 +337,7 @@
       const { db } = await import('../backend/firebase/firebase-config.js');
       await addDoc(collection(db, 'users'), {
         firstName, surname, name:`${firstName} ${surname}`,
-        email, section:sec, role:'correspondent', status:'invited', createdAt:serverTimestamp()
+        email: email.toLowerCase(), section:sec, role:'correspondent', status:'invited', createdAt:serverTimestamp()
       });
       document.getElementById('alertSuccessMsg').textContent = `"${firstName} ${surname}" added. They can register using ${email}.`;
       document.getElementById('alertSuccess').classList.add('show');

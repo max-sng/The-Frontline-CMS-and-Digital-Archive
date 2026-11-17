@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Article – The Frontline</title>
-  <link rel="stylesheet" href="frontline.css"/>
-  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css"/>
-  <meta name="description" content="Read a featured story from The Frontline, the official student publication portal." id="metaDescription" />
-  <link rel="canonical" id="canonicalLink" href="" />
+  <link rel="stylesheet" href="frontline.css">
+  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
+  <meta name="description" content="Read a featured story from The Frontline, the official student publication portal." id="metaDescription">
+  <link rel="canonical" id="canonicalLink" href="">
   <style>
     .comments-section { margin-top: 48px; padding: 24px; background:#fff; border-radius:10px; box-shadow:0 12px 24px rgba(0,0,0,.04); }
     .comments-title, .related-title { margin-bottom: 18px; color:#151515; }
@@ -24,11 +24,10 @@
 </head>
 <body>
 
-  <!-- ══ TOPBAR ══ -->
   <header class="site-header">
     <div class="header-brand">
       <img src="assets/forefront-black.png" alt="The Frontline" class="brand-logo"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
     </div>
     <nav class="site-nav">
@@ -61,12 +60,11 @@
     </nav>
   </header>
 
-  <!-- ══ POPUP MENU ══ -->
   <div class="popup-overlay" id="popupOverlay" onclick="closeMenu()"></div>
   <div class="popup-menu" id="popupMenu">
     <div class="popup-head">
       <img src="assets/forefront-black.png" alt="The Frontline" class="popup-logo"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="popup-logo-fallback">The <span>F</span>rontline</span>
       <button class="popup-close" id="popupClose" aria-label="Close menu">&#10005;</button>
     </div>
@@ -93,20 +91,17 @@
     </div>
   </div>
 
-  <!-- ══ ARTICLE CONTENT ══ -->
   <main class="article-main">
     <div class="article-wrap" id="article-wrap">
-      <!-- Loaded by Firebase -->
       <div style="text-align:center;padding:80px 24px;color:#999;">Loading article...</div>
     </div>
   </main>
 
-  <!-- ══ FOOTER ══ -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
         <img src="assets/forefront-white.png" alt="The Frontline" class="footer-logo"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
         <span class="footer-logo-fallback">The <span>F</span>rontline</span>
         <p class="footer-tagline">The Official Digital News Portal of The Frontline</p>
       </div>
@@ -293,7 +288,7 @@
           <div class="article-meta">
             <div class="meta-avatar">
               ${article.authorPhoto
-                ? `<img src="${article.authorPhoto}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />`
+                ? `<img src="${article.authorPhoto}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`
                 : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2e1a0a,#4a2e1a);"></div>`
               }
             </div>
@@ -307,7 +302,7 @@
           </div>
           ${article.coverPhoto
             ? `<figure class="article-figure">
-                <img src="${article.coverPhoto}" alt="${escapeHtml(article.title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;" />
+                <img src="${article.coverPhoto}" alt="${escapeHtml(article.title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;">
                 ${article.cutline ? `<figcaption style="font-size:12px;color:#888;margin-top:8px;text-align:center;">${escapeHtml(article.cutline)}</figcaption>` : ''}
                </figure>`
             : `<figure class="article-figure">
@@ -325,12 +320,12 @@
               <div class="comment-form-row">
                 <div class="comment-field">
                   <label>Name <span class="required">*</span></label>
-                  <input type="text" required placeholder="Your name" />
+                  <input type="text" required placeholder="Your name">
                 </div>
               </div>
               <div class="comment-field">
                 <label>Email <span class="req-hint">(will not be shown)</span></label>
-                <input type="email" placeholder="your@email.com" />
+                <input type="email" placeholder="your@email.com">
               </div>
               <div class="comment-field">
                 <label>Comment <span class="required">*</span></label>
@@ -365,7 +360,7 @@
             relGrid.innerHTML = related.map((a, i) => `
               <a href="article-view.html?id=${a.id}" class="card">
                 ${a.coverPhoto
-                  ? `<img src="${a.coverPhoto}" alt="${escapeHtml(a.title)}" class="card-img" style="object-fit:cover;aspect-ratio:16/10;width:100%;display:block;" />`
+                  ? `<img src="${a.coverPhoto}" alt="${escapeHtml(a.title)}" class="card-img" style="object-fit:cover;aspect-ratio:16/10;width:100%;display:block;">`
                   : `<div class="card-img" style="background:${grads[i]};aspect-ratio:16/10;"></div>`
                 }
                 <div class="card-body">

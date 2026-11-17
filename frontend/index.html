@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Frontline</title>
-  <link rel="stylesheet" href="frontline.css"/>
+  <link rel="stylesheet" href="frontline.css">
   <style>
     .nav-search {
       display: flex;
@@ -76,11 +76,10 @@
 </head>
 <body>
 
-  <!-- ══ TOPBAR ══ -->
   <header class="site-header">
     <a class="header-brand" href="index.html" aria-label="Go to The Frontline homepage">
       <img src="assets/forefront-black.png" alt="The Frontline" class="brand-logo"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
     </a>
     <nav class="site-nav">
@@ -105,7 +104,7 @@
           <li><a href="index.html?section=Comics">Comics</a></li>
         </ul>
         <div class="nav-search" id="navSearch">
-          <input id="homeSearch" type="search" placeholder="Search articles..." aria-label="Search articles" />
+          <input id="homeSearch" type="search" placeholder="Search articles..." aria-label="Search articles">
         </div>
         <button class="search-btn" aria-label="Search" type="button">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -116,12 +115,11 @@
     </nav>
   </header>
 
-  <!-- ══ POPUP MENU ══ -->
   <div class="popup-overlay" id="popupOverlay" onclick="closeMenu()"></div>
   <div class="popup-menu" id="popupMenu">
     <div class="popup-head">
       <img src="assets/forefront-black.png" alt="The Frontline" class="popup-logo"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="popup-logo-fallback">The <span>F</span>rontline</span>
       <button class="popup-close" id="popupClose" aria-label="Close menu">&#10005;</button>
     </div>
@@ -155,9 +153,7 @@
   <main class="site-main">
     <div class="home-layout">
 
-      <!-- Left: Hero + Grid -->
       <div class="home-left">
-        <!-- Hero — first published article -->
         <div class="hero-card" id="heroCard" hidden>
           <div class="hero-img" style="width:100%;aspect-ratio:16/9;display:block;"></div>
           <div class="hero-overlay">
@@ -167,11 +163,9 @@
           </div>
         </div>
 
-        <!-- Article grid -->
         <div class="article-grid" id="articleGrid"></div>
       </div>
 
-      <!-- Right: Latest -->
       <aside class="home-right">
         <div class="latest-label">Latest</div>
         <div id="latestList"></div>
@@ -179,12 +173,11 @@
     </div>
   </main>
 
-  <!-- ══ FOOTER ══ -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
         <img src="assets/forefront-white.png" alt="The Frontline" class="footer-logo"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
         <span class="footer-logo-fallback">The <span>F</span>rontline</span>
         <p class="footer-tagline">The Official Digital News Portal of The Frontline</p>
       </div>
@@ -295,7 +288,7 @@
 
   function imgOrGrad(article, i) {
     return article.coverPhoto
-      ? `<img src="${article.coverPhoto}" alt="${article.title}" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;" />`
+      ? `<img src="${article.coverPhoto}" alt="${article.title}" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;">`
       : `<div style="background:${fallbackGrads[i % fallbackGrads.length]};aspect-ratio:16/10;"></div>`;
   }
 
@@ -342,7 +335,7 @@
     const heroImg = document.querySelector('.hero-img');
     if (hero.coverPhoto) {
       heroImg.style.background = 'none';
-      heroImg.innerHTML = `<img src="${hero.coverPhoto}" alt="${hero.title}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;" />`;
+      heroImg.innerHTML = `<img src="${hero.coverPhoto}" alt="${hero.title}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">`;
     } else {
       heroImg.style.background = fallbackGrads[0];
       heroImg.innerHTML = '';
@@ -369,7 +362,7 @@
     document.getElementById('latestList').innerHTML = latestArticles.map((a, i) => `
       <a href="article-view.html?id=${a.id}" class="latest-item">
         ${a.coverPhoto
-          ? `<img src="${a.coverPhoto}" alt="${a.title}" style="width:64px;height:48px;object-fit:cover;border-radius:3px;flex-shrink:0;" />`
+          ? `<img src="${a.coverPhoto}" alt="${a.title}" style="width:64px;height:48px;object-fit:cover;border-radius:3px;flex-shrink:0;">`
           : `<div style="background:${fallbackGrads[i % fallbackGrads.length]};width:64px;height:48px;border-radius:3px;flex-shrink:0;"></div>`
         }
         <div class="latest-info">

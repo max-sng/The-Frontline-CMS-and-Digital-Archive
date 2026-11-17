@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Articles — The Frontline CMS</title>
-  <link rel="stylesheet" href="shared.css" />
+  <link rel="stylesheet" href="shared.css">
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <style>
     .modal-overlay { position:fixed;inset:0;background:rgba(30,10,10,0.6);z-index:500;display:flex;align-items:stretch;justify-content:stretch;padding:0;overflow:hidden; }
@@ -132,11 +132,10 @@
 <body>
 <div class="cms-wrapper">
 
-  <!-- ══ SIDEBAR ══ -->
   <aside class="cms-sidebar" id="sidebar">
     <div class="sidebar-logo">
       <img src="assets/forefront-white.png" alt="The Frontline"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="logo-fallback">The Frontline</span>
     </div>
     <nav class="sidebar-nav">
@@ -170,7 +169,6 @@
   </aside>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- ══ MAIN ══ -->
   <div class="cms-main">
     <header class="cms-topbar">
       <button class="topbar-hamburger" id="hamburger" aria-label="Menu">
@@ -178,7 +176,7 @@
       </button>
       <div class="search-wrap">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-        <input type="text" id="topbar-search" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" />
+        <input type="text" id="topbar-search" placeholder="Search" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
       </div>
       <div class="topbar-user">
         <div class="user-text">
@@ -199,7 +197,7 @@
       <div class="articles-toolbar">
         <div class="media-search">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-          <input type="search" id="articles-search" name="articles-search" placeholder="Search articles..." aria-label="Search articles" autocomplete="off" />
+          <input type="search" id="articles-search" name="articles-search" placeholder="Search articles..." aria-label="Search articles" autocomplete="off">
         </div>
       </div>
       <p id="article-editor-load-error" role="alert" style="display:none;color:var(--red);margin:-10px 0 16px;">
@@ -250,7 +248,6 @@
   </div>
 </div>
 
-<!-- ══ ARTICLE EDITOR MODAL ══ -->
 <div class="modal-overlay hidden" id="editor-overlay">
   <div class="editor-modal">
     <div class="editor-modal-header">
@@ -266,7 +263,7 @@
       <div>
         <div class="form-group">
           <label class="form-label">Article Title</label>
-          <input type="text" class="form-input" id="article-title" placeholder="Enter headline here..." />
+          <input type="text" class="form-input" id="article-title" placeholder="Enter headline here...">
         </div>
         <div class="form-group">
           <label class="form-label">Article Content</label>
@@ -337,7 +334,7 @@
               <input class="tag-input" id="tag-input" name="section-tag-search" type="text"
                      placeholder="Select sections..." autocomplete="off" autocorrect="off"
                      autocapitalize="off" spellcheck="false" role="combobox"
-                     aria-autocomplete="list" aria-expanded="false" aria-controls="tag-suggestions" />
+                     aria-autocomplete="list" aria-expanded="false" aria-controls="tag-suggestions">
             </div>
             <div class="tag-suggestions" id="tag-suggestions" role="listbox"></div>
           </div>
@@ -345,27 +342,27 @@
         <div id="editorial-fields">
           <div class="form-group">
             <label class="form-label">Writer</label>
-            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on" />
+            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Artist</label>
-            <input type="text" class="form-input" id="artist-name" spellcheck="true" autocorrect="on" />
+            <input type="text" class="form-input" id="artist-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Photojournalist</label>
-            <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on" />
+            <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Writer</label>
-            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on" />
+            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Artist</label>
-            <input type="text" class="form-input" id="artist-name" spellcheck="true" autocorrect="on" />
+            <input type="text" class="form-input" id="artist-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Photojournalist</label>
-            <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on" />
+            <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Assign to Correspondent</label>
@@ -377,32 +374,32 @@
             <label class="form-label">Due Date</label>
             <input type="text" class="form-input" id="due-date" placeholder="dd/mm/yyyy"
                    onfocus="if(this.type==='text'){this.type='date'}"
-                   onblur="if(!this.value){this.type='text'}" />
+                   onblur="if(!this.value){this.type='text'}">
           </div>
         </div>
         <div id="correspondent-fields" style="display:none;">
           <div class="form-group">
             <label class="form-label">Writer</label>
-            <input type="text" class="form-input" id="writer-name" spellcheck="true" autocorrect="on" />
+            <input type="text" class="form-input" id="writer-name" spellcheck="true" autocorrect="on">
           </div>
           <div class="form-group">
             <label class="form-label">Due Date</label>
             <input type="text" class="form-input" id="corr-due-date" placeholder="dd/mm/yyyy"
                    onfocus="if(this.type==='text'){this.type='date'}"
-                   onblur="if(!this.value){this.type='text'}" />
+                   onblur="if(!this.value){this.type='text'}">
           </div>
         </div>
         <div id="review-dates" style="display:none;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="form-group">
-            <div><label class="form-label">Due Date</label><input type="text" class="form-input" id="review-due" readonly /></div>
-            <div><label class="form-label">Submitted</label><input type="text" class="form-input" id="review-submitted" readonly /></div>
+            <div><label class="form-label">Due Date</label><input type="text" class="form-input" id="review-due" readonly></div>
+            <div><label class="form-label">Submitted</label><input type="text" class="form-input" id="review-submitted" readonly></div>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Cover Photo</label>
           <label class="cover-upload-zone" id="cover-zone">
-            <input type="file" accept="image/*" id="cover-file-input" />
-            <img id="cover-preview" class="cover-preview-img" alt="" />
+            <input type="file" accept="image/*" id="cover-file-input">
+            <img id="cover-preview" class="cover-preview-img" alt="">
             <button class="btn btn-red btn-sm" type="button"
               onclick="event.stopPropagation();document.getElementById('cover-file-input').click()">
               Upload image
@@ -424,7 +421,6 @@
   </div>
 </div>
 
-<!-- ══ DELETE CONFIRMATION MODAL ══ -->
 <div class="modal-overlay hidden" id="delete-confirm-overlay">
   <div class="editor-modal" style="max-width:400px;text-align:center;">
     <div style="font-size:18px;font-weight:600;margin-bottom:18px;">Are you sure you want to delete this item?</div>
@@ -436,7 +432,6 @@
   </div>
 </div>
 
-<!-- ══ ARTICLE PREVIEW MODAL ══ -->
 <div class="preview-overlay hidden" id="preview-overlay" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
   <div class="preview-modal">
     <div class="preview-modal-header">
@@ -1331,17 +1326,17 @@
     const dateLabel = publishedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const base = new URL('.', window.location.href).href;
 
-    previewFrame.srcdoc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />
-      <base href="${escapeHtml(base)}" target="_blank" />
-      <link rel="stylesheet" href="frontline.css" />
-      <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
+    previewFrame.srcdoc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+      <base href="${escapeHtml(base)}" target="_blank">
+      <link rel="stylesheet" href="frontline.css">
+      <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
       </head><body>
       <main class="article-main"><div class="article-wrap">
         <div class="article-section-tag">${escapeHtml(section)}</div>
         <h1 class="article-title">${escapeHtml(title)}</h1>
         <div class="article-meta">
           <div class="meta-avatar">${user.photoURL
-            ? `<img src="${escapeHtml(user.photoURL)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" alt="" />`
+            ? `<img src="${escapeHtml(user.photoURL)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" alt="">`
             : '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2e1a0a,#4a2e1a);"></div>'}</div>
           <div class="meta-info">
             <div class="meta-name">${escapeHtml(writerName)}</div>
@@ -1353,7 +1348,7 @@
         </div>
         ${coverSrc
           ? `<figure class="article-figure">
-              <img src="${escapeHtml(coverSrc)}" alt="${escapeHtml(title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;" />
+              <img src="${escapeHtml(coverSrc)}" alt="${escapeHtml(title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;">
               ${cutline ? `<figcaption style="font-size:12px;color:#888;margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
             </figure>`
           : `<figure class="article-figure">
