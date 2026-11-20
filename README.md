@@ -21,6 +21,29 @@ Each push to the configured production branch deploys automatically when the
 Vercel Git integration is enabled. A production deployment can also be started
 from the repository root with `vercel --prod`.
 
+## Email verification (Brevo)
+
+New accounts must enter a 6-digit code emailed to them before the account is
+created. The code is sent through Brevo by two Vercel serverless functions in
+`api/` (`send-code.js` and `verify-code.js`), so the Brevo key never appears in
+the website files.
+
+One-time setup:
+
+1. Create a free account at https://www.brevo.com/ and verify a sender address
+   under **Senders & IP** (for example `thefrontline@gordoncollege.edu.ph`).
+2. Create an API key under **SMTP & API → API Keys**.
+3. In the Vercel project, open **Settings → Environment Variables** and add:
+   - `BREVO_API_KEY` — the Brevo API key
+   - `SENDER_EMAIL` — the verified sender address
+   - `EMAIL_CODE_SECRET` — any long random string (it signs the codes)
+   - `SENDER_NAME` — optional, defaults to "The Frontline"
+4. Redeploy. The free Brevo plan sends up to 300 emails per day.
+
+Codes expire after 10 minutes. Verification runs on Vercel, so locally it only
+works with `vercel dev` (which serves the `api/` functions); plain Live Server
+cannot send codes.
+
 ## Firebase
 
 The client Firebase configuration is in `backend/firebase/firebase-config.js`.
