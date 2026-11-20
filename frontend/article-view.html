@@ -19,20 +19,30 @@
     .comment-field label { display:block; margin-bottom:6px; font-size:var(--fs-sm); color:#333; }
     .comment-field input,
     .comment-field textarea { width:100%; border:1px solid #d8d8d8; border-radius:8px; padding:12px 14px; font-size:var(--fs-md); }
-    .btn-submit-comment { width:fit-content; padding:12px 22px; border:none; border-radius:7px; background:#510B0B; color:#fff; cursor:pointer; }
+    .btn-submit-comment { width:fit-content; padding:12px 22px; border:none; border-radius:7px; background:var(--red); color:#fff; cursor:pointer; }
   </style>
 </head>
 <body>
 
   <header class="site-header">
-    <div class="header-brand">
-      <img src="assets/forefront-black.png" alt="The Frontline" class="brand-logo"
+    <div class="header-top">
+      <a class="header-brand" href="index.html" aria-label="Go to The Frontline homepage">
+        <img src="assets/public-logo.png" alt="The Frontline" class="brand-logo"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-      <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
+        <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
+      </a>
+      <form class="header-search" action="index.html" method="get" role="search">
+        <button class="header-search-submit" type="submit" aria-label="Search articles">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A1 1 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <input name="q" type="search" placeholder="Search" aria-label="Search articles">
+      </form>
     </div>
     <nav class="site-nav">
       <div class="nav-bar">
-        <button class="hamburger" id="hamburger" aria-label="Menu">
+        <button class="hamburger" id="hamburger" aria-label="Open menu" aria-controls="popupMenu" aria-expanded="false">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round">
             <line x1="2" y1="5" x2="18" y2="5"/>
@@ -42,14 +52,12 @@
         </button>
         <span class="nav-date" id="nav-date"></span>
         <ul class="nav-links">
-          <li><a href="index.html">News</a></li>
-          <li><a href="#">Editorial</a></li>
-          <li><a href="#">Opinion</a></li>
-          <li><a href="#">Features</a></li>
-          <li><a href="#">Literary</a></li>
-          <li><a href="#">DevComm</a></li>
-          <li><a href="#">Sports</a></li>
-          <li><a href="#">Comics</a></li>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html?section=News">News</a></li>
+          <li><a href="index.html?section=Editorial">Editorial</a></li>
+          <li><a href="index.html?section=Feature">Feature</a></li>
+          <li><a href="index.html?section=Literary">Literary</a></li>
+          <li><a href="index.html?section=DevComm">DevCom</a></li>
         </ul>
         <button class="search-btn" aria-label="Search">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -63,30 +71,26 @@
   <div class="popup-overlay" id="popupOverlay" onclick="closeMenu()"></div>
   <div class="popup-menu" id="popupMenu">
     <div class="popup-head">
-      <img src="assets/forefront-black.png" alt="The Frontline" class="popup-logo"
+      <img src="assets/public-logo.png" alt="The Frontline" class="popup-logo"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="popup-logo-fallback">The <span>F</span>rontline</span>
       <button class="popup-close" id="popupClose" aria-label="Close menu">&#10005;</button>
     </div>
+    <a class="popup-about-link" href="about.html">About Us</a>
     <div class="popup-body">
       <div class="popup-col">
-        <a href="#">News</a><a href="#">Editorial</a><a href="#">Opinion</a>
-        <a href="#">Column</a><a href="#">Features</a>
+        <a href="index.html">Home</a><a href="index.html?section=News">News</a>
+        <a href="index.html?section=Editorial">Editorial</a><a href="index.html?section=Opinion-Editorial">Opinion</a>
       </div>
       <div class="popup-col">
-        <a href="#">Literary</a><a href="#">DevComm</a>
-        <a href="#">Sports</a><a href="#">Arts</a>
+        <a href="index.html?section=Feature">Feature</a><a href="index.html?section=Literary">Literary</a>
+        <a href="index.html?section=DevComm">DevCom</a><a href="index.html?section=Sports">Sports</a>
       </div>
     </div>
     <div class="popup-footer">
       <div class="popup-footer-col">
         <div class="popup-section-title">Special Issues</div>
-        <a href="#">Bagani</a><a href="#">Sinagtala</a>
-        <a href="#">Bidlisiw</a><a href="#">Babaylan</a>
-      </div>
-      <div class="popup-footer-col">
-        <div class="popup-section-title">About</div>
-        <a href="about.html">About Us</a>
+        <a href="#">Siklab</a><a href="#">Bagani</a><a href="#">Bidlisiw</a>
       </div>
     </div>
   </div>
@@ -108,13 +112,12 @@
       <div class="footer-col">
         <div class="footer-col-title">Sections</div>
         <a href="#">News</a><a href="#">Editorial</a><a href="#">Opinion</a>
-        <a href="#">Features</a><a href="#">Literary</a><a href="#">DevComm</a>
+        <a href="#">Features</a><a href="#">Literary</a><a href="#">DevCom</a>
         <a href="#">Sports</a><a href="#">Comics</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Special Issues</div>
-        <a href="#">Bagani</a><a href="#">Sinagtala</a>
-        <a href="#">Bidlisiw</a><a href="#">Babaylan</a>
+        <a href="#">Siklab</a><a href="#">Bagani</a><a href="#">Bidlisiw</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">More on The Frontline</div>
@@ -141,13 +144,16 @@
 
   function openMenu() {
     const headerH = document.querySelector('.site-header').offsetHeight;
+    popupMenu.style.setProperty('--popup-menu-top', headerH + 'px');
     popupMenu.style.top = headerH + 'px';
     popupMenu.classList.add('open');
     popupOverlay.classList.add('open');
+    document.getElementById('hamburger').setAttribute('aria-expanded', 'true');
   }
   function closeMenu() {
     popupMenu.classList.remove('open');
     popupOverlay.classList.remove('open');
+    document.getElementById('hamburger').setAttribute('aria-expanded', 'false');
   }
 
   document.getElementById('hamburger').addEventListener('click', openMenu);
@@ -183,6 +189,17 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function contributorProfileHref(uid, name, role) {
+    const params = new URLSearchParams();
+    if (uid) {
+      params.set('uid', uid);
+    } else {
+      params.set('name', name);
+      params.set('role', role);
+    }
+    return `correspondent-profile-public.html?${params.toString()}`;
   }
 
   function renderComments(comments) {
@@ -252,7 +269,7 @@
       <div style="text-align:center;padding:80px 24px;">
         <h2 style="color:#333;margin-bottom:12px;">Article not found</h2>
         <p style="color:var(--text-muted);">No article ID was provided.</p>
-        <a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a>
+        <a href="index.html" style="color:var(--red);font-weight:600;">← Back to Home</a>
       </div>`;
   } else {
     try {
@@ -263,9 +280,12 @@
           <div style="text-align:center;padding:80px 24px;">
             <h2 style="color:#333;margin-bottom:12px;">Article not found</h2>
             <p style="color:var(--text-muted);">This article may have been removed or is not yet published.</p>
-            <a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a>
+            <a href="index.html" style="color:var(--red);font-weight:600;">← Back to Home</a>
           </div>`;
       } else {
+        const articleSectionLabel = articleSection(article);
+        const writerName = article.writerName || article.authorName || 'Unknown';
+        const writerProfileHref = contributorProfileHref(article.assignedTo || null, writerName, 'correspondent');
         let publishedDate = '';
         if (article.publishedAt) {
           const date = article.publishedAt.toDate ? article.publishedAt.toDate() : new Date(article.publishedAt);
@@ -283,26 +303,44 @@
         }
 
         wrap.innerHTML = `
-          <div class="article-section-tag">${escapeHtml(articleSection(article))}</div>
+          ${articleSectionLabel ? `<div class="article-section-tag">${escapeHtml(articleSectionLabel)}</div>` : ''}
           <h1 class="article-title">${article.title || 'Untitled'}</h1>
           <div class="article-meta">
-            <div class="meta-avatar">
-              ${article.authorPhoto
-                ? `<img src="${article.authorPhoto}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`
-                : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2e1a0a,#4a2e1a);"></div>`
-              }
-            </div>
-            <div class="meta-info">
-              <div class="meta-name">${escapeHtml(toTitleCaseName(article.writerName || article.authorName || 'Unknown'))}</div>
-              <div class="meta-role">Writer</div>
-              ${article.artistName ? `<div class="meta-role">Artist: ${escapeHtml(toTitleCaseName(article.artistName))}</div>` : ''}
-              ${article.photojournalistName ? `<div class="meta-role">Photojournalist: ${escapeHtml(toTitleCaseName(article.photojournalistName))}</div>` : ''}
+            <div class="article-contributors">
+              <div class="article-contributor">
+                <div class="meta-avatar">
+                  ${article.authorPhoto
+                    ? `<img src="${article.authorPhoto}" alt="">`
+                    : '<div class="meta-avatar-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="currentColor"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0z" fill="currentColor"/></svg></div>'
+                  }
+                </div>
+                <div class="meta-info">
+                  <a class="meta-name contributor-profile-link" href="${escapeHtml(writerProfileHref)}">${escapeHtml(toTitleCaseName(writerName))}</a>
+                  <div class="meta-role">Writer</div>
+                </div>
+              </div>
+              ${article.artistName?.trim() ? `
+                <div class="article-contributor">
+                  <div class="meta-avatar"><div class="meta-avatar-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="currentColor"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0z" fill="currentColor"/></svg></div></div>
+                  <div class="meta-info">
+                    <a class="meta-name contributor-profile-link" href="${escapeHtml(contributorProfileHref('', article.artistName.trim(), 'artist'))}">${escapeHtml(toTitleCaseName(article.artistName))}</a>
+                    <div class="meta-role">Artist</div>
+                  </div>
+                </div>` : ''}
+              ${article.photojournalistName?.trim() ? `
+                <div class="article-contributor">
+                  <div class="meta-avatar"><div class="meta-avatar-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="currentColor"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0z" fill="currentColor"/></svg></div></div>
+                  <div class="meta-info">
+                    <a class="meta-name contributor-profile-link" href="${escapeHtml(contributorProfileHref('', article.photojournalistName.trim(), 'photojournalist'))}">${escapeHtml(toTitleCaseName(article.photojournalistName))}</a>
+                    <div class="meta-role">Photojournalist</div>
+                  </div>
+                </div>` : ''}
             </div>
             ${publishedDate ? `<div class="meta-date">Published on ${publishedDate}</div>` : ''}
           </div>
           ${article.coverPhoto
             ? `<figure class="article-figure">
-                <img src="${article.coverPhoto}" alt="${escapeHtml(article.title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;">
+                <img class="article-cover-image" src="${article.coverPhoto}" alt="${escapeHtml(article.title)}">
                 ${article.cutline ? `<figcaption style="font-size:var(--fs-xs);color:var(--text-muted);margin-top:8px;text-align:center;">${escapeHtml(article.cutline)}</figcaption>` : ''}
                </figure>`
             : `<figure class="article-figure">
@@ -339,6 +377,15 @@
             <div class="related-grid" id="relatedGrid"></div>
           </section>`;
 
+        const coverImage = wrap.querySelector('.article-cover-image');
+        if (coverImage) {
+          const setOrientation = () => {
+            coverImage.classList.toggle('is-portrait', coverImage.naturalHeight > coverImage.naturalWidth);
+          };
+          if (coverImage.complete) setOrientation();
+          else coverImage.addEventListener('load', setOrientation, { once: true });
+        }
+
         const commentForm = document.querySelector('.comment-form');
         if (commentForm) {
           commentForm.addEventListener('submit', submitComment);
@@ -364,7 +411,7 @@
                   : `<div class="card-img" style="background:${grads[i]};aspect-ratio:16/10;"></div>`
                 }
                 <div class="card-body">
-                  <div class="card-section">${escapeHtml(articleSection(a).toUpperCase())}</div>
+                  ${articleSection(a) ? `<div class="card-section">${escapeHtml(articleSection(a).toUpperCase())}</div>` : ''}
                   <div class="card-title">${escapeHtml(a.title || 'Untitled')}</div>
                   <div class="card-excerpt">${escapeHtml(a.excerpt || '')}</div>
                   <div class="card-author">by ${escapeHtml(toTitleCaseName(a.writerName || a.authorName || 'Unknown'))}</div>
@@ -383,7 +430,7 @@
         <div style="text-align:center;padding:80px 24px;">
           <h2 style="color:#333;margin-bottom:12px;">Failed to load article</h2>
           <p style="color:var(--text-muted);">Please check your connection and try again.</p>
-          <a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a>
+          <a href="index.html" style="color:var(--red);font-weight:600;">← Back to Home</a>
         </div>`;
     }
   }

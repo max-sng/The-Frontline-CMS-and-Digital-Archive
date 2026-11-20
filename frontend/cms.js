@@ -3,13 +3,70 @@
    cms.js — included on every CMS page
    ============================================================ */
 
-/* ── Mobile sidebar ── */
+/* ── Sidebar ── */
+function isMobileSidebar() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function supportsSidebarHoverCollapse() {
+  return window.matchMedia('(min-width: 769px) and (hover: hover) and (pointer: fine)').matches;
+}
+
+function updateSidebarNavLabels() {
+  const collapsed = supportsSidebarHoverCollapse()
+    && !document.body.classList.contains('sidebar-hover-expanded');
+  document.querySelectorAll('.sidebar-nav li a, .sidebar-nav .nav-toggle, .sidebar-nav .sidebar-logout-button').forEach(control => {
+    const label = (control.querySelector('span:not(.nav-chevron)')?.textContent || control.textContent)
+      .trim().replace(/\s+/g, ' ');
+    if (!label) return;
+    control.setAttribute('aria-label', label);
+    if (collapsed) control.title = label;
+    else control.removeAttribute('title');
+  });
+}
+
+function updateSidebarButton() {
+  const btn = document.getElementById('hamburger');
+  const sidebar = document.getElementById('sidebar');
+  if (!btn || !sidebar) return;
+  const expanded = sidebar.classList.contains('open');
+  const label = expanded ? 'Close navigation' : 'Open navigation';
+  btn.setAttribute('aria-controls', 'sidebar');
+  btn.setAttribute('aria-expanded', String(expanded));
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+  updateSidebarNavLabels();
+}
+
+function initSidebarHoverCollapse() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar || sidebar.dataset.hoverCollapseBound) return;
+  sidebar.dataset.hoverCollapseBound = 'true';
+  let pointerInside = supportsSidebarHoverCollapse() && sidebar.matches(':hover');
+  const syncExpansion = () => {
+    const expanded = supportsSidebarHoverCollapse()
+      && (pointerInside || Boolean(sidebar.querySelector(':focus-visible')));
+    document.body.classList.toggle('sidebar-hover-expanded', expanded);
+    updateSidebarNavLabels();
+  };
+  sidebar.addEventListener('mouseenter', () => { pointerInside = true; syncExpansion(); });
+  sidebar.addEventListener('mouseleave', () => { pointerInside = false; syncExpansion(); });
+  sidebar.addEventListener('focusin', syncExpansion);
+  sidebar.addEventListener('focusout', syncExpansion);
+  window.addEventListener('resize', () => {
+    pointerInside = supportsSidebarHoverCollapse() && sidebar.matches(':hover');
+    syncExpansion();
+  });
+  syncExpansion();
+}
+
 function openSidebar() {
   const sb = document.getElementById('sidebar');
   const ov = document.getElementById('sidebarOverlay');
   if (sb) sb.classList.add('open');
   if (ov) ov.classList.add('active');
   document.body.style.overflow = 'hidden';
+  updateSidebarButton();
 }
 
 function closeSidebar() {
@@ -18,6 +75,7 @@ function closeSidebar() {
   if (sb) sb.classList.remove('open');
   if (ov) ov.classList.remove('active');
   document.body.style.overflow = '';
+  updateSidebarButton();
 }
 
 /* Close any open status menu on an outside click */
@@ -48,6 +106,49 @@ function createMediaThumb(item) {
   hover.className = 'thumb-hover';
   div.append(img, hover);
   return div;
+}
+
+function articleImageUrl(value) {
+  const src = String(value || '').trim();
+  if (/^data:image\/[a-z0-9.+-]+(?:;[^,]*)?,/i.test(src)) return src;
+  try {
+    const url = new URL(src, window.location.href);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function getArticleMediaItems(article) {
+  const items = [];
+  const title = String(article.title || 'Untitled article').trim();
+  const addImage = (value, label) => {
+    const url = articleImageUrl(value);
+    if (!url) return;
+    items.push({
+      id: `article-${article.id || 'unknown'}-${items.length}`,
+      filename: `${title} - ${label}`,
+      url,
+      thumb: url
+    });
+  };
+
+  addImage(article.coverPhoto, 'cover');
+  const content = new DOMParser().parseFromString(String(article.content || ''), 'text/html');
+  content.querySelectorAll('img[src]').forEach((image, index) => {
+    addImage(image.getAttribute('src'), `image ${index + 1}`);
+  });
+  return items;
+}
+
+function mediaUrlKey(value) {
+  try {
+    const url = new URL(value, window.location.href);
+    url.hash = '';
+    return url.href;
+  } catch {
+    return String(value || '').trim();
+  }
 }
 
 function updateMediaEmptyState() {
@@ -129,8 +230,21 @@ async function initMediaLibrary() {
   const grid = document.getElementById('media-grid');
   if (!grid) return;
   try {
-    const { getMediaItems } = await import('../backend/firebase/firestore.js');
-    const items = await getMediaItems();
+    const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+    if (!user?.uid) throw new Error('Please sign in again to view article media.');
+    const { getMediaItems, getAllArticles, getMyArticles } = await import('../backend/firebase/firestore.js');
+    const articleQuery = ['adviser', 'editorial'].includes(user.role)
+      ? getAllArticles()
+      : getMyArticles(user.uid);
+    const [libraryItems, articles] = await Promise.all([getMediaItems(), articleQuery]);
+    const items = [...libraryItems];
+    const seenUrls = new Set(libraryItems.map(item => mediaUrlKey(item.url)));
+    articles.flatMap(getArticleMediaItems).forEach(item => {
+      const key = mediaUrlKey(item.url);
+      if (!key || seenUrls.has(key)) return;
+      seenUrls.add(key);
+      items.push(item);
+    });
     // Keep any uploads that started while the library was loading.
     const existingIds = new Set(Array.from(grid.querySelectorAll('.media-thumb[data-id]')).map(el => el.dataset.id));
     items.forEach(item => {
@@ -234,7 +348,20 @@ function initHamburger() {
   const ov  = document.getElementById('sidebarOverlay');
   if (btn && !btn.dataset.boundSidebar) {
     btn.dataset.boundSidebar = 'true';
-    btn.addEventListener('click', openSidebar);
+    btn.addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      if (!sidebar || !isMobileSidebar()) return;
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    updateSidebarButton();
+    window.addEventListener('resize', () => {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (!isMobileSidebar() && (sidebar?.classList.contains('open') || overlay?.classList.contains('active'))) {
+        closeSidebar();
+      }
+      updateSidebarButton();
+    });
   }
   if (ov && !ov.dataset.boundSidebar) {
     ov.dataset.boundSidebar = 'true';
@@ -353,6 +480,38 @@ function initSidebarAccess() {
     const corrLink = document.querySelector('a[href="correspondents.html"]');
     if (corrLink) corrLink.closest('li').style.display = 'none';
   }
+  updateSidebarNavLabels();
+}
+
+function initSidebarLogout() {
+  const navFoot = document.querySelector('.sidebar-nav .nav-foot');
+  if (!navFoot || navFoot.querySelector('.sidebar-logout-button')) return;
+
+  const item = document.createElement('li');
+  item.className = 'sidebar-logout-item';
+  item.innerHTML = `
+    <button type="button" class="sidebar-logout-button">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h6a1 1 0 100-2H4V5h5a1 1 0 100-2H3zm10.293 3.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L14.586 11H7a1 1 0 110-2h7.586l-1.293-1.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+      </svg>
+      <span>Log out</span>
+    </button>`;
+  const button = item.querySelector('.sidebar-logout-button');
+  button.addEventListener('click', async () => {
+    if (typeof window.__frontlineLogout !== 'function') {
+      showToast('Sign-out is unavailable. Refresh the page and try again.', 'error');
+      return;
+    }
+    button.disabled = true;
+    try {
+      await window.__frontlineLogout();
+    } catch (error) {
+      console.error('Sidebar logout failed:', error);
+      button.disabled = false;
+      showToast('Could not log out. Please try again.', 'error');
+    }
+  });
+  navFoot.appendChild(item);
 }
 
 /* ── Topbar avatar dropdown (Account Settings / Log Out) ── */
@@ -558,8 +717,10 @@ async function initUserProfileSync() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initHamburger();
+  initSidebarHoverCollapse();
   initTopbarNameFormatting();
   initTopbarSearch();
+  initSidebarLogout();
   initSidebarAccess();
   initTopbarDropdown();
   initNotificationWidget();

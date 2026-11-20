@@ -10,3 +10,19 @@ react-login/dist/
 .claude/
 .codex/
 .devin/
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Firebase credentials and local emulator artifacts
+serviceAccount*.json
+*-firebase-adminsdk-*.json
+.firebase/
+.runtimeconfig.json
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+functions/.secret.local

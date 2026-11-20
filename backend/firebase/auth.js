@@ -211,7 +211,13 @@ export async function deactivateUser(targetUid) {
     await logAuditEntry({ action: 'deactivate_user', performedBy: current.uid, targetUid, details: 'User account deactivated' });
     return { success: true };
   } catch (e) {
-    return { success: false, error: e.message };
+    console.error('deactivateUser error', e);
+    return {
+      success: false,
+      error: e.code === 'permission-denied'
+        ? 'Firestore denied deactivation. Deploy the latest Firestore rules and confirm your adviser account is active.'
+        : e.message
+    };
   }
 }
 

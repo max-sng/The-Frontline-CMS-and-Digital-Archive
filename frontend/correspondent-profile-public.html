@@ -42,14 +42,24 @@
 <body>
 
   <header class="site-header">
-    <div class="header-brand">
-      <img src="assets/forefront-black.png" alt="The Frontline" class="brand-logo"
+    <div class="header-top">
+      <a class="header-brand" href="index.html" aria-label="Go to The Frontline homepage">
+        <img src="assets/public-logo.png" alt="The Frontline" class="brand-logo"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-      <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
+        <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
+      </a>
+      <form class="header-search" action="index.html" method="get" role="search">
+        <button class="header-search-submit" type="submit" aria-label="Search articles">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A1 1 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <input name="q" type="search" placeholder="Search" aria-label="Search articles">
+      </form>
     </div>
     <nav class="site-nav">
       <div class="nav-bar">
-        <button class="hamburger" id="hamburger" aria-label="Menu">
+        <button class="hamburger" id="hamburger" aria-label="Open menu" aria-controls="popupMenu" aria-expanded="false">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round">
             <line x1="2" y1="5" x2="18" y2="5"/>
@@ -59,14 +69,12 @@
         </button>
         <span class="nav-date" id="nav-date"></span>
         <ul class="nav-links">
-          <li><a href="index.html">News</a></li>
-          <li><a href="#">Editorial</a></li>
-          <li><a href="#">Opinion</a></li>
-          <li><a href="#">Features</a></li>
-          <li><a href="#">Literary</a></li>
-          <li><a href="#">DevComm</a></li>
-          <li><a href="#">Sports</a></li>
-          <li><a href="#">Comics</a></li>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html?section=News">News</a></li>
+          <li><a href="index.html?section=Editorial">Editorial</a></li>
+          <li><a href="index.html?section=Feature">Feature</a></li>
+          <li><a href="index.html?section=Literary">Literary</a></li>
+          <li><a href="index.html?section=DevComm">DevCom</a></li>
         </ul>
         <button class="search-btn" aria-label="Search">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -80,37 +88,32 @@
   <div class="popup-overlay" id="popupOverlay" onclick="closeMenu()"></div>
   <div class="popup-menu" id="popupMenu">
     <div class="popup-head">
-      <img src="assets/forefront-black.png" alt="The Frontline" class="popup-logo"
+      <img src="assets/public-logo.png" alt="The Frontline" class="popup-logo"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="popup-logo-fallback">The <span>F</span>rontline</span>
       <button class="popup-close" id="popupClose" aria-label="Close menu">&#10005;</button>
     </div>
+    <a class="popup-about-link" href="about.html">About Us</a>
     <div class="popup-body">
       <div class="popup-col">
-        <a href="#">News</a>
-        <a href="#">Editorial</a>
-        <a href="#">Opinion</a>
-        <a href="#">Column</a>
-        <a href="#">Features</a>
+        <a href="index.html">Home</a>
+        <a href="index.html?section=News">News</a>
+        <a href="index.html?section=Editorial">Editorial</a>
+        <a href="index.html?section=Opinion-Editorial">Opinion</a>
       </div>
       <div class="popup-col">
-        <a href="#">Literary</a>
-        <a href="#">DevComm</a>
-        <a href="#">Sports</a>
-        <a href="#">Arts</a>
+        <a href="index.html?section=Feature">Feature</a>
+        <a href="index.html?section=Literary">Literary</a>
+        <a href="index.html?section=DevComm">DevCom</a>
+        <a href="index.html?section=Sports">Sports</a>
       </div>
     </div>
     <div class="popup-footer">
       <div class="popup-footer-col">
         <div class="popup-section-title">Special Issues</div>
+        <a href="#">Siklab</a>
         <a href="#">Bagani</a>
-        <a href="#">Sinagtala</a>
         <a href="#">Bidlisiw</a>
-        <a href="#">Babaylan</a>
-      </div>
-      <div class="popup-footer-col">
-        <div class="popup-section-title">About</div>
-        <a href="about.html">About Us</a>
       </div>
     </div>
   </div>
@@ -148,13 +151,12 @@
       <div class="footer-col">
         <div class="footer-col-title">Sections</div>
         <a href="#">News</a><a href="#">Editorial</a><a href="#">Opinion</a>
-        <a href="#">Features</a><a href="#">Literary</a><a href="#">DevComm</a>
+        <a href="#">Features</a><a href="#">Literary</a><a href="#">DevCom</a>
         <a href="#">Sports</a><a href="#">Comics</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Special Issues</div>
-        <a href="#">Bagani</a><a href="#">Sinagtala</a>
-        <a href="#">Bidlisiw</a><a href="#">Babaylan</a>
+        <a href="#">Siklab</a><a href="#">Bagani</a><a href="#">Bidlisiw</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">More on The Frontline</div>
@@ -170,7 +172,7 @@
   </footer>
 
 <script type="module">
-  import { getPublishedArticlesByAuthor, getUser, toTitleCaseName, articleSection } from '../backend/firebase/firestore.js';
+  import { getAllPublishedArticles, getUser, toTitleCaseName, articleSection } from '../backend/firebase/firestore.js';
 
   // ── Live date ──
   const d = new Date();
@@ -184,13 +186,16 @@
 
   function openMenu() {
     const headerH = document.querySelector('.site-header').offsetHeight;
+    popupMenu.style.setProperty('--popup-menu-top', headerH + 'px');
     popupMenu.style.top = headerH + 'px';
     popupMenu.classList.add('open');
     popupOverlay.classList.add('open');
+    document.getElementById('hamburger').setAttribute('aria-expanded', 'true');
   }
   function closeMenu() {
     popupMenu.classList.remove('open');
     popupOverlay.classList.remove('open');
+    document.getElementById('hamburger').setAttribute('aria-expanded', 'false');
   }
 
   document.getElementById('hamburger').addEventListener('click', openMenu);
@@ -214,59 +219,130 @@
     return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  function normalizeName(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  }
+
+  function isCreditedToCorrespondent(article, userId, profileNames) {
+    const creditedNames = [article.writerName, article.authorName]
+      .map(normalizeName)
+      .filter(Boolean);
+    const matchesId = userId && (article.authorId === userId || article.assignedTo === userId);
+    return Boolean(matchesId) || profileNames.some(name => creditedNames.includes(name));
+  }
+
+  function normalizeProfileSection(value) {
+    const section = String(value || '').replace(/^#+/, '').trim();
+    return section.toLowerCase() === 'general' ? '' : toTitleCaseName(section);
+  }
+
   async function renderProfile() {
     const params = new URLSearchParams(window.location.search);
-    // Accept ?uid= (current links) and ?id= (older links).
     const userId = params.get('uid') || params.get('id');
-    if (!userId) {
+    const profileName = (params.get('name') || '').trim();
+    const requestedRole = params.get('role');
+    const profileRole = ['artist', 'photojournalist'].includes(requestedRole)
+      ? requestedRole
+      : 'correspondent';
+
+    if (!userId && !profileName) {
       const main = document.querySelector('.profile-main');
       if (main) {
         main.innerHTML = `
           <div class="profile-empty">
             <h2>Correspondent profile not found</h2>
             <p>Visit the newsroom and select a correspondent to view their published work.</p>
-            <p><a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a></p>
+            <p><a href="index.html" style="color:var(--red);font-weight:600;">← Back to Home</a></p>
           </div>`;
       }
       return;
     }
 
     try {
-      const user = await getUser(userId);
-      if (user) user.name = toTitleCaseName(user.name || [user.firstName, user.surname].filter(Boolean).join(' ') || '') || 'Correspondent';
-      if (!user) {
+      const [user, publishedArticles] = await Promise.all([
+        userId ? getUser(userId) : Promise.resolve(null),
+        getAllPublishedArticles()
+      ]);
+      const profileNames = [
+        profileName,
+        user?.name,
+        [user?.firstName, user?.surname].filter(Boolean).join(' ')
+      ].map(normalizeName).filter(Boolean);
+      const profileArticles = publishedArticles.filter(article => {
+        if (profileRole === 'artist') return normalizeName(article.artistName) === normalizeName(profileName);
+        if (profileRole === 'photojournalist') return normalizeName(article.photojournalistName) === normalizeName(profileName);
+        return isCreditedToCorrespondent(article, userId, profileNames);
+      });
+
+      if (!user && !profileArticles.length) {
         const main = document.querySelector('.profile-main');
-      if (main) {
-        main.innerHTML = `
-          <div class="profile-empty">
-            <h2>Correspondent profile not found</h2>
-            <p>The correspondent you are looking for does not exist or has not published any articles.</p>
-            <p><a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a></p>
-          </div>`;
-      }
-      return;
-      }
-
-      document.title = `${user.name || 'Correspondent'} – The Frontline`;
-      document.getElementById('profName').textContent = user.name || 'Unknown Correspondent';
-      const roleLabels = { adviser: 'Adviser', editorial: 'Editorial Board', correspondent: 'Correspondent' };
-      document.getElementById('profSubtitle').textContent = [roleLabels[user.role] || 'Correspondent', user.section].filter(Boolean).join(' • ');
-      document.getElementById('profInitials').textContent = initials(user.name || 'The Frontline');
-      document.getElementById('workTitle').textContent = `More of ${user.name?.split(' ')[0] || 'this correspondent'}'s Work`;
-
-      if (user.photoURL || user.photo) {
-        document.getElementById('profPhotoWrap').innerHTML = `<img src="${escapeHtml(user.photoURL || user.photo)}" alt="${escapeHtml(user.name)}">`;
+        if (main) {
+          main.innerHTML = `
+            <div class="profile-empty">
+              <h2>Contributor profile not found</h2>
+              <p>The contributor you are looking for does not exist or has not published any articles.</p>
+              <p><a href="index.html" style="color:var(--red);font-weight:600;">← Back to Home</a></p>
+            </div>`;
+        }
+        return;
       }
 
-      document.getElementById('profBio').innerHTML = `
-        <p>${escapeHtml(user.bio || user.about || `${user.name || 'This correspondent'} writes with The Frontline.`)}</p>
-        <p>${escapeHtml(user.bioDetail || 'This correspondent shares stories, features, and commentary that engage students and the campus community.')}</p>
-      `;
+      const firstArticle = profileArticles[0];
+      const articleName = profileRole === 'artist'
+        ? firstArticle?.artistName
+        : profileRole === 'photojournalist'
+          ? firstArticle?.photojournalistName
+          : firstArticle?.writerName || firstArticle?.authorName;
+      const storedName = user?.name || [user?.firstName, user?.surname].filter(Boolean).join(' ');
+      const displayName = toTitleCaseName(storedName || articleName || profileName) || 'Correspondent';
+      const sectionValues = [
+        ...(Array.isArray(user?.sections) ? user.sections : []),
+        ...(Array.isArray(user?.section) ? user.section : [user?.section]),
+        ...profileArticles.map(articleSection)
+      ];
+      const sections = [];
+      sectionValues.map(normalizeProfileSection).filter(Boolean).forEach(section => {
+        if (!sections.some(existing => existing.toLowerCase() === section.toLowerCase())) sections.push(section);
+      });
+      const subtitle = profileRole === 'artist'
+        ? 'Artist'
+        : profileRole === 'photojournalist'
+          ? 'Photojournalist'
+          : sections.length
+            ? sections.map(section => `${section} Correspondent`).join(' • ')
+            : 'Correspondent';
 
-      const articles = await getPublishedArticlesByAuthor(userId, 12);
+      document.title = `${displayName} – The Frontline`;
+      document.getElementById('profName').textContent = displayName;
+      document.getElementById('profSubtitle').textContent = subtitle;
+      document.getElementById('profInitials').textContent = initials(displayName);
+      document.getElementById('workTitle').textContent = profileRole === 'correspondent'
+        ? `More of ${displayName.split(' ')[0] || 'this correspondent'}'s Work`
+        : `Contributions by ${displayName}`;
+
+      const photoURL = user?.photoURL || user?.photo
+        || (profileRole === 'correspondent' && profileArticles.find(article => article.authorPhoto)?.authorPhoto);
+      if (photoURL) {
+        document.getElementById('profPhotoWrap').innerHTML = `<img src="${escapeHtml(photoURL)}" alt="${escapeHtml(displayName)}">`;
+      }
+
+      const defaultBio = profileRole === 'artist'
+        ? 'Credited for artwork in published articles.'
+        : profileRole === 'photojournalist'
+          ? 'Credited for photojournalism in published articles.'
+          : 'Contributor to The Frontline.';
+      const biography = user?.bio || user?.about || defaultBio;
+      const bioParagraphs = [biography, user?.bioDetail].filter(Boolean);
+      document.getElementById('profBio').replaceChildren(...bioParagraphs.map(text => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = text;
+        return paragraph;
+      }));
+
+      const articles = profileArticles.slice(0, 12);
       const workGrid = document.getElementById('workGrid');
       if (!articles.length) {
-        workGrid.innerHTML = `<p style="color:var(--text-muted);font-size:var(--fs-md);">No published articles found for this correspondent.</p>`;
+        workGrid.innerHTML = `<p style="color:var(--text-muted);font-size:var(--fs-md);">No published articles found for this contributor.</p>`;
       } else {
         workGrid.innerHTML = articles.map((article, i) => `
           <a href="article-view.html?id=${article.id}" class="work-card">
@@ -277,7 +353,7 @@
               }
             </div>
             <div>
-              <div class="work-card-section">${escapeHtml(articleSection(article).toUpperCase())}</div>
+              ${articleSection(article) ? `<div class="work-card-section">${escapeHtml(articleSection(article).toUpperCase())}</div>` : ''}
               <div class="work-card-title">${escapeHtml(article.title || 'Untitled')}</div>
               <div class="work-card-author">by ${escapeHtml(toTitleCaseName(article.writerName || article.authorName || user.name || 'Unknown'))}</div>
             </div>
@@ -291,7 +367,7 @@
           <div class="profile-empty">
             <h2>Unable to load profile</h2>
             <p>Please check your connection and try again.</p>
-            <p><a href="index.html" style="color:#510B0B;font-weight:600;">← Back to Home</a></p>
+            <p><a href="index.html" style="color:var(--red);font-weight:600;">← Back to Home</a></p>
           </div>`;
       }
     }

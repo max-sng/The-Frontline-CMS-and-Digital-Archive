@@ -26,7 +26,7 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         // Adviser may update any user
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active')
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('status', 'active') == 'active')
         // Users may update profile fields, but not their role, status, or email.
         || (request.auth.uid == userId
           && request.resource.data.role == resource.data.role
@@ -54,6 +54,18 @@ service cloud.firestore {
 
     // Articles collection
     match /articles/{articleId} {
+      function writerIdentityUnchangedAfterForward() {
+        let isForwarded = resource.data.get('status', '') in ['pending_adviser', 'published']
+          || request.resource.data.get('status', '') in ['pending_adviser', 'published']
+          || resource.data.get('approvedByEditorialAt', null) != null;
+        return !isForwarded || (
+          request.resource.data.get('writerName', null) == resource.data.get('writerName', null)
+          && request.resource.data.get('authorName', null) == resource.data.get('authorName', null)
+          && request.resource.data.get('authorId', null) == resource.data.get('authorId', null)
+          && request.resource.data.get('assignedTo', null) == resource.data.get('assignedTo', null)
+        );
+      }
+
       function publicAccessEnabled() {
         return !exists(/databases/$(database)/documents/settings/publication)
           || get(/databases/$(database)/documents/settings/publication).data.publicArticleAccess == true;
@@ -70,7 +82,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial', 'correspondent']
         && request.resource.data.authorId == request.auth.uid;
-      allow update: if request.auth != null && (
+      allow update: if request.auth != null && writerIdentityUnchangedAfterForward() && (
         // Adviser may update anything
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active')

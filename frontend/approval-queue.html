@@ -88,9 +88,7 @@
     window.__frontlineLogout = logoutUser;
 
     const STATUS_LABELS = {
-      pending: 'Pending',
-      pending_adviser: 'Awaiting Final Approval',
-      pending_editorial: 'Awaiting Editorial Review'
+      pending_adviser: 'Awaiting Final Approval'
     };
 
     function escapeHtml(value) {
@@ -115,7 +113,7 @@
       container.textContent = 'Loading…';
       try {
         const all = await getAllArticles();
-        const list = all.filter(a => ['pending', 'pending_adviser', 'pending_editorial'].includes(a.status));
+        const list = all.filter(a => a.status === 'pending_adviser');
         if (!list.length) {
           container.innerHTML = '<div class="empty-state empty-state-plain"><div class="empty-state-title">Nothing to approve</div><div class="empty-state-sub">Articles sent to you for final approval will appear here.</div></div>';
           return;

@@ -21,7 +21,15 @@
 
     /* Title + rich-text editor, then the article details panel underneath */
     .editor-grid { display:flex;flex-direction:column;gap:24px; }
-    #quill-toolbar { border:1px solid var(--border);border-bottom:0;border-radius:14px 14px 0 0;background:#fff;overflow:hidden; }
+    #quill-toolbar { display:flex;align-items:center;flex-wrap:wrap;border:1px solid var(--border);border-bottom:0;border-radius:14px 14px 0 0;background:#fff;overflow:hidden; }
+    #quill-toolbar::after { display:none; }
+    #quill-toolbar.formatting-unavailable .ql-formats { display:none; }
+    #quill-toolbar .rte-preview-button {
+      width:auto;height:auto;flex:0 0 auto;margin:4px 8px 4px auto;padding:7px 12px;
+      border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-white);
+      color:var(--text-main);font:500 var(--fs-sm)/1.2 var(--font);cursor:pointer;float:none;
+    }
+    #quill-toolbar .rte-preview-button:hover { border-color:var(--red);color:var(--red); }
     #quill-editor { min-height:340px !important; }
     .ql-editor { min-height:320px;max-height:55vh;overflow-y:auto;padding-bottom:8px; }
 
@@ -35,11 +43,36 @@
     #correspondent-fields { display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap:16px; }
     .editor-modal .form-input, .editor-modal .form-select, .editor-modal .form-textarea { border-radius:10px;background:var(--bg-surface); }
     .editor-modal .cover-upload-zone { border-radius:14px; }
+    .writer-lock-hint { display:block;margin-top:5px;color:var(--text-muted);font-size:var(--fs-xs); }
+    .writer-lock-hint[hidden] { display:none; }
+    .correspondent-empty-help { display:block;margin-top:5px;color:var(--text-muted);font-size:var(--fs-xs);line-height:1.45; }
+    .correspondent-empty-help[hidden] { display:none; }
+    .correspondent-empty-help a { color:var(--red);font-weight:600;text-decoration:underline;text-underline-offset:2px; }
+    #writer-name:read-only, #assign-correspondent:disabled {
+      background:var(--bg-surface);color:var(--text-sub);cursor:not-allowed;
+    }
 
     .editor-alert { display:none;padding:9px 14px;border-radius:var(--radius-md);font-size:var(--fs-sm);font-weight:500;margin-bottom:14px;align-items:center;gap:8px; }
     .editor-alert.show { display:flex; }
     .editor-alert.success { background:#f0fdf4;border:1px solid #bbf7d0;color:#166534; }
     .editor-alert.error { background:var(--red-tint);border:1px solid var(--red-tint-line);color:var(--red); }
+    .autosave-status { color:var(--text-muted);font-size:var(--fs-xs);white-space:nowrap; }
+    .autosave-status[data-state="error"] { color:var(--red); }
+    .autosave-status[data-state="saving"] { color:var(--text-sub); }
+
+    #articles-content .articles-table td[data-label="Status"] { text-align:left; }
+    #articles-content .status-badge { justify-content:flex-start; }
+    #articles-content .status-badge:not(.status-readonly)::after { content:'▾';margin-left:auto; }
+    #articles-content .dot-pending { background:#3498db; }
+    #articles-content .dot-reviewed { background:#f1c40f; }
+    #articles-content .status-option.is-selected.opt-pending { background:#e8f4fd; }
+    #articles-content .status-option.is-selected.opt-reviewed { background:#fef9e7; }
+
+    #articles-content > .table-wrap > .articles-table { min-width:0; }
+    #articles-content .articles-table th,
+    #articles-content .articles-table td {
+      min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
 
     #delete-confirm-overlay { align-items:center;justify-content:center;padding:16px; }
     #delete-confirm-overlay .editor-modal { width:min(400px,100%);height:auto;max-width:400px;border-radius:var(--radius-xl); }
@@ -55,6 +88,20 @@
       .editor-details > .details-cover { margin-bottom:15px; }
       .editor-details .cover-upload-zone { min-height:200px; }
       .editor-people-row, #correspondent-fields { grid-template-columns:1fr; }
+      #articles-content .articles-table th,
+      #articles-content .articles-table td { padding-right:6px;padding-left:6px;font-size:var(--fs-xs); }
+    }
+    @media (max-width: 520px) {
+      #articles-content .articles-table col:nth-child(1) { width:16% !important; }
+      #articles-content .articles-table col:nth-child(2) { width:10% !important; }
+      #articles-content .articles-table col:nth-child(3) { width:27% !important; }
+      #articles-content .articles-table col:nth-child(4) { width:35% !important; }
+    }
+    @media (max-width: 380px) {
+      #articles-content .articles-table col:nth-child(1) { width:14% !important; }
+      #articles-content .articles-table col:nth-child(2) { width:8% !important; }
+      #articles-content .articles-table col:nth-child(3) { width:26% !important; }
+      #articles-content .articles-table col:nth-child(4) { width:40% !important; }
     }
   </style>
 </head>
@@ -193,6 +240,7 @@
     <div class="editor-modal-header">
       <span class="editor-modal-title" id="editor-title">New Article</span>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+        <span class="autosave-status" id="autosave-status" aria-live="polite"></span>
         <div id="review-avatar" style="display:none;"></div>
         <button class="btn btn-red btn-sm" id="publish-btn" style="display:none;">Publish</button>
         <div class="editor-footer" id="editor-footer"></div>
@@ -262,19 +310,21 @@
               <button class="ql-code-block"></button>
               <button class="ql-clean"></button>
             </span>
+            <button class="btn btn-outline btn-sm rte-preview-button" id="btn-preview" type="button">Preview</button>
           </div>
           <div id="quill-editor" style="min-height:280px;border:1px solid var(--border);border-radius:0 0 14px 14px;background:#fff;padding:10px;overflow:hidden;"></div>
         </div>
       </div>
       <div class="editor-details">
         <div class="form-group details-tags">
-          <label class="form-label" for="tag-input">Section Tags</label>
+          <label class="form-label" for="tag-input">Section Tags (required)</label>
           <div class="tags-field">
             <div class="tags-wrap" id="tags-wrap">
               <input class="tag-input" id="tag-input" name="section-tag-search" type="text"
                      placeholder="Select sections..." autocomplete="off" autocorrect="off"
                      autocapitalize="off" spellcheck="false" role="combobox"
-                     aria-autocomplete="list" aria-expanded="false" aria-controls="tag-suggestions">
+                     aria-autocomplete="list" aria-expanded="false" aria-controls="tag-suggestions"
+                     aria-required="true">
             </div>
             <div class="tag-suggestions" id="tag-suggestions" role="listbox"></div>
           </div>
@@ -282,8 +332,14 @@
         <div id="editorial-fields">
           <div class="editor-people-row">
           <div class="form-group">
-            <label class="form-label">Writer</label>
-            <input type="text" class="form-input" id="editorial-writer-name" spellcheck="true" autocorrect="on">
+            <label class="form-label" for="assign-correspondent">Writer / Assignee</label>
+            <select class="form-select" id="assign-correspondent" disabled>
+              <option value="">Loading correspondents…</option>
+            </select>
+            <small class="correspondent-empty-help" id="correspondent-empty-help" hidden>
+              No active correspondent accounts are registered yet. <a href="correspondents.html" target="_blank" rel="noopener">Invite a correspondent</a>; they will appear after registering.
+            </small>
+            <small class="writer-lock-hint" id="writer-lock-hint-editorial" hidden>Writer and correspondent assignment are locked after this article is sent to the adviser.</small>
           </div>
           <div class="form-group">
             <label class="form-label">Artist</label>
@@ -294,13 +350,7 @@
             <input type="text" class="form-input" id="photojournalist-name" spellcheck="true" autocorrect="on">
           </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Assign to Correspondent</label>
-            <select class="form-select" id="assign-correspondent">
-              <option value="">None</option>
-            </select>
-          </div>
-          <div class="form-group">
+          <div class="form-group" id="due-date-group">
             <label class="form-label">Due Date</label>
             <input type="text" class="form-input" id="due-date" placeholder="dd/mm/yyyy"
                    onfocus="if(this.type==='text'){this.type='date'}"
@@ -311,6 +361,7 @@
           <div class="form-group">
             <label class="form-label">Writer</label>
             <input type="text" class="form-input" id="writer-name" spellcheck="true" autocorrect="on">
+            <small class="writer-lock-hint" id="writer-lock-hint-correspondent" hidden>Writer details are locked after this article is sent to the adviser.</small>
           </div>
           <div class="form-group">
             <label class="form-label">Due Date</label>
@@ -439,23 +490,47 @@
     document.body.classList.add('correspondent-view');
   }
 
-  // Sections offered in the editor (same list as the Correspondents page, plus General
-  // for articles without a specific section).
-  const SECTIONS = ['General', 'News', 'Opinion-Editorial', 'DevComm', 'Feature', 'Literary', 'Photojournalism', 'Sports', 'Arts', 'Broadcasting'];
+  // Sections offered in the editor (same list as the Correspondents page).
+  const SECTIONS = ['News', 'Opinion-Editorial', 'DevComm', 'Feature', 'Literary', 'Photojournalism', 'Sports', 'Arts', 'Broadcasting'];
   const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'];
   const toTitleCase = value => (typeof window.toTitleCaseName === 'function' ? window.toTitleCaseName(value) : value);
   const sectionOf = article => {
-    const section = String(article?.section || '').replace(/^#+/, '').trim();
-    const firstTag = Array.isArray(article?.tags) ? String(article.tags[0] || '').replace(/^#+/, '').trim() : '';
-    return section || firstTag || 'General';
+    const normalize = value => {
+      const section = String(value || '').replace(/^#+/, '').trim();
+      return section.toLowerCase() === 'general' ? '' : section;
+    };
+    const section = normalize(article?.section);
+    if (section) return section;
+    return Array.isArray(article?.tags) ? article.tags.map(normalize).find(Boolean) || '' : '';
   };
+  const timestampMillis = value => {
+    if (typeof value?.toMillis === 'function') return value.toMillis();
+    return value instanceof Date ? value.getTime() : 0;
+  };
+  const articleSubmissionTime = article =>
+    timestampMillis(article.submittedAt) || timestampMillis(article.createdAt);
+  const articleWriterLocked = article => Boolean(article && (
+    ['pending_adviser', 'published'].includes(article.status) || article.approvedByEditorialAt
+  ));
 
   // ── State ──
-  const statusLabels = { draft:'Draft', pending:'Pending', reviewed:'Reviewed', published:'Published', assigned:'Assigned', pending_adviser:'Awaiting Final Approval', pending_editorial:'Awaiting Editorial Review' };
+  const statusLabels = { draft:'Draft', pending:'Under Review', reviewed:'Pending', published:'Published', assigned:'Assigned', pending_editorial:'Under Review' };
+  const statusOptions = ['draft', 'reviewed', 'assigned', 'pending', 'published'];
   let articlesData   = [];
   let visibleArticles = [];
   let editingId      = null; // Firestore doc ID of article being edited
   let quill = null;
+  let editorMode = null;
+  let correspondentOptions = [];
+  let correspondentsLoaded = false;
+  let autoSaveTimer = null;
+  let autoSavePromise = null;
+  let autoSaveQueued = false;
+  let editorChangeVersion = 0;
+  let savedChangeVersion = 0;
+  let pendingCoverPhoto = null;
+  let pendingCoverFile = null;
+  let isSavingArticle = false;
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -518,7 +593,8 @@
 
   function canShowStatusOption(status, article) {
     if (status === 'published') return user.role === 'adviser';
-    if (status === 'pending_adviser') return user.role === 'editorial' || user.role === 'adviser';
+    if (status === 'assigned' && (!correspondentsLoaded
+      || !correspondentOptions.some(correspondent => correspondent.id === article.assignedTo))) return false;
     if (user.role === 'correspondent') {
       if (article.status === 'pending') return status === 'pending';
       if (article.status === 'reviewed') return status === 'pending';
@@ -528,20 +604,63 @@
     return true;
   }
 
-  // ── Load correspondents into assign dropdown ──
+  function correspondentDisplayName(correspondent) {
+    return toTitleCase(correspondent.name
+      || [correspondent.firstName, correspondent.surname].filter(Boolean).join(' ')
+      || correspondent.email
+      || 'Correspondent');
+  }
+
+  function setCorrespondentSelection(article) {
+    const select = document.getElementById('assign-correspondent');
+    const writerName = article?.writerName || article?.authorName || '';
+    const assignedTo = article?.assignedTo || '';
+    select.dataset.pendingId = assignedTo;
+    select.dataset.pendingName = writerName;
+    if (!correspondentsLoaded) return;
+
+    const byId = correspondentOptions.find(correspondent => correspondent.id === assignedTo);
+    const nameMatches = writerName
+      ? correspondentOptions.filter(correspondent =>
+          correspondentDisplayName(correspondent).toLocaleLowerCase() === writerName.trim().toLocaleLowerCase())
+      : [];
+    const match = byId || (nameMatches.length === 1 ? nameMatches[0] : null);
+    select.value = match?.id || '';
+    select.disabled = select.dataset.locked === 'true' || correspondentOptions.length === 0;
+    document.getElementById('correspondent-empty-help').hidden =
+      correspondentOptions.length > 0 || select.dataset.locked === 'true';
+  }
+
+  function selectedCorrespondentName() {
+    const select = document.getElementById('assign-correspondent');
+    return select.value ? select.selectedOptions[0]?.textContent.trim() || '' : '';
+  }
+
+  // ── Load correspondents into the shared writer and assignment selector ──
   async function loadCorrespondents() {
+    const select = document.getElementById('assign-correspondent');
     try {
-      const corrs = await getCorrespondents();
-      const sel   = document.getElementById('assign-correspondent');
-      sel.innerHTML = '<option value="">None</option>';
-      corrs.forEach(c => {
+      const users = await getCorrespondents();
+      correspondentOptions = users.filter(correspondent => correspondent.status === 'active');
+      correspondentsLoaded = true;
+      select.replaceChildren(new Option('Select a correspondent', ''));
+      correspondentOptions.forEach(correspondent => {
         const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = toTitleCase(c.name || [c.firstName, c.surname].filter(Boolean).join(' ') || c.email || 'Correspondent');
-        sel.appendChild(opt);
+        opt.value = correspondent.id;
+        opt.textContent = correspondentDisplayName(correspondent);
+        select.appendChild(opt);
       });
+      if (!correspondentOptions.length) select.options[0].textContent = 'No active correspondents';
+      setCorrespondentSelection({
+        assignedTo: select.dataset.pendingId || '',
+        writerName: select.dataset.pendingName || ''
+      });
+      buildTable();
     } catch (e) {
       console.error('Failed to load correspondents', e);
+      select.replaceChildren(new Option('Could not load correspondents', ''));
+      select.disabled = true;
+      document.getElementById('correspondent-empty-help').hidden = true;
       showToast('Could not load the correspondent list. Try refreshing the page.', 'error');
     }
   }
@@ -558,7 +677,7 @@
       root.setAttribute('autocorrect', 'on');
       root.setAttribute('autocapitalize', 'sentences');
       root.style.minHeight = '280px';
-      document.getElementById('quill-toolbar').style.display = 'none';
+      document.getElementById('quill-toolbar').classList.add('formatting-unavailable');
       quill = {
         root,
         getText: () => root.innerText || root.textContent || '',
@@ -585,10 +704,12 @@
   // ── Build table ──
   function buildTable() {
     const query = document.getElementById('articles-search').value.trim().toLocaleLowerCase();
-    visibleArticles = articlesData.filter(article => !query || [
+    const tableArticles = articlesData.filter(article => article.status !== 'pending_adviser');
+    visibleArticles = tableArticles.filter(article => !query || [
       article.title, sectionOf(article), ...(Array.isArray(article.tags) ? article.tags : []), article.writerName, article.authorName,
       article.artistName, article.photojournalistName, article.status
-    ].some(value => String(value || '').toLocaleLowerCase().includes(query)));
+    ].some(value => String(value || '').toLocaleLowerCase().includes(query)))
+      .sort((a, b) => articleSubmissionTime(b) - articleSubmissionTime(a));
 
     if (!articlesData.length) {
       document.getElementById('articles-content').innerHTML = `
@@ -598,6 +719,14 @@
           ${user.role !== 'adviser' ? '<button class="btn btn-red" id="empty-new-btn">Create</button>' : ''}
         </div>`;
       document.getElementById('empty-new-btn')?.addEventListener('click', () => openEditor(editorModeFor()));
+      return;
+    }
+    if (!tableArticles.length) {
+      document.getElementById('articles-content').innerHTML = `
+        <div class="empty-state empty-state-plain">
+          <div class="empty-state-title">No articles to show</div>
+          <div class="empty-state-sub">Articles awaiting final approval are in the Approval Queue.</div>
+        </div>`;
       return;
     }
     if (!visibleArticles.length) {
@@ -614,15 +743,15 @@
       rows += `
         <tr>
           <td data-label="Writer" title="${escapeHtml(toTitleCaseName(a.writerName || a.authorName || '—'))}">${escapeHtml(toTitleCaseName(a.writerName || a.authorName || '—'))}</td>
-          <td data-label="Section">${escapeHtml(sectionOf(a).toUpperCase())}</td>
-          <td class="title-cell" data-label="Title">${escapeHtml(a.title || 'Untitled')}</td>
+          <td data-label="Section" title="${escapeHtml(sectionOf(a).toUpperCase())}">${escapeHtml(sectionOf(a).toUpperCase())}</td>
+          <td class="title-cell" data-label="Title" title="${escapeHtml(a.title || 'Untitled')}">${escapeHtml(a.title || 'Untitled')}</td>
           <td data-label="Status">
             ${user.role === 'correspondent'
               ? `<span class="status-badge status-readonly ${status}" aria-label="Status: ${escapeHtml(statusLabels[status])}"><span class="status-pill-dot dot-${status}"></span><span>${escapeHtml(statusLabels[status])}</span></span>`
               : `<div class="status-dropdown" id="dd-${i}">
                   <button type="button" class="status-badge ${status}" id="badge-${i}" aria-label="Change status, currently ${escapeHtml(statusLabels[status])}"><span class="status-pill-dot dot-${status}"></span><span>${escapeHtml(statusLabels[status])}</span></button>
                   <div class="status-menu" id="menu-${i}">
-                    ${['draft', 'pending', 'reviewed', 'published', 'assigned', 'pending_adviser'].filter(nextStatus => canShowStatusOption(nextStatus, a)).map(nextStatus => `<div class="status-option opt-${nextStatus} ${status===nextStatus?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="${nextStatus}"><span class="status-dot dot-${nextStatus}"></span>${escapeHtml(statusLabels[nextStatus])}</div>`).join('')}
+                    ${statusOptions.filter(nextStatus => canShowStatusOption(nextStatus, a)).map(nextStatus => `<div class="status-option opt-${nextStatus} ${status===nextStatus?'is-selected':''}" data-i="${i}" data-id="${escapeHtml(a.id)}" data-s="${nextStatus}"><span class="status-dot dot-${nextStatus}"></span>${escapeHtml(statusLabels[nextStatus])}</div>`).join('')}
                   </div>
                 </div>`}
           </td>
@@ -638,8 +767,8 @@
       <div class="table-wrap">
         <table class="articles-table" style="table-layout:fixed;width:100%;border:0;border-radius:0;">
           <colgroup>
-            <col style="width:18%"><col style="width:12%">
-            <col style="width:38%"><col style="width:18%"><col style="width:14%">
+            <col style="width:20%"><col style="width:14%">
+            <col style="width:34%"><col style="width:20%"><col style="width:12%">
           </colgroup>
           <thead><tr>
             <th>Writer</th><th>Section</th>
@@ -784,23 +913,43 @@
 
   function openEditor(mode, article = null, id = null) {
     editingId = id;
+    editorMode = mode;
+    editorChangeVersion = 0;
+    savedChangeVersion = 0;
+    pendingCoverPhoto = null;
+    pendingCoverFile = null;
     document.getElementById('editor-alert').classList.remove('show');
-    if (typeof window.Quill !== 'function') {
-      document.getElementById('quill-toolbar').style.display = 'none';
-    } else {
-      document.getElementById('quill-toolbar').style.display = '';
-    }
+    setAutoSaveStatus(article ? 'Saved' : '', article ? 'saved' : '');
+    document.getElementById('quill-toolbar').classList.toggle('formatting-unavailable', typeof window.Quill !== 'function');
 
     const ef = document.getElementById('editorial-fields');
     const cf = document.getElementById('correspondent-fields');
     const rd = document.getElementById('review-dates');
+    const dueDateGroup = document.getElementById('due-date-group');
     const fg = document.getElementById('feedback-group');
     const pb = document.getElementById('publish-btn');
     const footer = document.getElementById('editor-footer');
     const title  = document.getElementById('editor-title');
+    const writerLocked = articleWriterLocked(article);
+    const writerFields = [
+      [document.getElementById('writer-name'), 'readOnly', 'writer-lock-hint-correspondent']
+    ];
+    writerFields.forEach(([field, lockProperty, hintId]) => {
+      field[lockProperty] = writerLocked;
+      if (writerLocked) field.setAttribute('aria-describedby', hintId);
+      else field.removeAttribute('aria-describedby');
+    });
+    document.getElementById('writer-name').readOnly = true;
+    const correspondentSelect = document.getElementById('assign-correspondent');
+    correspondentSelect.dataset.locked = String(writerLocked);
+    correspondentSelect.disabled = writerLocked || !correspondentsLoaded || correspondentOptions.length === 0;
+    if (writerLocked) correspondentSelect.setAttribute('aria-describedby', 'writer-lock-hint-editorial');
+    else correspondentSelect.removeAttribute('aria-describedby');
+    document.querySelectorAll('.writer-lock-hint').forEach(hint => { hint.hidden = !writerLocked; });
 
     ef.style.display = cf.style.display = rd.style.display =
     fg.style.display = pb.style.display = 'none';
+    dueDateGroup.style.display = '';
 
     // Pre-fill if editing existing article
     if (article) {
@@ -808,16 +957,19 @@
       ensureQuill();
       quill.root.innerHTML = sanitizeArticleContent(article.content);
       document.getElementById('article-cutline').value = article.cutline || '';
-      document.getElementById('editorial-writer-name').value = article.writerName || article.authorName || '';
       document.getElementById('writer-name').value = article.writerName || article.authorName || '';
       document.getElementById('artist-name').value = article.artistName || '';
       document.getElementById('photojournalist-name').value = article.photojournalistName || '';
+      document.getElementById('due-date').value = article.dueDate || '';
+      document.getElementById('corr-due-date').value = article.dueDate || '';
       document.querySelectorAll('#tags-wrap .section-tag').forEach(t => t.remove());
       const articleTags = Array.isArray(article.tags) && article.tags.length
         ? article.tags
         : (article.section ? [article.section] : []);
-      articleTags.forEach(value => addSectionTag(value));
-      document.getElementById('assign-correspondent').value = article.assignedTo || '';
+      articleTags
+        .filter(value => String(value || '').replace(/^#+/, '').trim().toLowerCase() !== 'general')
+        .forEach(value => addSectionTag(value));
+      setCorrespondentSelection(article);
       document.getElementById('editor-feedback').value = '';
       const feedbackThread = document.getElementById('feedback-thread');
       feedbackThread.replaceChildren();
@@ -863,14 +1015,15 @@
       ensureQuill();
       quill.root.innerHTML = '';
       document.getElementById('article-cutline').value   = '';
-      document.getElementById('editorial-writer-name').value = userDisplayName;
       document.getElementById('writer-name').value = userDisplayName;
       document.getElementById('artist-name').value = '';
       document.getElementById('photojournalist-name').value = '';
+      document.getElementById('due-date').value = '';
+      document.getElementById('corr-due-date').value = '';
       document.getElementById('editor-feedback').value = '';
       document.getElementById('feedback-thread').replaceChildren();
       document.getElementById('feedback-thread').style.display = 'none';
-      document.getElementById('assign-correspondent').value = '';
+      setCorrespondentSelection(null);
       document.getElementById('cover-preview').removeAttribute('src');
       document.getElementById('cover-preview').style.display = 'none';
       document.getElementById('cover-file-input').value  = '';
@@ -898,6 +1051,7 @@
 
     } else if (mode === 'review') {
       title.textContent = 'Review Article';
+      dueDateGroup.style.display = 'none';
       if (user.role === 'adviser') ef.style.display = '';
       rd.style.display = fg.style.display = '';
       // Only adviser may publish; other reviewers forward to adviser
@@ -941,25 +1095,187 @@
       document.getElementById('btn-assign').addEventListener('click',     () => saveArticle('assigned'));
     }
 
-    footer.insertAdjacentHTML('afterbegin', '<button class="btn btn-outline" id="btn-preview" type="button">Preview</button>');
-    document.getElementById('btn-preview').addEventListener('click', openPreview);
-
     document.getElementById('editor-overlay').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
   }
 
-  function closeEditor() {
+  async function closeEditor(flushPending = true) {
+    if (flushPending) {
+      if (!await flushAutoSave()) return;
+    } else {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = null;
+      autoSaveQueued = false;
+    }
     closePreview();
     closeTagSuggestions();
     document.getElementById('editor-overlay').classList.add('hidden');
     document.body.style.overflow = '';
     editingId = null;
+    editorMode = null;
   }
   window.closeEditor = closeEditor;
 
+  function setAutoSaveStatus(message, state = '') {
+    const status = document.getElementById('autosave-status');
+    status.textContent = message;
+    status.dataset.state = state;
+    status.style.display = !message ? 'none' : '';
+  }
+
+  function canAutoSave() {
+    if (document.getElementById('editor-overlay').classList.contains('hidden')) return false;
+    if (!getSelectedSections().length) {
+      setAutoSaveStatus('Select a section before saving changes.', 'error');
+      return false;
+    }
+    const article = editingId ? articlesData.find(item => item.id === editingId) : null;
+    if (article?.status === 'published' && user.role !== 'adviser') return false;
+    return !(['editorial', 'adviser'].includes(user.role)
+      && !articleWriterLocked(article)
+      && !document.getElementById('assign-correspondent').value);
+  }
+
+  function scheduleAutoSave() {
+    if (!canAutoSave() || isSavingArticle) return;
+    editorChangeVersion++;
+    setAutoSaveStatus('Unsaved changes');
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      autoSaveTimer = null;
+      startAutoSave();
+    }, 900);
+  }
+
+  function startAutoSave() {
+    if (autoSavePromise) {
+      autoSaveQueued = true;
+      return autoSavePromise;
+    }
+    autoSavePromise = performAutoSave().finally(() => {
+      autoSavePromise = null;
+      if (autoSaveQueued) {
+        autoSaveQueued = false;
+        scheduleAutoSave();
+      }
+    });
+    return autoSavePromise;
+  }
+
+  async function flushAutoSave() {
+    while (autoSaveTimer || autoSavePromise) {
+      if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = null;
+        startAutoSave();
+      }
+      if (autoSavePromise) await autoSavePromise;
+    }
+    return savedChangeVersion >= editorChangeVersion;
+  }
+
+  function buildArticleData() {
+    ensureQuill();
+    const title = document.getElementById('article-title').value.trim();
+    const content = sanitizeArticleContent(quill.root.innerHTML);
+    const existingArticle = editingId
+      ? articlesData.find(article => article.id === editingId)
+      : null;
+    const writerLocked = articleWriterLocked(existingArticle);
+    const tags = getSelectedSections();
+    const assignee = writerLocked
+      ? (existingArticle.assignedTo ?? null)
+      : ['editorial', 'adviser'].includes(user.role)
+        ? (document.getElementById('assign-correspondent')?.value || null)
+      : (existingArticle?.assignedTo || null);
+    const dueDate = user.role === 'correspondent'
+      ? document.getElementById('corr-due-date').value
+      : document.getElementById('due-date').value;
+    const writerName = writerLocked
+      ? (Object.hasOwn(existingArticle, 'writerName')
+        ? existingArticle.writerName
+        : existingArticle.authorName || '')
+      : (user.role === 'correspondent'
+        ? userDisplayName
+        : selectedCorrespondentName());
+    const data = {
+      title,
+      content,
+      cutline: document.getElementById('article-cutline').value.trim(),
+      section: tags[0] || '',
+      tags,
+      assignedTo: assignee,
+      dueDate: dueDate || existingArticle?.dueDate || null,
+      ...(writerLocked && !Object.hasOwn(existingArticle, 'writerName') ? {} : { writerName }),
+      artistName: document.getElementById('artist-name').value.trim(),
+      photojournalistName: document.getElementById('photojournalist-name').value.trim(),
+    };
+    if (!editingId) {
+      data.authorId = user.uid;
+      data.authorName = writerName || userDisplayName;
+    } else if (writerName && !writerLocked) {
+      data.authorName = writerName;
+    }
+    return { data, existingArticle };
+  }
+
+  async function uploadSelectedCover(data) {
+    const fileInput = document.getElementById('cover-file-input');
+    const file = fileInput.files[0];
+    if (file && file !== pendingCoverFile) {
+      const { uploadImage } = await import('../backend/firebase/imgbb.js');
+      const imageResult = await uploadImage(file);
+      if (!imageResult.success) throw new Error(imageResult.error || 'Cover image upload failed.');
+      pendingCoverPhoto = imageResult.url;
+      pendingCoverFile = file;
+      if (fileInput.files[0] === file) fileInput.value = '';
+    }
+    if (pendingCoverPhoto) data.coverPhoto = pendingCoverPhoto;
+  }
+
+  async function persistArticleData(data) {
+    const isNewArticle = !editingId;
+    const result = isNewArticle
+      ? await createArticle(data)
+      : await updateArticle(editingId, data);
+    if (!result.success) throw new Error(result.error || 'The article could not be saved.');
+    if (isNewArticle) {
+      if (!result.id) throw new Error('The article was saved, but no article ID was returned.');
+      editingId = result.id;
+    }
+    pendingCoverPhoto = null;
+    pendingCoverFile = null;
+    return result;
+  }
+
+  async function performAutoSave() {
+    if (!canAutoSave() || isSavingArticle) return;
+    const changeVersion = editorChangeVersion;
+    try {
+      const { data } = buildArticleData();
+      if (document.getElementById('cover-file-input').files[0]) {
+        setAutoSaveStatus('Saving cover photo…', 'saving');
+      } else {
+        setAutoSaveStatus('Saving…', 'saving');
+      }
+      await uploadSelectedCover(data);
+      await persistArticleData(data);
+      if (changeVersion === editorChangeVersion) {
+        savedChangeVersion = changeVersion;
+        setAutoSaveStatus('Saved automatically', 'saved');
+      } else {
+        setAutoSaveStatus('Unsaved changes');
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to autosave article:', error);
+      setAutoSaveStatus('Autosave failed. Use a save action to keep changes.', 'error');
+      return false;
+    }
+  }
+
   // ── Save article to Firestore ──
-  let isSavingArticle = false;
   async function saveArticle(status) {
     if (isSavingArticle) return;
     isSavingArticle = true;
@@ -967,12 +1283,21 @@
     actionButtons.forEach(button => { button.disabled = true; });
 
     try {
-      const title = document.getElementById('article-title').value.trim();
-      ensureQuill();
-      const content = sanitizeArticleContent(quill.root.innerHTML);
-      const cutline = document.getElementById('article-cutline').value.trim();
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = null;
+      if (autoSavePromise) await autoSavePromise;
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = null;
+      autoSaveQueued = false;
+      const { data, existingArticle } = buildArticleData();
 
-      if (!title) {
+      if (!data.tags.length) {
+        showEditorAlert('Select a section before saving.', 'error');
+        document.getElementById('tag-input').focus();
+        return;
+      }
+
+      if (!data.title) {
         showEditorAlert('Add a title before saving.', 'error');
         return;
       }
@@ -982,57 +1307,19 @@
         return;
       }
 
-      const tags = getSelectedSections();
-      const existingArticle = editingId
-        ? articlesData.find(article => article.id === editingId)
-        : null;
-      const assignee = ['editorial', 'adviser'].includes(user.role)
-        ? (document.getElementById('assign-correspondent')?.value || null)
-        : (existingArticle?.assignedTo || null);
-      const dueDate = user.role === 'correspondent'
-        ? document.getElementById('corr-due-date').value
-        : (document.getElementById('due-date').value || document.getElementById('review-due').value);
-      const data = {
-        title,
-        content,
-        cutline,
-        section: tags[0] || 'General',
-        tags,
-        assignedTo: assignee,
-        dueDate: dueDate || existingArticle?.dueDate || null,
-        writerName: (user.role === 'correspondent'
-          ? document.getElementById('writer-name').value
-          : document.getElementById('editorial-writer-name').value).trim(),
-        artistName: document.getElementById('artist-name').value.trim(),
-        photojournalistName: document.getElementById('photojournalist-name').value.trim(),
-      };
       if (!data.writerName) {
-        showEditorAlert("Add the writer's name before saving.", 'error');
+        showEditorAlert('Select a correspondent to set the writer and assignment.', 'error');
         return;
-      }
-      if (!editingId) {
-        data.authorId = user.uid;
-        data.authorName = data.writerName || userDisplayName;
-      } else if (data.writerName) {
-        data.authorName = data.writerName;
       }
 
       const fileInput = document.getElementById('cover-file-input');
       if (fileInput.files[0]) {
         showEditorAlert('Uploading cover photo…', 'success');
-        const { uploadImage } = await import('../backend/firebase/imgbb.js');
-        const imgResult = await uploadImage(fileInput.files[0]);
-        if (!imgResult.success) throw new Error(imgResult.error || 'Cover image upload failed.');
-        data.coverPhoto = imgResult.url;
       }
 
-      const result = editingId
-        ? await updateArticle(editingId, data)
-        : await createArticle(data);
-
-      if (!result.success) throw new Error(result.error || 'The article could not be saved.');
-
-      if (!editingId && result.id) editingId = result.id;
+      await uploadSelectedCover(data);
+      const result = await persistArticleData(data);
+      savedChangeVersion = editorChangeVersion;
       const articleId = editingId || result.id;
       const currentStatus = existingArticle?.status || 'draft';
       if (articleId && status !== currentStatus) {
@@ -1061,7 +1348,7 @@
         showToast('The article was saved, but feedback could not be added.', 'error');
       }
 
-      closeEditor();
+      await closeEditor(false);
       const msgs = {
         draft:     'Draft saved successfully.',
         pending:   'Article submitted for review.',
@@ -1078,6 +1365,14 @@
       actionButtons.forEach(button => { button.disabled = false; });
     }
   }
+
+  const editorGrid = document.getElementById('editor-grid-main');
+  editorGrid.addEventListener('input', event => {
+    if (event.target.id !== 'editor-feedback') scheduleAutoSave();
+  });
+  editorGrid.addEventListener('change', event => {
+    if (event.target.id !== 'editor-feedback') scheduleAutoSave();
+  });
 
   document.getElementById('editor-overlay').addEventListener('click', function(e) {
     if (e.target === this) closeEditor();
@@ -1128,9 +1423,11 @@
       tag.remove();
       tagInput.focus();
       renderTagSuggestions();
+      scheduleAutoSave();
     });
     tag.append(label, removeButton);
     tagsWrap.insertBefore(tag, tagInput);
+    scheduleAutoSave();
   }
 
   function availableSections() {
@@ -1217,10 +1514,10 @@
     ensureQuill();
     const title = document.getElementById('article-title').value.trim() || 'Untitled';
     const sections = getSelectedSections();
-    const section = sections[0] || 'General';
+    const section = sections[0] || '';
     const writerName = (user.role === 'correspondent'
-      ? document.getElementById('writer-name').value
-      : document.getElementById('editorial-writer-name').value).trim() || userDisplayName;
+      ? userDisplayName
+      : selectedCorrespondentName()) || 'Writer not selected';
     const artistName = document.getElementById('artist-name').value.trim();
     const photojournalistName = document.getElementById('photojournalist-name').value.trim();
     const cutline = document.getElementById('article-cutline').value.trim();
@@ -1233,6 +1530,16 @@
     const dateLabel = publishedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const base = new URL('.', window.location.href).href;
 
+    previewFrame.onload = () => {
+      const coverImage = previewFrame.contentDocument?.querySelector('.article-cover-image');
+      if (!coverImage) return;
+      const setOrientation = () => {
+        coverImage.classList.toggle('is-portrait', coverImage.naturalHeight > coverImage.naturalWidth);
+      };
+      if (coverImage.complete) setOrientation();
+      else coverImage.addEventListener('load', setOrientation, { once: true });
+    };
+
     previewFrame.srcdoc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
       <base href="${escapeHtml(base)}" target="_blank">
       <link rel="stylesheet" href="frontline.css">
@@ -1242,20 +1549,38 @@
         <div class="article-section-tag">${escapeHtml(section)}</div>
         <h1 class="article-title">${escapeHtml(title)}</h1>
         <div class="article-meta">
-          <div class="meta-avatar">${user.photoURL
-            ? `<img src="${escapeHtml(user.photoURL)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" alt="">`
-            : '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2e1a0a,#4a2e1a);"></div>'}</div>
-          <div class="meta-info">
-            <div class="meta-name">${escapeHtml(toTitleCaseName(writerName))}</div>
-            <div class="meta-role">Writer</div>
-            ${artistName ? `<div class="meta-role">Artist: ${escapeHtml(toTitleCaseName(artistName))}</div>` : ''}
-            ${photojournalistName ? `<div class="meta-role">Photojournalist: ${escapeHtml(toTitleCaseName(photojournalistName))}</div>` : ''}
+          <div class="article-contributors">
+            <div class="article-contributor">
+              <div class="meta-avatar">${user.photoURL
+                ? `<img src="${escapeHtml(user.photoURL)}" alt="">`
+                : '<div class="meta-avatar-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="currentColor"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0z" fill="currentColor"/></svg></div>'}</div>
+              <div class="meta-info">
+                <div class="meta-name">${escapeHtml(toTitleCaseName(writerName))}</div>
+                <div class="meta-role">Writer</div>
+              </div>
+            </div>
+            ${artistName ? `
+              <div class="article-contributor">
+                <div class="meta-avatar"><div class="meta-avatar-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="currentColor"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0z" fill="currentColor"/></svg></div></div>
+                <div class="meta-info">
+                  <div class="meta-name">${escapeHtml(toTitleCaseName(artistName))}</div>
+                  <div class="meta-role">Artist</div>
+                </div>
+              </div>` : ''}
+            ${photojournalistName ? `
+              <div class="article-contributor">
+                <div class="meta-avatar"><div class="meta-avatar-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="currentColor"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0z" fill="currentColor"/></svg></div></div>
+                <div class="meta-info">
+                  <div class="meta-name">${escapeHtml(toTitleCaseName(photojournalistName))}</div>
+                  <div class="meta-role">Photojournalist</div>
+                </div>
+              </div>` : ''}
           </div>
           <div class="meta-date">${existing?.status === 'published' ? 'Published on' : 'To be published'} ${escapeHtml(dateLabel)}</div>
         </div>
         ${coverSrc
           ? `<figure class="article-figure">
-              <img src="${escapeHtml(coverSrc)}" alt="${escapeHtml(title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;display:block;">
+              <img class="article-cover-image" src="${escapeHtml(coverSrc)}" alt="${escapeHtml(title)}">
               ${cutline ? `<figcaption style="font-size:var(--fs-xs);color:var(--text-muted);margin-top:8px;text-align:center;">${escapeHtml(cutline)}</figcaption>` : ''}
             </figure>`
           : `<figure class="article-figure">
@@ -1271,6 +1596,7 @@
   function closePreview() {
     previewOverlay.classList.add('hidden');
   }
+  document.getElementById('btn-preview').addEventListener('click', openPreview);
   document.getElementById('preview-close-btn').addEventListener('click', closePreview);
   previewOverlay.addEventListener('click', e => { if (e.target === previewOverlay) closePreview(); });
   document.addEventListener('keydown', e => {

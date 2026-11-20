@@ -6,36 +6,6 @@
   <title>The Frontline</title>
   <link rel="stylesheet" href="frontline.css">
   <style>
-    .nav-search {
-      display: flex;
-      align-items: center;
-      width: 0;
-      min-width: 0;
-      height: 34px;
-      margin-left: auto;
-      background: rgba(255,255,255,0.1);
-      border-left: 1px solid rgba(255,255,255,0.12);
-      overflow: hidden;
-      transition: width 0.18s ease, min-width 0.18s ease;
-    }
-    .nav-search.open {
-      width: min(300px, 22vw);
-      min-width: 190px;
-    }
-    .nav-search input {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: transparent;
-      color: #fff;
-      padding: 0 8px 0 14px;
-      font-size: var(--fs-sm);
-      outline: none;
-      font-family: inherit;
-    }
-    .nav-search input::placeholder { color: rgba(255,255,255,0.72); }
-    .nav-search:focus-within { background: rgba(255,255,255,0.16); }
-    .search-btn { height: 34px; flex-shrink: 0; }
     .popup-account {
       display: flex;
       gap: 10px;
@@ -48,7 +18,7 @@
       min-height: 40px;
       padding: 0 16px;
       border-radius: 4px;
-      border: 1px solid #5c0808;
+      border: 1px solid var(--red-dark);
       font: inherit;
       font-size: var(--fs-md);
       font-weight: 700;
@@ -59,32 +29,39 @@
       cursor: pointer;
     }
     .popup-account .account-primary {
-      background: #5c0808;
+      background: var(--red-dark);
       color: #fff;
     }
     .popup-account .account-secondary {
       background: #fff;
-      color: #5c0808;
+      color: var(--red-dark);
     }
-    @media (max-width: 700px) {
-      .nav-search.open {
-        width: min(58vw, 260px);
-        min-width: 180px;
-      }
+    .popup-account[hidden] {
+      display: none;
     }
   </style>
 </head>
 <body>
 
   <header class="site-header">
-    <a class="header-brand" href="index.html" aria-label="Go to The Frontline homepage">
-      <img src="assets/forefront-black.png" alt="The Frontline" class="brand-logo"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-      <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
-    </a>
+    <div class="header-top">
+      <a class="header-brand" href="index.html" aria-label="Go to The Frontline homepage">
+        <img src="assets/public-logo.png" alt="The Frontline" class="brand-logo"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <span class="brand-fallback">The <span class="brand-accent">F</span>rontline</span>
+      </a>
+      <form class="header-search" action="index.html" method="get" role="search">
+        <button class="header-search-submit" type="submit" aria-label="Search articles">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <input id="homeSearch" name="q" type="search" placeholder="Search" aria-label="Search articles">
+      </form>
+    </div>
     <nav class="site-nav">
       <div class="nav-bar">
-        <button class="hamburger" id="hamburger" aria-label="Menu">
+        <button class="hamburger" id="hamburger" aria-label="Open menu" aria-controls="popupMenu" aria-expanded="false">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round">
             <line x1="2" y1="5" x2="18" y2="5"/>
@@ -92,61 +69,45 @@
             <line x1="2" y1="15" x2="18" y2="15"/>
           </svg>
         </button>
-        <span class="nav-date" id="nav-date"></span>
         <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
           <li><a href="index.html?section=News">News</a></li>
           <li><a href="index.html?section=Editorial">Editorial</a></li>
-          <li><a href="index.html?section=Opinion-Editorial">Opinion</a></li>
-          <li><a href="index.html?section=Feature">Features</a></li>
+          <li><a href="index.html?section=Feature">Feature</a></li>
           <li><a href="index.html?section=Literary">Literary</a></li>
-          <li><a href="index.html?section=DevComm">DevComm</a></li>
-          <li><a href="index.html?section=Sports">Sports</a></li>
-          <li><a href="index.html?section=Comics">Comics</a></li>
+          <li><a href="index.html?section=DevComm">DevCom</a></li>
         </ul>
-        <div class="nav-search" id="navSearch">
-          <input id="homeSearch" type="search" placeholder="Search articles..." aria-label="Search articles">
-        </div>
-        <button class="search-btn" aria-label="Search" type="button">
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-          </svg>
-        </button>
+        <span class="nav-date" id="nav-date"></span>
       </div>
     </nav>
   </header>
 
   <div class="popup-overlay" id="popupOverlay" onclick="closeMenu()"></div>
-  <div class="popup-menu" id="popupMenu">
+  <div class="popup-menu" id="popupMenu" aria-label="Site menu">
     <div class="popup-head">
-      <img src="assets/forefront-black.png" alt="The Frontline" class="popup-logo"
+      <img src="assets/public-logo.png" alt="The Frontline" class="popup-logo"
            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <span class="popup-logo-fallback">The <span>F</span>rontline</span>
       <button class="popup-close" id="popupClose" aria-label="Close menu">&#10005;</button>
     </div>
+    <a class="popup-about-link" href="about.html">About Us</a>
     <div class="popup-body">
       <div class="popup-col">
-        <a href="index.html?section=News">News</a><a href="index.html?section=Editorial">Editorial</a><a href="index.html?section=Opinion-Editorial">Opinion</a>
-        <a href="index.html?section=Column">Column</a><a href="index.html?section=Feature">Features</a>
+        <a href="index.html">Home</a><a href="index.html?section=News">News</a>
+        <a href="index.html?section=Editorial">Editorial</a><a href="index.html?section=Opinion-Editorial">Opinion</a>
       </div>
       <div class="popup-col">
-        <a href="index.html?section=Literary">Literary</a><a href="index.html?section=DevComm">DevComm</a>
-        <a href="index.html?section=Sports">Sports</a><a href="index.html?section=Arts">Arts</a>
+        <a href="index.html?section=Feature">Feature</a><a href="index.html?section=Literary">Literary</a>
+        <a href="index.html?section=DevComm">DevCom</a><a href="index.html?section=Sports">Sports</a>
       </div>
     </div>
     <div class="popup-footer">
       <div class="popup-footer-col">
         <div class="popup-section-title">Special Issues</div>
-        <a href="#">Bagani</a><a href="#">Sinagtala</a>
-        <a href="#">Bidlisiw</a><a href="#">Babaylan</a>
-      </div>
-      <div class="popup-footer-col">
-        <div class="popup-section-title">About</div>
-        <a href="about.html">About Us</a>
+        <a href="#">Siklab</a><a href="#">Bagani</a><a href="#">Bidlisiw</a>
       </div>
     </div>
-    <div class="popup-account" id="popupAccountActions">
-      <a class="account-primary" href="login.html">Log in</a>
-      <a class="account-secondary" href="register.html">Create account</a>
+    <div class="popup-account" id="popupAccountActions" hidden>
     </div>
   </div>
 
@@ -184,13 +145,12 @@
       <div class="footer-col">
         <div class="footer-col-title">Sections</div>
         <a href="index.html?section=News">News</a><a href="index.html?section=Editorial">Editorial</a><a href="index.html?section=Opinion-Editorial">Opinion</a>
-        <a href="index.html?section=Feature">Features</a><a href="index.html?section=Literary">Literary</a><a href="index.html?section=DevComm">DevComm</a>
+        <a href="index.html?section=Feature">Features</a><a href="index.html?section=Literary">Literary</a><a href="index.html?section=DevComm">DevCom</a>
         <a href="index.html?section=Sports">Sports</a><a href="index.html?section=Comics">Comics</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Special Issues</div>
-        <a href="#">Bagani</a><a href="#">Sinagtala</a>
-        <a href="#">Bidlisiw</a><a href="#">Babaylan</a>
+        <a href="#">Siklab</a><a href="#">Bagani</a><a href="#">Bidlisiw</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">More on The Frontline</div>
@@ -217,38 +177,22 @@
 
   function openMenu() {
     const headerH = document.querySelector('.site-header').offsetHeight;
+    popupMenu.style.setProperty('--popup-menu-top', headerH + 'px');
     popupMenu.style.top = headerH + 'px';
     popupMenu.classList.add('open');
     popupOverlay.classList.add('open');
+    document.getElementById('hamburger').setAttribute('aria-expanded', 'true');
   }
   function closeMenu() {
     popupMenu.classList.remove('open');
     popupOverlay.classList.remove('open');
+    document.getElementById('hamburger').setAttribute('aria-expanded', 'false');
   }
 
   document.getElementById('hamburger').addEventListener('click', openMenu);
   document.getElementById('popupClose').addEventListener('click', closeMenu);
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeMenu();
-      closeSearch();
-    }
-  });
-
-  // Search icon should work immediately, even while Firebase content is still loading.
-  const navSearch = document.getElementById('navSearch');
-  const searchButton = document.querySelector('.search-btn');
-  function closeSearch() {
-    navSearch.classList.remove('open');
-  }
-  document.querySelector('.search-btn').addEventListener('click', () => {
-    const input = document.getElementById('homeSearch');
-    if (!navSearch || !input) return;
-    navSearch.classList.add('open');
-    input.focus();
-    if (typeof window.__frontlineFilterArticles === 'function') {
-      window.__frontlineFilterArticles();
-    }
+    if (e.key === 'Escape') closeMenu();
   });
 
   function initAccountActions() {
@@ -260,6 +204,7 @@
       <a class="account-primary" href="dashboard.html">Go to dashboard</a>
       <button class="account-secondary" type="button" id="homeLogoutBtn">Log out</button>
     `;
+    accountActions.hidden = false;
     document.getElementById('homeLogoutBtn').addEventListener('click', () => {
       sessionStorage.removeItem('user');
       window.location.href = 'login.html';
@@ -284,6 +229,7 @@
   ];
 
   const searchInput = document.getElementById('homeSearch');
+  searchInput.value = new URLSearchParams(window.location.search).get('q') || '';
   let publishedArticles = [];
 
   function imgOrGrad(article, i) {
@@ -304,6 +250,7 @@
   function setNoResults() {
     document.getElementById('heroCard').hidden = true;
     document.getElementById('heroTag').textContent = '';
+    document.getElementById('heroTag').hidden = true;
     document.getElementById('heroTitle').textContent = 'No articles found.';
     const heroRead = document.getElementById('heroRead');
     heroRead.style.display = 'none';
@@ -324,7 +271,10 @@
 
     const hero = articles[0];
     document.getElementById('heroCard').hidden = false;
-    document.getElementById('heroTag').textContent = articleSection(hero).toUpperCase();
+    const heroSection = articleSection(hero);
+    const heroTag = document.getElementById('heroTag');
+    heroTag.textContent = heroSection.toUpperCase();
+    heroTag.hidden = !heroSection;
     document.getElementById('heroTitle').textContent = hero.title || 'Untitled';
     const heroRead = document.getElementById('heroRead');
     heroRead.href = `article-view.html?id=${hero.id}`;
@@ -348,7 +298,7 @@
         <a href="article-view.html?id=${a.id}" class="card">
           ${imgOrGrad(a, i)}
           <div class="card-body">
-            <div class="card-section">${articleSection(a).toUpperCase()}</div>
+            ${articleSection(a) ? `<div class="card-section">${articleSection(a).toUpperCase()}</div>` : ''}
             <div class="card-title">${truncate(a.title, 80)}</div>
             <div class="card-excerpt">${truncate(a.excerpt || '', 100)}</div>
             <div class="card-author">by ${toTitleCaseName(a.writerName || a.authorName || 'Unknown')}</div>
@@ -366,7 +316,7 @@
           : `<div style="background:${fallbackGrads[i % fallbackGrads.length]};width:64px;height:48px;border-radius:3px;flex-shrink:0;"></div>`
         }
         <div class="latest-info">
-          <div class="latest-section">${articleSection(a).toUpperCase()}</div>
+          ${articleSection(a) ? `<div class="latest-section">${articleSection(a).toUpperCase()}</div>` : ''}
           <div class="latest-title">${truncate(a.title, 60)}</div>
           <div class="latest-author">by ${toTitleCaseName(a.writerName || a.authorName || 'Unknown')}</div>
         </div>
@@ -378,8 +328,9 @@
     const section = new URLSearchParams(window.location.search).get('section') || '';
 
     const filtered = publishedArticles.filter(article => {
-      // Compare case-insensitively and against every tag, so multi-section and "General" articles are not dropped.
-      const sections = [articleSection(article), ...(Array.isArray(article.tags) ? article.tags : [])].map(normalize);
+      // Compare case-insensitively and against every tag so multi-section articles are not dropped.
+      const sections = [articleSection(article), ...(Array.isArray(article.tags) ? article.tags : [])]
+        .map(normalize).filter(section => section && section !== 'general');
       const matchesSection = !section || sections.includes(normalize(section));
       const haystack = [article.title, article.excerpt, article.writerName, article.authorName, ...sections].map(normalize).join(' ');
       const matchesQuery = !query || haystack.includes(query);
@@ -399,7 +350,8 @@
         '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">No published articles yet.</div>';
     } else {
       renderArticles(articles);
-      if (new URLSearchParams(window.location.search).get('section')) filterArticles();
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('section') || params.get('q')) filterArticles();
     }
   } catch (e) {
     console.error('Failed to load articles:', e);

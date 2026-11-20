@@ -34,12 +34,17 @@ export function normalizeUserNames(data) {
   return next;
 }
 
-// Every article without a section is treated as "General" everywhere it is shown or filtered.
+function normalizeArticleSection(value) {
+  const section = String(value || '').replace(/^#+/, '').trim();
+  return section.toLowerCase() === 'general' ? '' : section;
+}
+
 export function articleSection(article) {
-  const section = String(article?.section || '').replace(/^#+/, '').trim();
+  const section = normalizeArticleSection(article?.section);
   if (section) return section;
-  const firstTag = Array.isArray(article?.tags) ? String(article.tags[0] || '').replace(/^#+/, '').trim() : '';
-  return firstTag || 'General';
+  return Array.isArray(article?.tags)
+    ? article.tags.map(normalizeArticleSection).find(Boolean) || ''
+    : '';
 }
 
 function articleTimestamp(article) {
@@ -410,7 +415,8 @@ export async function getAllUsers() {
     const snap = await getDocs(collection(db, "users"));
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (e) {
-    return [];
+    console.error('getAllUsers error', e);
+    throw e;
   }
 }
 
