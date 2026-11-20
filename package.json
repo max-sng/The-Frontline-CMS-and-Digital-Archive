@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "npx serve ."
+    "start": "npx serve .",
+    "build:public": "node scripts/build-site.mjs public",
+    "build:cms": "node scripts/build-site.mjs cms",
+    "build": "npm run build:public && npm run build:cms"
   }
 }
