@@ -516,7 +516,9 @@
   }
 
   // Sections offered in the editor (same list as the Correspondents page).
-  const SECTIONS = ['News', 'Opinion-Editorial', 'DevComm', 'Feature', 'Literary', 'Photojournalism', 'Sports', 'Arts', 'Broadcasting'];
+  // Editorial and Opinion are separate sections on the public portal. Articles saved earlier
+  // with "Opinion-Editorial" keep that tag and still appear under both.
+  const SECTIONS = ['News', 'Editorial', 'Opinion', 'DevComm', 'Feature', 'Literary', 'Photojournalism', 'Sports', 'Arts', 'Broadcasting'];
   const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'];
   const toTitleCase = value => (typeof window.toTitleCaseName === 'function' ? window.toTitleCaseName(value) : value);
   const sectionOf = article => {

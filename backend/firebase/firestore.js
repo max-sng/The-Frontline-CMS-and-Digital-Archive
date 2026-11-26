@@ -47,6 +47,45 @@ export function articleSection(article) {
     : '';
 }
 
+// Public portal sections, in navbar order. `matches` lists the section/tag values (lowercase)
+// that count as that section, including older values: articles tagged "Opinion-Editorial"
+// before Editorial and Opinion were split appear under both, and "DevComm" is DevCom.
+export const PUBLIC_SECTIONS = [
+  { label: 'News',      param: 'News',      matches: ['news'] },
+  { label: 'Editorial', param: 'Editorial', matches: ['editorial', 'opinion-editorial'] },
+  { label: 'Opinion',   param: 'Opinion',   matches: ['opinion', 'opinion-editorial'] },
+  { label: 'Feature',   param: 'Feature',   matches: ['feature', 'features'] },
+  { label: 'DevCom',    param: 'DevCom',    matches: ['devcom', 'devcomm'] },
+  { label: 'Literary',  param: 'Literary',  matches: ['literary'] },
+  { label: 'Sports',    param: 'Sports',    matches: ['sports'] }
+];
+
+// Finds the public section for a ?section= value. Old links such as
+// ?section=Opinion-Editorial or ?section=DevComm still resolve.
+export function findPublicSection(param) {
+  const value = String(param || '').trim().toLowerCase();
+  if (!value) return null;
+  return PUBLIC_SECTIONS.find(section => section.param.toLowerCase() === value)
+    || PUBLIC_SECTIONS.find(section => section.matches.includes(value))
+    || null;
+}
+
+// True when the article belongs to the ?section= value (checks the section and every tag).
+export function articleMatchesSection(article, param) {
+  const value = String(param || '').trim().toLowerCase();
+  if (!value) return true;
+  const sections = [article?.section, ...(Array.isArray(article?.tags) ? article.tags : [])]
+    .map(normalizeArticleSection)
+    .map(section => section.toLowerCase())
+    .filter(Boolean);
+  const publicSection = findPublicSection(value);
+  // Legacy "Opinion-Editorial" links show both halves.
+  const accepted = value === 'opinion-editorial'
+    ? ['editorial', 'opinion', 'opinion-editorial']
+    : publicSection ? publicSection.matches : [value];
+  return sections.some(section => accepted.includes(section));
+}
+
 function articleTimestamp(article) {
   return article?.publishedAt?.toMillis?.() || article?.createdAt?.toMillis?.() || 0;
 }
@@ -569,7 +608,7 @@ export async function updatePublicationSettings(data) {
     const existing = await getDoc(settingsRef);
     await setDoc(settingsRef, {
       publicationName: 'The Frontline',
-      contactEmail: 'thefrontline@gordoncollege.edu.ph',
+      contactEmail: 'theforefront@gordoncollege.edu.ph',
       publicArticleAccess: true,
       ...(existing.exists() ? existing.data() : {}),
       ...data,

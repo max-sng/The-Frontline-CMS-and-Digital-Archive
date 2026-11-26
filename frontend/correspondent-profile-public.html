@@ -8,34 +8,34 @@
   <link rel="stylesheet" href="frontline.css">
   <meta name="description" content="Read published work and correspondent profile pages on The Frontline." id="metaDescription">
   <style>
-    .profile-main { max-width:1100px;margin:0 auto;padding:32px 20px 48px; }
+    .profile-main { max-width:1100px;margin:0 auto;padding:26px 18px 40px; }
     .profile-name { font-size:var(--fs-3xl);font-weight:600;color:var(--text-main);margin-bottom:3px; }
-    .profile-subtitle { font-size:var(--fs-xs);color:var(--text-muted);margin-bottom:20px; }
-    .profile-body { display:flex;gap:28px;align-items:flex-start;margin-bottom:32px; }
-    .profile-photo-wrap { width:190px;height:240px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#1c2333;display:flex;align-items:center;justify-content:center; }
+    .profile-subtitle { font-size:var(--fs-xs);color:var(--text-muted);margin-bottom:16px; }
+    .profile-body { display:flex;gap:24px;align-items:flex-start;margin-bottom:26px; }
+    .profile-photo-wrap { width:165px;height:208px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#1c2333;display:flex;align-items:center;justify-content:center; }
     .profile-photo-wrap img { width:100%;height:100%;object-fit:cover;display:block; }
-    .profile-photo-initials { font-size:56px;font-weight:800;color:rgba(255,255,255,0.2); }
+    .profile-photo-initials { font-size:48px;font-weight:800;color:rgba(255,255,255,0.2); }
     .profile-bio { flex:1; }
     .bio-label { font-size:var(--fs-2xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-main);margin-bottom:10px; }
     .bio-text { font-size:var(--fs-md);color:var(--text-sub);line-height:1.75; }
-    .bio-text p { margin-bottom:12px; }
+    .bio-text p { margin-bottom:10px; }
     .bio-text p:last-child { margin-bottom:0; }
-    .work-header { display:flex;align-items:center;gap:12px;margin-bottom:16px; }
+    .work-header { display:flex;align-items:center;gap:10px;margin-bottom:13px; }
     .work-title { font-size:var(--fs-2xs);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-main);white-space:nowrap; }
     .work-rule { flex:1;height:1px;background:linear-gradient(to right,var(--red) 20%,#e2e5ea 100%); }
-    .work-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
-    .work-card { display:flex;gap:12px;align-items:flex-start;text-decoration:none; }
+    .work-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+    .work-card { display:flex;gap:10px;align-items:flex-start;text-decoration:none; }
     .work-card:hover .work-card-title { color:var(--red); }
-    .work-thumb { width:120px;height:80px;flex-shrink:0;border-radius:3px;background:#1c2333;overflow:hidden; }
+    .work-thumb { width:104px;height:70px;flex-shrink:0;border-radius:3px;background:#1c2333;overflow:hidden; }
     .work-thumb img { width:100%;height:100%;object-fit:cover; }
     .work-thumb-inner { width:100%;height:100%; }
     .work-card-section { font-size:var(--fs-2xs);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--red);margin-bottom:4px; }
     .work-card-title { font-size:var(--fs-sm);font-weight:700;color:var(--text-main);line-height:1.35;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color 0.12s; }
     .work-card-author { font-size:var(--fs-xs);color:var(--text-muted); }
-    .profile-empty { padding:48px 24px; text-align:center; color:#666; }
+    .profile-empty { padding:40px 20px; text-align:center; color:#666; }
     @media (max-width:600px) {
       .profile-body { flex-direction:column; }
-      .profile-photo-wrap { width:100%;height:220px; }
+      .profile-photo-wrap { width:100%;height:190px; }
       .work-grid { grid-template-columns:1fr; }
     }
   </style>
@@ -70,12 +70,14 @@
         </button>
         <span class="nav-date" id="nav-date"></span>
         <ul class="nav-links">
-          <li><a href="index.html">Home</a></li>
-          <li><a href="index.html?section=News">News</a></li>
-          <li><a href="index.html?section=Editorial">Editorial</a></li>
-          <li><a href="index.html?section=Feature">Feature</a></li>
-          <li><a href="index.html?section=Literary">Literary</a></li>
-          <li><a href="index.html?section=DevComm">DevCom</a></li>
+          <li><a href="index.html" data-section="">Home</a></li>
+          <li><a href="index.html?section=News" data-section="News">News</a></li>
+          <li><a href="index.html?section=Editorial" data-section="Editorial">Editorial</a></li>
+          <li><a href="index.html?section=Opinion" data-section="Opinion">Opinion</a></li>
+          <li><a href="index.html?section=Feature" data-section="Feature">Feature</a></li>
+          <li><a href="index.html?section=DevCom" data-section="DevCom">DevCom</a></li>
+          <li><a href="index.html?section=Literary" data-section="Literary">Literary</a></li>
+          <li><a href="index.html?section=Sports" data-section="Sports">Sports</a></li>
         </ul>
         <button class="search-btn" aria-label="Search">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -97,16 +99,16 @@
     <a class="popup-about-link" href="about.html">About Us</a>
     <div class="popup-body">
       <div class="popup-col">
-        <a href="index.html">Home</a>
-        <a href="index.html?section=News">News</a>
-        <a href="index.html?section=Editorial">Editorial</a>
-        <a href="index.html?section=Opinion-Editorial">Opinion</a>
+        <a href="index.html" data-section="">Home</a>
+        <a href="index.html?section=News" data-section="News">News</a>
+        <a href="index.html?section=Editorial" data-section="Editorial">Editorial</a>
+        <a href="index.html?section=Opinion" data-section="Opinion">Opinion</a>
       </div>
       <div class="popup-col">
-        <a href="index.html?section=Feature">Feature</a>
-        <a href="index.html?section=Literary">Literary</a>
-        <a href="index.html?section=DevComm">DevCom</a>
-        <a href="index.html?section=Sports">Sports</a>
+        <a href="index.html?section=Feature" data-section="Feature">Feature</a>
+        <a href="index.html?section=DevCom" data-section="DevCom">DevCom</a>
+        <a href="index.html?section=Literary" data-section="Literary">Literary</a>
+        <a href="index.html?section=Sports" data-section="Sports">Sports</a>
       </div>
     </div>
     <div class="popup-footer">
@@ -151,9 +153,7 @@
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Sections</div>
-        <a href="#">News</a><a href="#">Editorial</a><a href="#">Opinion</a>
-        <a href="#">Features</a><a href="#">Literary</a><a href="#">DevCom</a>
-        <a href="#">Sports</a><a href="#">Comics</a>
+        <a href="index.html?section=News">News</a><a href="index.html?section=Editorial">Editorial</a><a href="index.html?section=Opinion">Opinion</a><a href="index.html?section=Feature">Feature</a><a href="index.html?section=DevCom">DevCom</a><a href="index.html?section=Literary">Literary</a><a href="index.html?section=Sports">Sports</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Special Issues</div>

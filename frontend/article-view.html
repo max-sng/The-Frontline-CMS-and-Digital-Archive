@@ -10,17 +10,17 @@
   <meta name="description" content="Read a featured story from The Frontline, the official student publication portal." id="metaDescription">
   <link rel="canonical" id="canonicalLink" href="">
   <style>
-    .comments-section { margin-top: 48px; padding: 24px; background:#fff; border-radius:10px; box-shadow:0 12px 24px rgba(0,0,0,.04); }
-    .comments-title, .related-title { margin-bottom: 18px; color:#151515; }
-    .comment-item { padding: 14px 16px; margin-bottom: 16px; border:1px solid #e2e2e2; border-radius:8px; background:#fbfbfb; }
-    .comment-item strong { display:block; margin-bottom:8px; color:#111; }
+    .comments-section { margin-top: 40px; padding: 20px; background:#fff; border-radius:10px; box-shadow:0 12px 24px rgba(0,0,0,.04); }
+    .comments-title, .related-title { margin-bottom: 15px; color:#151515; }
+    .comment-item { padding: 12px 14px; margin-bottom: 12px; border:1px solid #e2e2e2; border-radius:8px; background:#fbfbfb; }
+    .comment-item strong { display:block; margin-bottom:6px; color:#111; }
     .comment-item p { margin:0; color:#444; line-height:1.75; }
-    .comment-form { display:grid; gap:16px; margin-top:16px; }
-    .comment-form-row { display:grid; gap:16px; grid-template-columns:1fr; }
-    .comment-field label { display:block; margin-bottom:6px; font-size:var(--fs-sm); color:#333; }
+    .comment-form { display:grid; gap:13px; margin-top:13px; }
+    .comment-form-row { display:grid; gap:13px; grid-template-columns:1fr; }
+    .comment-field label { display:block; margin-bottom:5px; font-size:var(--fs-sm); color:#333; }
     .comment-field input,
-    .comment-field textarea { width:100%; border:1px solid #d8d8d8; border-radius:8px; padding:12px 14px; font-size:var(--fs-md); }
-    .btn-submit-comment { width:fit-content; padding:12px 22px; border:none; border-radius:7px; background:var(--red); color:#fff; cursor:pointer; }
+    .comment-field textarea { width:100%; border:1px solid #d8d8d8; border-radius:8px; padding:10px 12px; font-size:var(--fs-md); }
+    .btn-submit-comment { width:fit-content; padding:10px 18px; border:none; border-radius:7px; background:var(--red); color:#fff; cursor:pointer; }
   </style>
 </head>
 <body>
@@ -53,12 +53,14 @@
         </button>
         <span class="nav-date" id="nav-date"></span>
         <ul class="nav-links">
-          <li><a href="index.html">Home</a></li>
-          <li><a href="index.html?section=News">News</a></li>
-          <li><a href="index.html?section=Editorial">Editorial</a></li>
-          <li><a href="index.html?section=Feature">Feature</a></li>
-          <li><a href="index.html?section=Literary">Literary</a></li>
-          <li><a href="index.html?section=DevComm">DevCom</a></li>
+          <li><a href="index.html" data-section="">Home</a></li>
+          <li><a href="index.html?section=News" data-section="News">News</a></li>
+          <li><a href="index.html?section=Editorial" data-section="Editorial">Editorial</a></li>
+          <li><a href="index.html?section=Opinion" data-section="Opinion">Opinion</a></li>
+          <li><a href="index.html?section=Feature" data-section="Feature">Feature</a></li>
+          <li><a href="index.html?section=DevCom" data-section="DevCom">DevCom</a></li>
+          <li><a href="index.html?section=Literary" data-section="Literary">Literary</a></li>
+          <li><a href="index.html?section=Sports" data-section="Sports">Sports</a></li>
         </ul>
         <button class="search-btn" aria-label="Search">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -80,12 +82,16 @@
     <a class="popup-about-link" href="about.html">About Us</a>
     <div class="popup-body">
       <div class="popup-col">
-        <a href="index.html">Home</a><a href="index.html?section=News">News</a>
-        <a href="index.html?section=Editorial">Editorial</a><a href="index.html?section=Opinion-Editorial">Opinion</a>
+        <a href="index.html" data-section="">Home</a>
+        <a href="index.html?section=News" data-section="News">News</a>
+        <a href="index.html?section=Editorial" data-section="Editorial">Editorial</a>
+        <a href="index.html?section=Opinion" data-section="Opinion">Opinion</a>
       </div>
       <div class="popup-col">
-        <a href="index.html?section=Feature">Feature</a><a href="index.html?section=Literary">Literary</a>
-        <a href="index.html?section=DevComm">DevCom</a><a href="index.html?section=Sports">Sports</a>
+        <a href="index.html?section=Feature" data-section="Feature">Feature</a>
+        <a href="index.html?section=DevCom" data-section="DevCom">DevCom</a>
+        <a href="index.html?section=Literary" data-section="Literary">Literary</a>
+        <a href="index.html?section=Sports" data-section="Sports">Sports</a>
       </div>
     </div>
     <div class="popup-footer">
@@ -112,9 +118,7 @@
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Sections</div>
-        <a href="#">News</a><a href="#">Editorial</a><a href="#">Opinion</a>
-        <a href="#">Features</a><a href="#">Literary</a><a href="#">DevCom</a>
-        <a href="#">Sports</a><a href="#">Comics</a>
+        <a href="index.html?section=News">News</a><a href="index.html?section=Editorial">Editorial</a><a href="index.html?section=Opinion">Opinion</a><a href="index.html?section=Feature">Feature</a><a href="index.html?section=DevCom">DevCom</a><a href="index.html?section=Literary">Literary</a><a href="index.html?section=Sports">Sports</a>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Special Issues</div>
