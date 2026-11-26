@@ -64,12 +64,39 @@ function withFirestoreTimeout(promise) {
 // ARTICLES
 // ══════════════════════════════
 
+// When the caller records who assigned the article (assignedBy), stamp when it happened.
+function withAssignmentTime(data) {
+  if (!data || !Object.hasOwn(data, 'assignedBy')) return data;
+  return { ...data, assignedAt: data.assignedBy ? serverTimestamp() : null };
+}
+
+// Can this user forward the article to the adviser? Only the editor who assigned it may.
+// Articles with no recorded assigner (self-submitted, or assigned before assignedBy existed)
+// may be forwarded by any editor. Mirrors forwardAllowed() in firestore.rules.
+export function canForwardToAdviser(article, user) {
+  if (!user) return false;
+  if (user.role === 'adviser') return true;
+  if (user.role !== 'editorial') return false;
+  return !article?.assignedBy || article.assignedBy === user.uid;
+}
+
+// Can this user delete the article? Advisers may delete any article. Correspondents and
+// editors may delete unpublished articles they created, not ones merely assigned to them.
+// Mirrors isCreatorSoftDelete() in firestore.rules.
+export function canDeleteArticle(article, user) {
+  if (!article || !user) return false;
+  if (user.role === 'adviser') return true;
+  return ['correspondent', 'editorial'].includes(user.role)
+    && article.authorId === user.uid
+    && article.status !== 'published';
+}
+
 // Create new article
 export async function createArticle(data) {
   try {
     const ref = await addDoc(collection(db, "articles"), {
       status:    'draft',
-      ...data,
+      ...withAssignmentTime(data),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
@@ -248,7 +275,7 @@ export async function updateArticle(id, data) {
       }
     }
     await updateDoc(doc(db, "articles", id), {
-      ...data,
+      ...withAssignmentTime(data),
       updatedAt: serverTimestamp()
     });
     return { success: true };
@@ -284,6 +311,11 @@ export async function updateArticleStatus(id, status) {
     }
     if (status === 'pending_adviser' && !['editorial', 'adviser'].includes(actorRole)) {
       return { success: false, error: 'Only editorial staff may forward articles to an adviser.' };
+    }
+    if (status === 'pending_adviser' && article.status !== 'pending_adviser'
+      && !canForwardToAdviser(article, session)) {
+      const assigner = article.assignedByName || 'the editor who assigned it';
+      return { success: false, error: `Only ${assigner} can forward this article to the adviser.` };
     }
 
     const data = { status, updatedAt: serverTimestamp() };
@@ -387,13 +419,27 @@ export async function updateArticleStatus(id, status) {
   }
 }
 
-// Delete article (soft delete)
+// Delete article (soft delete). Advisers may delete any article; correspondents and editors
+// may delete unpublished articles they created.
 export async function deleteArticle(id) {
   try {
     const session = typeof sessionStorage !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
-    if (!session || session.role !== 'adviser') {
-      return { success: false, error: 'Only adviser can delete articles.' };
+    if (!session?.uid) return { success: false, error: 'Please log in again to delete articles.' };
+
+    const snap = await getDoc(doc(db, "articles", id));
+    if (!snap.exists() || snap.data().status === 'deleted') {
+      return { success: false, error: 'This article no longer exists.' };
     }
+    const article = { id: snap.id, ...snap.data() };
+    if (!canDeleteArticle(article, session)) {
+      return {
+        success: false,
+        error: article.authorId === session.uid
+          ? 'Published articles can only be deleted by an adviser.'
+          : 'You can only delete articles you created.'
+      };
+    }
+
     const deletedBy = session.uid;
     await updateDoc(doc(db, "articles", id), {
       status: 'deleted',
@@ -401,10 +447,39 @@ export async function deleteArticle(id) {
       deletedBy,
       updatedAt: serverTimestamp()
     });
-    await logAuditEntry({ action: 'delete_article', performedBy: deletedBy, targetUid: null, articleId: id, details: 'Article soft-deleted by adviser' });
+
+    const fromName = session.name || 'A staff member';
+    const title = article.title || 'Untitled article';
+    // Tell the assigned writer the article is gone, unless they deleted it themselves.
+    if (article.assignedTo && article.assignedTo !== deletedBy) {
+      await createNotification({
+        toUid: article.assignedTo,
+        type: 'article_deleted',
+        articleId: id,
+        articleTitle: title,
+        fromUid: deletedBy,
+        fromName,
+        message: `${fromName} deleted the article "${title}".`,
+        read: false
+      });
+    }
+    await logAuditEntry({
+      action: 'delete_article',
+      performedBy: deletedBy,
+      targetUid: article.authorId || null,
+      articleId: id,
+      details: session.role === 'adviser' && article.authorId !== deletedBy
+        ? 'Article soft-deleted by adviser'
+        : 'Article soft-deleted by its creator'
+    });
     return { success: true };
   } catch (e) {
-    return { success: false, error: e.message };
+    return {
+      success: false,
+      error: e.code === 'permission-denied'
+        ? 'You do not have permission to delete this article.'
+        : e.message
+    };
   }
 }
 

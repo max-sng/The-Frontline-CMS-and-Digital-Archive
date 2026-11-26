@@ -68,7 +68,15 @@ service cloud.firestore {
         );
       }
 
-      // Only editors assign articles, and only to correspondents or co-editors.
+      function me() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      }
+
+      function isActive(role) {
+        return me().role == role && me().get('status', 'active') == 'active';
+      }
+
+      // Only editors assign articles, and only to active correspondents or co-editors.
       function assigneeUnchanged() {
         return request.resource.data.get('assignedTo', null) == resource.data.get('assignedTo', null);
       }
@@ -76,7 +84,47 @@ service cloud.firestore {
       function validAssignee() {
         let assignee = request.resource.data.get('assignedTo', null);
         return assignee == null || assignee == ''
-          || get(/databases/$(database)/documents/users/$(assignee)).data.role in ['correspondent', 'editorial'];
+          || (get(/databases/$(database)/documents/users/$(assignee)).data.role in ['correspondent', 'editorial']
+            && get(/databases/$(database)/documents/users/$(assignee)).data.get('status', '') == 'active');
+      }
+
+      // Who assigned the article (assignedBy / assignedByName / assignedAt) only changes
+      // together with the assignee, and only to the editor making that change.
+      function assignmentRecordUnchanged() {
+        return request.resource.data.get('assignedBy', null) == resource.data.get('assignedBy', null)
+          && request.resource.data.get('assignedByName', null) == resource.data.get('assignedByName', null)
+          && request.resource.data.get('assignedAt', null) == resource.data.get('assignedAt', null);
+      }
+
+      function assignmentRecordedBySelf() {
+        let assignee = request.resource.data.get('assignedTo', null);
+        return (assignee == null || assignee == '')
+          ? request.resource.data.get('assignedBy', null) == null
+          : request.resource.data.get('assignedBy', null) == request.auth.uid;
+      }
+
+      // An editor may not take over an article another editor assigned.
+      function assignedBySelfOrNobody() {
+        return resource.data.get('assignedBy', null) in [null, request.auth.uid];
+      }
+
+      // Only the editor who assigned an article may forward it to the adviser. Articles that
+      // no editor assigned (self-submitted, or assigned before assignedBy existed) are open
+      // to any editor.
+      function forwardAllowed() {
+        let forwarding = request.resource.data.get('status', '') == 'pending_adviser'
+          && resource.data.get('status', '') != 'pending_adviser';
+        return !forwarding || assignedBySelfOrNobody();
+      }
+
+      // The creator of an unpublished article may soft-delete it (status "deleted").
+      function isCreatorSoftDelete() {
+        return resource.data.get('authorId', null) == request.auth.uid
+          && resource.data.get('status', 'draft') != 'published'
+          && request.resource.data.get('status', '') == 'deleted'
+          && request.resource.data.get('deletedBy', null) == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'deletedAt', 'deletedBy', 'updatedAt']);
       }
 
       function publicAccessEnabled() {
@@ -96,25 +144,30 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial', 'correspondent']
         && request.resource.data.authorId == request.auth.uid
         && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editorial'
-          ? validAssignee()
-          : request.resource.data.get('assignedTo', null) in [null, '']);
+          ? validAssignee() && assignmentRecordedBySelf()
+          : request.resource.data.get('assignedTo', null) in [null, '']
+            && request.resource.data.get('assignedBy', null) == null);
       allow update: if request.auth != null && writerIdentityUnchangedAfterForward() && (
-        // Adviser may update anything except who the article is assigned to.
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
-          && assigneeUnchanged())
-        // Editorial staff may manage and assign articles but cannot publish or replace the author.
-        || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editorial'
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+        // Adviser may update (and soft-delete) anything except the assignment.
+        (isActive('adviser')
+          && assigneeUnchanged()
+          && assignmentRecordUnchanged())
+        // Editorial staff may manage and assign articles but cannot publish, delete articles
+        // they did not create, replace the author, take over another editor's assignment, or
+        // forward an article another editor assigned.
+        || (isActive('editorial')
           && request.resource.data.status != 'published'
+          && request.resource.data.status != 'deleted'
           && request.resource.data.authorId == resource.data.authorId
-          && (assigneeUnchanged() || validAssignee()))
+          && ((assigneeUnchanged() && assignmentRecordUnchanged())
+            || (validAssignee() && assignmentRecordedBySelf() && assignedBySelfOrNobody()))
+          && forwardAllowed())
         // Correspondents may edit their own or assigned drafts and submit them for review.
-        || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'correspondent'
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
-          && (resource.data.authorId == request.auth.uid || resource.data.assignedTo == request.auth.uid)
+        || (isActive('correspondent')
+          && (resource.data.authorId == request.auth.uid || resource.data.get('assignedTo', null) == request.auth.uid)
           && request.resource.data.authorId == resource.data.authorId
-          && request.resource.data.assignedTo == resource.data.assignedTo
+          && assigneeUnchanged()
+          && assignmentRecordUnchanged()
           && (
             (resource.data.status in ['draft', 'assigned']
               && request.resource.data.status == resource.data.status)
@@ -125,6 +178,8 @@ service cloud.firestore {
             || (resource.data.status == 'reviewed'
               && request.resource.data.status == 'reviewed')
           ))
+        // Correspondents and editors may delete unpublished articles they created themselves.
+        || ((isActive('correspondent') || isActive('editorial')) && isCreatorSoftDelete())
       );
       allow delete: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
