@@ -173,7 +173,7 @@
   </footer>
 
 <script type="module">
-  import { getAllPublishedArticles, getUser, toTitleCaseName, articleSection } from '../backend/firebase/firestore.js';
+  import { getAllPublishedArticles, getUser, toTitleCaseName, articleSection, articleImageSrc } from '../backend/firebase/firestore.js';
 
   // ── Live date ──
   const d = new Date();
@@ -324,7 +324,7 @@
       const photoURL = user?.photoURL || user?.photo
         || (profileRole === 'correspondent' && profileArticles.find(article => article.authorPhoto)?.authorPhoto);
       if (photoURL) {
-        document.getElementById('profPhotoWrap').innerHTML = `<img src="${escapeHtml(photoURL)}" alt="${escapeHtml(displayName)}">`;
+        document.getElementById('profPhotoWrap').innerHTML = `<img src="${articleImageSrc(photoURL)}" alt="${escapeHtml(displayName)}">`;
       }
 
       const defaultBio = profileRole === 'artist'
@@ -349,7 +349,7 @@
           <a href="article-view.html?id=${article.id}" class="work-card">
             <div class="work-thumb">
               ${article.coverPhoto
-                ? `<img src="${article.coverPhoto}" alt="${escapeHtml(article.title)}">`
+                ? `<img src="${articleImageSrc(article.coverPhoto)}" alt="${escapeHtml(article.title || '')}">`
                 : `<div class="work-thumb-inner" style="background:${gradients[i % gradients.length]};"></div>`
               }
             </div>

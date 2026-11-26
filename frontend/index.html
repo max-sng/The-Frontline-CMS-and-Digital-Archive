@@ -231,7 +231,9 @@
 </script>
 
 <script type="module">
-  import { getPublishedArticles, articleSection, articleMatchesSection, findPublicSection, toTitleCaseName } from '../backend/firebase/firestore.js';
+  import { getPublishedArticles, articleSection, articleMatchesSection, findPublicSection, articleImageSrc, toTitleCaseName } from '../backend/firebase/firestore.js';
+
+  const escapeAttr = value => String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   const fallbackGrads = [
     "linear-gradient(135deg,#1a0a0a,#3a1a1a)",
@@ -264,7 +266,7 @@
 
   function imgOrGrad(article, i) {
     return article.coverPhoto
-      ? `<img src="${article.coverPhoto}" alt="${article.title}" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;">`
+      ? `<img src="${articleImageSrc(article.coverPhoto)}" alt="${escapeAttr(article.title)}" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;">`
       : `<div style="background:${fallbackGrads[i % fallbackGrads.length]};aspect-ratio:16/10;"></div>`;
   }
 
@@ -315,7 +317,7 @@
     const heroImg = document.querySelector('.hero-img');
     if (hero.coverPhoto) {
       heroImg.style.background = 'none';
-      heroImg.innerHTML = `<img src="${hero.coverPhoto}" alt="${hero.title}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">`;
+      heroImg.innerHTML = `<img src="${articleImageSrc(hero.coverPhoto)}" alt="${escapeAttr(hero.title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">`;
     } else {
       heroImg.style.background = fallbackGrads[0];
       heroImg.innerHTML = '';
@@ -342,7 +344,7 @@
     document.getElementById('latestList').innerHTML = latestArticles.map((a, i) => `
       <a href="article-view.html?id=${a.id}" class="latest-item">
         ${a.coverPhoto
-          ? `<img src="${a.coverPhoto}" alt="${a.title}" style="width:56px;height:42px;object-fit:cover;border-radius:3px;flex-shrink:0;">`
+          ? `<img src="${articleImageSrc(a.coverPhoto)}" alt="${escapeAttr(a.title)}" style="width:56px;height:42px;object-fit:cover;border-radius:3px;flex-shrink:0;">`
           : `<div style="background:${fallbackGrads[i % fallbackGrads.length]};width:56px;height:42px;border-radius:3px;flex-shrink:0;"></div>`
         }
         <div class="latest-info">

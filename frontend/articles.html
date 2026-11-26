@@ -751,12 +751,152 @@
     quill = new Quill('#quill-editor', {
       theme: 'snow',
       modules: {
-        toolbar: '#quill-toolbar'
+        toolbar: {
+          container: '#quill-toolbar',
+          // Images are uploaded (ImgBB) and inserted by URL, never embedded as base64.
+          handlers: { image: pickAndInsertImages }
+        }
       }
     });
     quill.root.setAttribute('spellcheck', 'true');
     quill.root.setAttribute('autocorrect', 'on');
     quill.root.setAttribute('autocapitalize', 'sentences');
+
+    // Pasted or dropped image files are uploaded too. Runs before Quill's own paste
+    // handling, which skips events that are already handled (defaultPrevented).
+    quill.root.addEventListener('paste', event => {
+      const files = imageFilesFrom(event.clipboardData);
+      if (!files.length) return;
+      event.preventDefault();
+      insertUploadedImages(files);
+    }, true);
+    quill.root.addEventListener('drop', event => {
+      const files = imageFilesFrom(event.dataTransfer);
+      if (!files.length) return;
+      event.preventDefault();
+      insertUploadedImages(files);
+    }, true);
+    // Anything that still arrives as base64 (e.g. pasted HTML) is uploaded shortly after.
+    quill.on('text-change', (delta, oldDelta, source) => {
+      if (source !== 'user' || !quill.root.querySelector(EMBEDDED_IMAGE_SELECTOR)) return;
+      clearTimeout(embeddedUploadTimer);
+      embeddedUploadTimer = setTimeout(() => {
+        uploadEmbeddedImages()
+          .then(failed => {
+            if (failed) showEditorAlert(`${failed} image${failed === 1 ? '' : 's'} could not be uploaded. Remove or re-insert ${failed === 1 ? 'it' : 'them'} before saving.`, 'error');
+            else scheduleAutoSave(); // URL swaps happen through Quill's API, which fires no input event
+          })
+          .catch(error => console.error('Inline image upload failed:', error));
+      }, 400);
+    });
+  }
+
+  // ── Inline article images ──
+  // Every image inside the article body must be an online URL. Images are uploaded with
+  // uploadImage() (backend/firebase/imgbb.js) and inserted by URL.
+  const EMBEDDED_IMAGE_SELECTOR = 'img[src^="data:"], img[src^="blob:"]';
+  let embeddedUploadTimer = null;
+  let embeddedUploadPromise = null;
+  let pendingImageUploads = 0;
+
+  function imageFilesFrom(transfer) {
+    return Array.from(transfer?.files || []).filter(file => file.type?.startsWith('image/'));
+  }
+
+  function trackImageUpload(delta) {
+    pendingImageUploads = Math.max(0, pendingImageUploads + delta);
+    if (pendingImageUploads) setAutoSaveStatus(`Uploading ${pendingImageUploads} image${pendingImageUploads === 1 ? '' : 's'}…`, 'saving');
+  }
+
+  async function uploadArticleImage(file) {
+    const { uploadImage } = await import('../backend/firebase/imgbb.js');
+    const result = await uploadImage(file, { folder: 'article-images' });
+    if (!result.success) throw new Error(result.error || 'Image upload failed.');
+    return result.url;
+  }
+
+  function pickAndInsertImages() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.addEventListener('change', () => insertUploadedImages(Array.from(input.files || [])));
+    input.click();
+  }
+
+  async function insertUploadedImages(files) {
+    if (!files.length || typeof quill?.insertEmbed !== 'function') return;
+    let index = (quill.getSelection(true) || { index: quill.getLength() }).index;
+    let failed = 0;
+    let lastError = '';
+    for (const file of files) {
+      trackImageUpload(1);
+      try {
+        const url = await uploadArticleImage(file);
+        quill.insertEmbed(index, 'image', url, 'user');
+        index += 1;
+        quill.setSelection(index, 0, 'silent');
+      } catch (error) {
+        failed++;
+        lastError = error.message;
+        console.error('Inline image upload failed:', error);
+      } finally {
+        trackImageUpload(-1);
+      }
+    }
+    if (failed) {
+      showEditorAlert(`${failed} image${failed === 1 ? '' : 's'} could not be uploaded. ${lastError}`, 'error');
+      setAutoSaveStatus('Image upload failed', 'error');
+    } else {
+      scheduleAutoSave();
+    }
+  }
+
+  // Uploads any base64/blob images in the editor and swaps in their online URLs.
+  // Resolves to the number of images that could not be uploaded.
+  function uploadEmbeddedImages() {
+    if (embeddedUploadPromise) return embeddedUploadPromise;
+    embeddedUploadPromise = (async () => {
+      if (typeof quill?.insertEmbed !== 'function') return 0;
+      let failed = 0;
+      for (const img of Array.from(quill.root.querySelectorAll(EMBEDDED_IMAGE_SELECTOR))) {
+        trackImageUpload(1);
+        try {
+          const blob = await (await fetch(img.src)).blob();
+          const type = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/png';
+          const file = new File([blob], `article-image.${type.split('/')[1] || 'png'}`, { type });
+          const url = await uploadArticleImage(file);
+          const blot = Quill.find(img);
+          if (blot && img.isConnected) {
+            const at = quill.getIndex(blot);
+            quill.deleteText(at, 1, 'user');
+            quill.insertEmbed(at, 'image', url, 'user');
+          }
+        } catch (error) {
+          failed++;
+          console.error('Could not upload an embedded image:', error);
+        } finally {
+          trackImageUpload(-1);
+        }
+      }
+      return failed;
+    })().finally(() => { embeddedUploadPromise = null; });
+    return embeddedUploadPromise;
+  }
+
+  // Waits for in-flight inserts, then uploads leftovers. Throws if any image would be saved
+  // as embedded data instead of a URL.
+  async function ensureOnlineImages() {
+    clearTimeout(embeddedUploadTimer);
+    while (pendingImageUploads > 0 || embeddedUploadPromise) {
+      if (embeddedUploadPromise) await embeddedUploadPromise;
+      else await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    if (!quill?.root?.querySelector(EMBEDDED_IMAGE_SELECTOR)) return;
+    const failed = await uploadEmbeddedImages();
+    if (failed || quill.root.querySelector(EMBEDDED_IMAGE_SELECTOR)) {
+      throw new Error('An image in the article could not be uploaded. Remove it or try inserting it again.');
+    }
   }
 
   // ── Build table ──
@@ -1345,7 +1485,7 @@
     const file = fileInput.files[0];
     if (file && file !== pendingCoverFile) {
       const { uploadImage } = await import('../backend/firebase/imgbb.js');
-      const imageResult = await uploadImage(file);
+      const imageResult = await uploadImage(file, { folder: 'article-covers' });
       if (!imageResult.success) throw new Error(imageResult.error || 'Cover image upload failed.');
       pendingCoverPhoto = imageResult.url;
       pendingCoverFile = file;
@@ -1373,6 +1513,7 @@
     if (!canAutoSave() || isSavingArticle) return;
     const changeVersion = editorChangeVersion;
     try {
+      await ensureOnlineImages();
       const { data } = buildArticleData();
       if (document.getElementById('cover-file-input').files[0]) {
         setAutoSaveStatus('Saving cover photo…', 'saving');
@@ -1409,6 +1550,12 @@
       clearTimeout(autoSaveTimer);
       autoSaveTimer = null;
       autoSaveQueued = false;
+      try {
+        await ensureOnlineImages();
+      } catch (error) {
+        showEditorAlert(error.message, 'error');
+        return;
+      }
       const { data, existingArticle } = buildArticleData();
 
       if (status === 'pending_adviser' && existingArticle?.status !== 'pending_adviser' && !canForward(existingArticle)) {
@@ -1669,6 +1816,7 @@
 
     previewFrame.srcdoc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
       <base href="${escapeHtml(base)}" target="_blank">
+      <script src="image-fallback.js"><\/script>
       <link rel="stylesheet" href="frontline.css">
       <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
       </head><body>

@@ -86,6 +86,19 @@ export function articleMatchesSection(article, param) {
   return sections.some(section => accepted.includes(section));
 }
 
+// Safe, escaped value for an <img src="..."> attribute. Only online (http/https) photo URLs
+// are used. Anything else (a local path, embedded data, junk) becomes a URL that fails at
+// once, so image-fallback.js shows the "Image unavailable" graphic instead.
+export function articleImageSrc(value) {
+  const raw = String(value || '').trim();
+  let url = 'about:invalid';
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') url = parsed.href;
+  } catch { /* not a URL */ }
+  return url.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function articleTimestamp(article) {
   return article?.publishedAt?.toMillis?.() || article?.createdAt?.toMillis?.() || 0;
 }
@@ -262,18 +275,51 @@ export async function getArticle(id) {
   }
 }
 
-export async function addArticleComment(articleId, comment) {
+// Comments belong to signed-in users. Only the commenter's uid and display name are stored,
+// never their email. firestore.rules checks that userId is the signed-in user and authorName
+// matches their profile name.
+export const COMMENT_MAX_LENGTH = 2000;
+
+export async function addArticleComment(articleId, { userId, authorName, comment }) {
+  const text = String(comment || '').trim();
+  if (!userId) return { success: false, error: 'Please log in to comment.' };
+  if (!text) return { success: false, error: 'Write a comment first.' };
+  if (text.length > COMMENT_MAX_LENGTH) {
+    return { success: false, error: `Comments can be up to ${COMMENT_MAX_LENGTH} characters.` };
+  }
   try {
     const ref = await addDoc(collection(db, "articles", articleId, "comments"), {
       articleId,
-      name: comment.name || 'Anonymous',
-      email: comment.email || null,
-      comment: comment.comment || '',
+      userId,
+      authorName: String(authorName || ''),
+      comment: text,
       createdAt: serverTimestamp()
     });
     return { success: true, id: ref.id };
   } catch (e) {
-    return { success: false, error: e.message };
+    console.error('addArticleComment error:', e);
+    return {
+      success: false,
+      error: e.code === 'permission-denied'
+        ? 'Your comment could not be posted. Make sure your account is active and try again.'
+        : 'Your comment could not be posted. Please try again.'
+    };
+  }
+}
+
+// Commenters may delete their own comments (advisers may remove any, for moderation).
+export async function deleteArticleComment(articleId, commentId) {
+  try {
+    await deleteDoc(doc(db, "articles", articleId, "comments", commentId));
+    return { success: true };
+  } catch (e) {
+    console.error('deleteArticleComment error:', e);
+    return {
+      success: false,
+      error: e.code === 'permission-denied'
+        ? 'You can only delete your own comments.'
+        : 'The comment could not be deleted. Please try again.'
+    };
   }
 }
 

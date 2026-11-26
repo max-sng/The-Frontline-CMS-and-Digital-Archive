@@ -20,6 +20,20 @@
     .comment-field label { display:block; margin-bottom:5px; font-size:var(--fs-sm); color:#333; }
     .comment-field input,
     .comment-field textarea { width:100%; border:1px solid #d8d8d8; border-radius:8px; padding:10px 12px; font-size:var(--fs-md); }
+    .comment-head { display:flex; align-items:baseline; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+    .comment-head strong { margin-bottom:0; display:inline; }
+    .comment-date { font-size:var(--fs-xs); color:var(--text-muted); }
+    .comment-delete { margin-left:auto; padding:3px 10px; border:1px solid #e2c4c4; border-radius:6px; background:#fff; color:var(--red); font:inherit; font-size:var(--fs-xs); font-weight:600; cursor:pointer; }
+    .comment-delete:hover:not(:disabled) { background:#fbeeee; }
+    .comment-delete:disabled { opacity:.6; cursor:default; }
+    .comments-count { font-weight:400; color:var(--text-muted); font-size:var(--fs-md); }
+    .comment-auth-note { font-size:var(--fs-sm); color:var(--text-sub); margin-bottom:10px; line-height:1.6; }
+    .comment-link-btn { border:0; background:none; padding:0; color:var(--red); font:inherit; font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+    .comment-error { font-size:var(--fs-sm); color:var(--red); background:#fbeeee; border-radius:6px; padding:8px 12px; margin-bottom:10px; }
+    .comment-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .comment-counter, .comment-auth-links { font-size:var(--fs-xs); color:var(--text-muted); }
+    .comment-auth-links a { color:var(--red); text-decoration:underline; text-underline-offset:2px; }
+    @media (min-width: 640px) { .comment-login-row { grid-template-columns:1fr 1fr; } }
     .btn-submit-comment { width:fit-content; padding:10px 18px; border:none; border-radius:7px; background:var(--red); color:#fff; cursor:pointer; }
   </style>
 </head>
@@ -164,26 +178,17 @@
   document.getElementById('hamburger').addEventListener('click', openMenu);
   document.getElementById('popupClose').addEventListener('click', closeMenu);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
-
-  // ── Comment submit ──
-  function submitComment(e) {
-    e.preventDefault();
-    const p = document.querySelector('.comments-empty');
-    if (p) p.remove();
-    const form    = e.target;
-    const name    = form.querySelector('input[type="text"]').value;
-    const comment = form.querySelector('textarea').value;
-    const section = document.querySelector('.comments-section');
-    const div     = document.createElement('div');
-    div.className = 'comment-item';
-    div.innerHTML = `<strong>${name}</strong><p>${comment}</p>`;
-    section.insertBefore(div, form.previousElementSibling);
-    form.reset();
-  }
 </script>
 
 <script type="module">
-  import { addArticleComment, getArticle, getArticleComments, getPublishedArticles, articleSection, toTitleCaseName } from '../backend/firebase/firestore.js';
+  import {
+    addArticleComment, deleteArticleComment, getArticle, getArticleComments, getPublishedArticles,
+    getUser, articleSection, articleImageSrc, toTitleCaseName, COMMENT_MAX_LENGTH
+  } from '../backend/firebase/firestore.js';
+  import { auth } from '../backend/firebase/firebase-config.js';
+  import {
+    onAuthStateChanged, signInWithEmailAndPassword, signOut
+  } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
   const wrap = document.getElementById('article-wrap');
 
@@ -207,62 +212,226 @@
     return `correspondent-profile-public.html?${params.toString()}`;
   }
 
-  function renderComments(comments) {
-    const section = document.querySelector('.comments-section');
-    if (!section) return;
+  // ── Comments ──
+  // Comments are tied to Frontline accounts. The public site is its own website, so a
+  // sign-in on the CMS does not carry over; readers sign in here with the same account.
+  let comments = [];
+  let commenter = null;          // { uid, name } when signed in with an active account
+  let commenterState = 'loading'; // loading | signed-out | inactive | ready
+  let composerError = '';
 
-    const existingList = section.querySelector('.comments-list');
-    if (existingList) existingList.remove();
-    const emptyNotice = section.querySelector('.comments-empty');
-    if (comments.length && emptyNotice) emptyNotice.remove();
+  const AUTH_ERRORS = {
+    'auth/invalid-credential': 'Invalid email or password. Please try again.',
+    'auth/wrong-password': 'Invalid email or password. Please try again.',
+    'auth/user-not-found': 'Invalid email or password. Please try again.',
+    'auth/invalid-email': 'Enter a valid email address.',
+    'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+    'auth/network-request-failed': 'Network error. Check your connection and try again.',
+    'auth/user-disabled': 'This account has been disabled.'
+  };
 
-    if (!comments.length) {
-      return;
-    }
-
-    const list = document.createElement('div');
-    list.className = 'comments-list';
-
-    comments.forEach(comment => {
-      const item = document.createElement('div');
-      item.className = 'comment-item';
-      item.innerHTML = `
-        <strong>${escapeHtml(toTitleCaseName(comment.name || 'Anonymous'))}</strong>
-        <p>${escapeHtml(comment.comment || '')}</p>
-      `;
-      list.appendChild(item);
-    });
-
-    section.insertBefore(list, section.querySelector('.leave-comment-title'));
+  function commentDate(comment) {
+    const date = comment.createdAt?.toDate?.();
+    return date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
   }
 
-  async function loadComments(articleId) {
+  function renderComments() {
+    const list = document.getElementById('comments-list');
+    if (!list) return;
+    document.getElementById('comments-empty').hidden = comments.length > 0;
+    document.getElementById('comments-count').textContent = comments.length ? `(${comments.length})` : '';
+    list.innerHTML = comments.map(comment => {
+      // Older anonymous comments used "name"; current ones store "authorName".
+      const name = toTitleCaseName(comment.authorName || comment.name || 'Reader');
+      const own = commenter && comment.userId && comment.userId === commenter.uid;
+      const date = commentDate(comment);
+      return `
+        <article class="comment-item" data-id="${escapeHtml(comment.id)}">
+          <div class="comment-head">
+            <strong>${escapeHtml(name)}</strong>
+            ${date ? `<span class="comment-date">${escapeHtml(date)}</span>` : ''}
+            ${own ? `<button type="button" class="comment-delete" data-id="${escapeHtml(comment.id)}" aria-label="Delete your comment">Delete</button>` : ''}
+          </div>
+          <p>${escapeHtml(comment.comment || '')}</p>
+        </article>`;
+    }).join('');
+  }
+
+  async function loadComments() {
     try {
-      const comments = await getArticleComments(articleId);
-      renderComments(comments);
+      comments = await getArticleComments(articleId);
     } catch (e) {
       console.error('Failed to load comments:', e);
+      comments = [];
     }
+    renderComments();
   }
 
-  async function submitComment(e) {
-    e.preventDefault();
-    const form = e.target;
-    const name = form.querySelector('input[type="text"]').value.trim() || 'Anonymous';
-    const email = form.querySelector('input[type="email"]').value.trim();
-    const comment = form.querySelector('textarea').value.trim();
+  function renderComposer() {
+    const box = document.getElementById('comment-composer');
+    if (!box) return;
+    const error = composerError
+      ? `<p class="comment-error" role="alert">${escapeHtml(composerError)}</p>` : '';
 
-    if (!comment) return;
-
-    const result = await addArticleComment(articleId, { name, email, comment });
-    if (result.success) {
-      form.reset();
-      await loadComments(articleId);
-      const emptyNotice = document.querySelector('.comments-empty');
-      if (emptyNotice) emptyNotice.remove();
-    } else {
-      console.error('Comment submission failed:', result.error);
+    if (commenterState === 'loading') {
+      box.innerHTML = '<p class="comment-auth-note">Checking sign-in…</p>';
+      return;
     }
+    if (commenterState === 'signed-out') {
+      box.innerHTML = `
+        <p class="comment-auth-note">Log in with your Frontline account to join the conversation.</p>
+        ${error}
+        <form class="comment-form" id="comment-login-form" novalidate>
+          <div class="comment-form-row comment-login-row">
+            <div class="comment-field">
+              <label for="comment-login-email">Email</label>
+              <input type="email" id="comment-login-email" autocomplete="email" placeholder="name@gordoncollege.edu.ph" required>
+            </div>
+            <div class="comment-field">
+              <label for="comment-login-password">Password</label>
+              <input type="password" id="comment-login-password" autocomplete="current-password" required>
+            </div>
+          </div>
+          <div class="comment-actions">
+            <span class="comment-auth-links"><a href="forgot-password.html">Forgot password?</a> · <a href="register.html">Create an account</a></span>
+            <button type="submit" class="btn-submit-comment" id="comment-login-btn">Log in</button>
+          </div>
+        </form>`;
+      return;
+    }
+    if (commenterState === 'inactive') {
+      box.innerHTML = `
+        <p class="comment-auth-note">Your account is not active yet, so you can't comment. Please contact an adviser.
+          <button type="button" class="comment-link-btn" id="comment-logout">Log out</button></p>`;
+      return;
+    }
+    box.innerHTML = `
+      <p class="comment-auth-note">Commenting as <strong>${escapeHtml(toTitleCaseName(commenter.name))}</strong>
+        · <button type="button" class="comment-link-btn" id="comment-logout">Log out</button></p>
+      ${error}
+      <form class="comment-form" id="comment-post-form" novalidate>
+        <div class="comment-field">
+          <label for="comment-text">Comment <span class="required">*</span></label>
+          <textarea id="comment-text" rows="4" maxlength="${COMMENT_MAX_LENGTH}" required placeholder="Write your comment here..."></textarea>
+        </div>
+        <div class="comment-actions">
+          <span class="comment-counter" id="comment-counter">0 / ${COMMENT_MAX_LENGTH}</span>
+          <button type="submit" class="btn-submit-comment" id="comment-post-btn">Post comment</button>
+        </div>
+      </form>`;
+  }
+
+  async function handleAuthChange(firebaseUser) {
+    if (!firebaseUser) {
+      commenter = null;
+      commenterState = 'signed-out';
+    } else {
+      const profile = await getUser(firebaseUser.uid);
+      if (profile?.status === 'active' && profile.name) {
+        commenter = { uid: firebaseUser.uid, name: profile.name };
+        commenterState = 'ready';
+      } else {
+        commenter = null;
+        commenterState = 'inactive';
+      }
+    }
+    renderComposer();
+    renderComments(); // show or hide Delete on the user's own comments
+  }
+
+  function initComments() {
+    const section = document.getElementById('comments');
+    if (!section) return;
+
+    section.addEventListener('submit', async event => {
+      event.preventDefault();
+      composerError = '';
+
+      if (event.target.id === 'comment-login-form') {
+        const email = document.getElementById('comment-login-email').value.trim();
+        const password = document.getElementById('comment-login-password').value;
+        if (!email || !password) {
+          composerError = 'Enter your email and password.';
+          renderComposer();
+          return;
+        }
+        const button = document.getElementById('comment-login-btn');
+        button.disabled = true;
+        button.textContent = 'Logging in…';
+        try {
+          await signInWithEmailAndPassword(auth, email.toLowerCase(), password);
+          // onAuthStateChanged re-renders the composer.
+        } catch (error) {
+          composerError = AUTH_ERRORS[error.code] || 'Could not log in. Please try again.';
+          renderComposer();
+          document.getElementById('comment-login-email').value = email;
+        }
+        return;
+      }
+
+      if (event.target.id === 'comment-post-form' && commenter) {
+        const textarea = document.getElementById('comment-text');
+        const text = textarea.value.trim();
+        if (!text) {
+          composerError = 'Write a comment first.';
+          renderComposer();
+          return;
+        }
+        const button = document.getElementById('comment-post-btn');
+        button.disabled = true;
+        button.textContent = 'Posting…';
+        const result = await addArticleComment(articleId, {
+          userId: commenter.uid,
+          authorName: commenter.name,
+          comment: text
+        });
+        if (result.success) {
+          renderComposer();
+          await loadComments();
+        } else {
+          composerError = result.error;
+          renderComposer();
+          document.getElementById('comment-text').value = text;
+        }
+      }
+    });
+
+    section.addEventListener('input', event => {
+      if (event.target.id !== 'comment-text') return;
+      document.getElementById('comment-counter').textContent =
+        `${event.target.value.length} / ${COMMENT_MAX_LENGTH}`;
+    });
+
+    section.addEventListener('click', async event => {
+      if (event.target.id === 'comment-logout') {
+        await signOut(auth).catch(error => console.error('Sign-out failed:', error));
+        return;
+      }
+      const deleteButton = event.target.closest('.comment-delete');
+      if (!deleteButton) return;
+      if (!window.confirm('Delete your comment? This cannot be undone.')) return;
+      deleteButton.disabled = true;
+      deleteButton.textContent = 'Deleting…';
+      const result = await deleteArticleComment(articleId, deleteButton.dataset.id);
+      if (result.success) {
+        comments = comments.filter(comment => comment.id !== deleteButton.dataset.id);
+        renderComments();
+      } else {
+        deleteButton.disabled = false;
+        deleteButton.textContent = 'Delete';
+        window.alert(result.error);
+      }
+    });
+
+    renderComposer();
+    onAuthStateChanged(auth, user => {
+      handleAuthChange(user).catch(error => {
+        console.error('Could not load the commenter profile:', error);
+        commenter = null;
+        commenterState = 'signed-out';
+        renderComposer();
+      });
+    });
   }
 
   // ── Get article ID from URL ──
@@ -345,7 +514,7 @@
           </div>
           ${article.coverPhoto
             ? `<figure class="article-figure">
-                <img class="article-cover-image" src="${article.coverPhoto}" alt="${escapeHtml(article.title)}">
+                <img class="article-cover-image" src="${articleImageSrc(article.coverPhoto)}" alt="${escapeHtml(article.title || '')}">
                 ${article.cutline ? `<figcaption style="font-size:var(--fs-xs);color:var(--text-muted);margin-top:8px;text-align:center;">${escapeHtml(article.cutline)}</figcaption>` : ''}
                </figure>`
             : `<figure class="article-figure">
@@ -355,27 +524,12 @@
           <div class="article-body">
             ${article.content || '<p>No content available.</p>'}
           </div>
-          <section class="comments-section">
-            <h3 class="comments-title">Comments</h3>
-            <p class="comments-empty">There are no comments yet. Be the first to start the conversation.</p>
+          <section class="comments-section" id="comments" aria-labelledby="comments-title">
+            <h3 class="comments-title" id="comments-title">Comments <span class="comments-count" id="comments-count"></span></h3>
+            <p class="comments-empty" id="comments-empty">There are no comments yet. Be the first to start the conversation.</p>
+            <div class="comments-list" id="comments-list"></div>
             <h4 class="leave-comment-title">Leave a Comment</h4>
-            <form class="comment-form">
-              <div class="comment-form-row">
-                <div class="comment-field">
-                  <label>Name <span class="required">*</span></label>
-                  <input type="text" required placeholder="Your name">
-                </div>
-              </div>
-              <div class="comment-field">
-                <label>Email <span class="req-hint">(will not be shown)</span></label>
-                <input type="email" placeholder="your@email.com">
-              </div>
-              <div class="comment-field">
-                <label>Comment <span class="required">*</span></label>
-                <textarea rows="4" required placeholder="Write your comment here..."></textarea>
-              </div>
-              <button type="submit" class="btn-submit-comment">Submit</button>
-            </form>
+            <div id="comment-composer"></div>
           </section>
           <section class="related-section">
             <h3 class="related-title">Related Articles</h3>
@@ -391,12 +545,8 @@
           else coverImage.addEventListener('load', setOrientation, { once: true });
         }
 
-        const commentForm = document.querySelector('.comment-form');
-        if (commentForm) {
-          commentForm.addEventListener('submit', submitComment);
-        }
-
-        await loadComments(articleId);
+        initComments();
+        await loadComments();
 
         try {
           const all = await getPublishedArticles(10);
@@ -412,7 +562,7 @@
             relGrid.innerHTML = related.map((a, i) => `
               <a href="article-view.html?id=${a.id}" class="card">
                 ${a.coverPhoto
-                  ? `<img src="${a.coverPhoto}" alt="${escapeHtml(a.title)}" class="card-img" style="object-fit:cover;aspect-ratio:16/10;width:100%;display:block;">`
+                  ? `<img src="${articleImageSrc(a.coverPhoto)}" alt="${escapeHtml(a.title || '')}" class="card-img" style="object-fit:cover;aspect-ratio:16/10;width:100%;display:block;">`
                   : `<div class="card-img" style="background:${grads[i]};aspect-ratio:16/10;"></div>`
                 }
                 <div class="card-body">

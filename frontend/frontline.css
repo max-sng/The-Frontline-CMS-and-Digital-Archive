@@ -559,3 +559,12 @@ img { display: block; max-width: 100%; }
   .brand-logo { height: 42px; }
   .header-search { width: 128px; }
 }
+
+/* Broken or unavailable photos are swapped for a built-in graphic by image-fallback.js. */
+img.img-fallback {
+  object-fit: cover;
+  background: #eef0f3;
+  color: var(--text-muted);
+}
+.article-cover-image.img-fallback { width: 100%; aspect-ratio: 16 / 9; max-height: none; }
+.article-body img.img-fallback { width: 100%; max-width: 560px; aspect-ratio: 16 / 10; }

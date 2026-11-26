@@ -545,3 +545,6 @@ html:not([data-role="adviser"]) .sidebar-nav .sub-nav { display: none !important
   .status-menu.open, .status-badge.is-updated .status-pill-dot { animation: none; }
   .sidebar-nav .nav-chevron { transition: none; }
 }
+
+/* Broken or unavailable photos are swapped for a built-in graphic by image-fallback.js. */
+img.img-fallback { object-fit: cover; background: #eef0f3; }

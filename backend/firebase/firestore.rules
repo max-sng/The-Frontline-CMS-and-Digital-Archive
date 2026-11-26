@@ -201,16 +201,36 @@ service cloud.firestore {
         allow update, delete: if false; // feedback once written shouldn't be modified by clients
       }
 
-      // Public comments for published articles
+      // Comments on published articles: anyone can read them; only signed-in, active users
+      // can post, as themselves. No email is stored. Commenters may delete their own comments,
+      // and active advisers may delete any comment (moderation). Comments cannot be edited.
       match /comments/{commentId} {
-        allow read: if get(/databases/$(database)/documents/articles/$(articleId)).data.status == 'published';
-        allow create: if request.resource.data.articleId == articleId
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
+        function articlePublished() {
+          return get(/databases/$(database)/documents/articles/$(articleId)).data.get('status', '') == 'published';
+        }
+        function commenterProfile() {
+          return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        }
+
+        allow read: if articlePublished();
+        allow create: if request.auth != null
+          && articlePublished()
+          && commenterProfile().get('status', '') == 'active'
+          && request.resource.data.keys().hasOnly(['articleId', 'userId', 'authorName', 'comment', 'createdAt'])
+          && request.resource.data.articleId == articleId
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.authorName is string
+          && request.resource.data.authorName == commenterProfile().get('name', '')
           && request.resource.data.comment is string
-          && request.resource.data.comment.size() > 0
-          && get(/databases/$(database)/documents/articles/$(articleId)).data.status == 'published';
-        allow update, delete: if false;
+          && request.resource.data.comment.trim().size() > 0
+          && request.resource.data.comment.size() <= 2000
+          && request.resource.data.createdAt == request.time;
+        allow delete: if request.auth != null && (
+          resource.data.get('userId', null) == request.auth.uid
+          || (commenterProfile().get('role', '') == 'adviser'
+            && commenterProfile().get('status', '') == 'active')
+        );
+        allow update: if false;
       }
     }
 
