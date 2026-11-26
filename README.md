@@ -11,15 +11,60 @@ Open the repository root in VS Code and serve the page over HTTP, for example
 directly or serve only the `frontend/` directory: CMS pages import Firebase
 modules from the sibling `backend/` directory.
 
-## Deploy to Vercel
+## Deploy to Vercel (two sites from one repository)
 
-Import this GitHub repository into Vercel and use the repository root as the
-project root. The root `vercel.json` routes the public site and CMS pages to
-their files in `frontend/`; no build command is required.
+The project is deployed as **two Vercel projects** that both import this same GitHub
+repository:
 
-Each push to the configured production branch deploys automatically when the
-Vercel Git integration is enabled. A production deployment can also be started
-from the repository root with `vercel --prod`.
+| | Public site | CMS |
+|---|---|---|
+| Who uses it | Readers | Staff (login, Dashboard, Articles, Media, Archive, Correspondents, ...) |
+| Build Command | `npm run build:public` | `npm run build:cms` |
+| Output Directory | `dist/public` | `dist/cms` |
+| Root Directory | `./` (repository root) | `./` (repository root) |
+| Framework Preset | Other | Other |
+| Needs Brevo variables | No | Yes (see below) |
+
+`scripts/build-site.mjs` copies only the files each site needs into `dist/`, so the
+source folders (`frontend/`, `backend/`) are unchanged and Live Server still works.
+Both projects also receive the `api/` functions, but they only do anything in the CMS
+project, which is the only one that has the Brevo environment variables.
+
+Both projects need these environment variables (Settings -> Environment Variables):
+
+- `PUBLIC_SITE_URL` - the public site's production URL, e.g. `https://the-frontline.vercel.app`
+- `CMS_SITE_URL` - the CMS production URL, e.g. `https://the-frontline-cms.vercel.app`
+
+They turn the few links that jump between the two sites into absolute URLs
+(CMS -> article / contributor pages, public site -> login). After changing them,
+redeploy so the build picks them up. See `.env.example` for every variable name.
+
+## Email verification (Brevo)
+
+New accounts must enter a 6-digit code emailed to them before the account is
+created. The code is sent through Brevo by two Vercel serverless functions in
+`api/` (`send-code.js` and `verify-code.js`), so the Brevo key never appears in
+the website files.
+
+One-time setup:
+
+1. Create a free account at https://www.brevo.com/. Add and authenticate a domain you
+   control under **Settings -> Senders, Domains & Dedicated IPs -> Domains** (Brevo code,
+   DKIM and DMARC DNS records), then add a sender address on that domain. Brevo rejects or
+   spam-folders mail sent "from" free addresses such as @gmail.com, so do not use one.
+2. Create an API key under **Settings -> SMTP & API -> API Keys & MCP**. Then open
+   **Settings -> Security -> Authorized IPs** and click **Deactivate blocking**, otherwise
+   Brevo can reject calls from Vercel, whose outgoing IP addresses change.
+3. In the **CMS** Vercel project only, open **Settings → Environment Variables** and add:
+   - `BREVO_API_KEY` — the Brevo API key
+   - `SENDER_EMAIL` — the verified sender address
+   - `EMAIL_CODE_SECRET` — any long random string (it signs the codes)
+   - `SENDER_NAME` — optional, defaults to "The Frontline"
+4. Redeploy. The free Brevo plan sends up to 300 emails per day.
+
+Codes expire after 10 minutes. Verification runs on Vercel, so locally it only
+works with `vercel dev` (which serves the `api/` functions); plain Live Server
+cannot send codes.
 
 ## Firebase
 
