@@ -66,6 +66,17 @@ service cloud.firestore {
         );
       }
 
+      // Only editors assign articles, and only to correspondents or co-editors.
+      function assigneeUnchanged() {
+        return request.resource.data.get('assignedTo', null) == resource.data.get('assignedTo', null);
+      }
+
+      function validAssignee() {
+        let assignee = request.resource.data.get('assignedTo', null);
+        return assignee == null || assignee == ''
+          || get(/databases/$(database)/documents/users/$(assignee)).data.role in ['correspondent', 'editorial'];
+      }
+
       function publicAccessEnabled() {
         return !exists(/databases/$(database)/documents/settings/publication)
           || get(/databases/$(database)/documents/settings/publication).data.publicArticleAccess == true;
@@ -81,16 +92,21 @@ service cloud.firestore {
       allow create: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial', 'correspondent']
-        && request.resource.data.authorId == request.auth.uid;
+        && request.resource.data.authorId == request.auth.uid
+        && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editorial'
+          ? validAssignee()
+          : request.resource.data.get('assignedTo', null) in [null, '']);
       allow update: if request.auth != null && writerIdentityUnchangedAfterForward() && (
-        // Adviser may update anything
+        // Adviser may update anything except who the article is assigned to.
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'adviser'
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active')
-        // Editorial staff may manage articles but cannot publish or replace the author.
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
+          && assigneeUnchanged())
+        // Editorial staff may manage and assign articles but cannot publish or replace the author.
         || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editorial'
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'
           && request.resource.data.status != 'published'
-          && request.resource.data.authorId == resource.data.authorId)
+          && request.resource.data.authorId == resource.data.authorId
+          && (assigneeUnchanged() || validAssignee()))
         // Correspondents may edit their own or assigned drafts and submit them for review.
         || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'correspondent'
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active'

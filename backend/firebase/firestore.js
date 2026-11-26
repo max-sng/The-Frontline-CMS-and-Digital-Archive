@@ -279,6 +279,9 @@ export async function updateArticleStatus(id, status) {
         return { success: false, error: 'Correspondents may only submit their own or assigned articles for review.' };
       }
     }
+    if (status === 'assigned' && article.status !== 'assigned' && actorRole !== 'editorial') {
+      return { success: false, error: 'Only editors may assign articles.' };
+    }
     if (status === 'pending_adviser' && !['editorial', 'adviser'].includes(actorRole)) {
       return { success: false, error: 'Only editorial staff may forward articles to an adviser.' };
     }
@@ -365,7 +368,7 @@ export async function updateArticleStatus(id, status) {
         ...payload,
         message: `${fromName} assigned this article to you.`
       });
-      await logAuditEntry({ action: 'assign_article', performedBy: actorUid, targetUid: article.assignedTo, articleId: id, details: 'Article assigned to correspondent' });
+      await logAuditEntry({ action: 'assign_article', performedBy: actorUid, targetUid: article.assignedTo, articleId: id, details: 'Article assigned to correspondent or co-editor' });
     }
 
     if (status === 'published') {

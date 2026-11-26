@@ -23,6 +23,7 @@
     { "source": "/auth.css", "destination": "/frontend/auth.css" },
     { "source": "/shared.css", "destination": "/frontend/shared.css" },
     { "source": "/cms.js", "destination": "/frontend/cms.js" },
+    { "source": "/image-fallback.js", "destination": "/frontend/image-fallback.js" },
     { "source": "/assets/:path*", "destination": "/frontend/assets/:path*" }
   ]
 }

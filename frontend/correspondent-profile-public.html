@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="image-fallback.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Correspondent – The Frontline</title>
@@ -185,7 +186,7 @@
   const popupOverlay = document.getElementById('popupOverlay');
 
   function openMenu() {
-    const headerH = document.querySelector('.site-header').offsetHeight;
+    const headerH = Math.max(0, Math.round(document.querySelector('.site-header').getBoundingClientRect().bottom));
     popupMenu.style.setProperty('--popup-menu-top', headerH + 'px');
     popupMenu.style.top = headerH + 'px';
     popupMenu.classList.add('open');

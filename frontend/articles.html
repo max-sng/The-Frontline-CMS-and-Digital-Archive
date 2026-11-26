@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="image-fallback.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Articles — The Frontline CMS</title>
@@ -334,12 +335,13 @@
           <div class="form-group">
             <label class="form-label" for="assign-correspondent">Writer / Assignee</label>
             <select class="form-select" id="assign-correspondent" disabled>
-              <option value="">Loading correspondents…</option>
+              <option value="">Loading staff…</option>
             </select>
             <small class="correspondent-empty-help" id="correspondent-empty-help" hidden>
-              No active correspondent accounts are registered yet. <a href="correspondents.html" target="_blank" rel="noopener">Invite a correspondent</a>; they will appear after registering.
+              No active correspondents or co-editors are registered yet. <a href="correspondents.html" target="_blank" rel="noopener">Invite a correspondent</a>; they will appear after registering.
             </small>
-            <small class="writer-lock-hint" id="writer-lock-hint-editorial" hidden>Writer and correspondent assignment are locked after this article is sent to the adviser.</small>
+            <small class="writer-lock-hint" id="writer-lock-hint-editorial" hidden>Writer and assignment are locked after this article is sent to the adviser.</small>
+            <small class="writer-lock-hint" id="assign-adviser-hint" hidden>Only editors can assign articles. This shows who the article is assigned to.</small>
           </div>
           <div class="form-group">
             <label class="form-label">Artist</label>
@@ -455,6 +457,7 @@
   const updateArticleStatus = firestoreCall('updateArticleStatus');
   const deleteArticle = firestoreCall('deleteArticle');
   const getCorrespondents = firestoreCall('getCorrespondents');
+  const getUsersByRole = firestoreCall('getUsersByRole');
   const addArticleFeedback = firestoreCall('addArticleFeedback');
   const getArticleFeedbacks = firestoreCall('getArticleFeedbacks');
 
@@ -591,8 +594,12 @@
     return user.role === 'editorial' ? 'editorial' : 'correspondent';
   }
 
+  // Only editors assign articles; the adviser sees the assignee but cannot change it.
+  const canAssign = user.role === 'editorial';
+
   function canShowStatusOption(status, article) {
     if (status === 'published') return user.role === 'adviser';
+    if (status === 'assigned' && !canAssign && article.status !== 'assigned') return false;
     if (status === 'assigned' && (!correspondentsLoaded
       || !correspondentOptions.some(correspondent => correspondent.id === article.assignedTo))) return false;
     if (user.role === 'correspondent') {
@@ -625,10 +632,18 @@
           correspondentDisplayName(correspondent).toLocaleLowerCase() === writerName.trim().toLocaleLowerCase())
       : [];
     const match = byId || (nameMatches.length === 1 ? nameMatches[0] : null);
+    select.querySelector('option[data-current]')?.remove();
+    const readOnly = !canAssign || select.dataset.locked === 'true' || correspondentOptions.length === 0;
+    if (!match && readOnly) {
+      // Show the assignee even when they are not in the selectable list (e.g. adviser view, inactive user).
+      const current = new Option(writerName ? toTitleCase(writerName) : 'Not assigned', '');
+      current.dataset.current = 'true';
+      select.insertBefore(current, select.firstChild);
+    }
     select.value = match?.id || '';
-    select.disabled = select.dataset.locked === 'true' || correspondentOptions.length === 0;
+    select.disabled = readOnly;
     document.getElementById('correspondent-empty-help').hidden =
-      correspondentOptions.length > 0 || select.dataset.locked === 'true';
+      !canAssign || correspondentOptions.length > 0 || select.dataset.locked === 'true';
   }
 
   function selectedCorrespondentName() {
@@ -640,17 +655,25 @@
   async function loadCorrespondents() {
     const select = document.getElementById('assign-correspondent');
     try {
-      const users = await getCorrespondents();
-      correspondentOptions = users.filter(correspondent => correspondent.status === 'active');
+      const [correspondents, editors] = await Promise.all([
+        getCorrespondents(),
+        getUsersByRole('editorial')
+      ]);
+      const byName = (a, b) => correspondentDisplayName(a).localeCompare(correspondentDisplayName(b));
+      const activeCorrespondents = correspondents.filter(person => person.status === 'active').sort(byName);
+      // Co-editors: other active editors (not the person assigning).
+      const coEditors = editors.filter(person => person.status === 'active' && person.id !== user.uid).sort(byName);
+      correspondentOptions = [...activeCorrespondents, ...coEditors];
       correspondentsLoaded = true;
-      select.replaceChildren(new Option('Select a correspondent', ''));
-      correspondentOptions.forEach(correspondent => {
-        const opt = document.createElement('option');
-        opt.value = correspondent.id;
-        opt.textContent = correspondentDisplayName(correspondent);
-        select.appendChild(opt);
+      select.replaceChildren(new Option('Select a correspondent or co-editor', ''));
+      [['Correspondents', activeCorrespondents], ['Co-editors', coEditors]].forEach(([label, people]) => {
+        if (!people.length) return;
+        const group = document.createElement('optgroup');
+        group.label = label;
+        people.forEach(person => group.appendChild(new Option(correspondentDisplayName(person), person.id)));
+        select.appendChild(group);
       });
-      if (!correspondentOptions.length) select.options[0].textContent = 'No active correspondents';
+      if (!correspondentOptions.length) select.options[0].textContent = 'No active correspondents or co-editors';
       setCorrespondentSelection({
         assignedTo: select.dataset.pendingId || '',
         writerName: select.dataset.pendingName || ''
@@ -661,7 +684,7 @@
       select.replaceChildren(new Option('Could not load correspondents', ''));
       select.disabled = true;
       document.getElementById('correspondent-empty-help').hidden = true;
-      showToast('Could not load the correspondent list. Try refreshing the page.', 'error');
+      showToast('Could not load the staff list. Try refreshing the page.', 'error');
     }
   }
 
@@ -942,10 +965,13 @@
     document.getElementById('writer-name').readOnly = true;
     const correspondentSelect = document.getElementById('assign-correspondent');
     correspondentSelect.dataset.locked = String(writerLocked);
-    correspondentSelect.disabled = writerLocked || !correspondentsLoaded || correspondentOptions.length === 0;
-    if (writerLocked) correspondentSelect.setAttribute('aria-describedby', 'writer-lock-hint-editorial');
+    correspondentSelect.disabled = !canAssign || writerLocked || !correspondentsLoaded || correspondentOptions.length === 0;
+    if (!canAssign) correspondentSelect.setAttribute('aria-describedby', 'assign-adviser-hint');
+    else if (writerLocked) correspondentSelect.setAttribute('aria-describedby', 'writer-lock-hint-editorial');
     else correspondentSelect.removeAttribute('aria-describedby');
     document.querySelectorAll('.writer-lock-hint').forEach(hint => { hint.hidden = !writerLocked; });
+    document.getElementById('assign-adviser-hint').hidden = canAssign;
+    if (!canAssign) document.getElementById('writer-lock-hint-editorial').hidden = true;
 
     ef.style.display = cf.style.display = rd.style.display =
     fg.style.display = pb.style.display = 'none';
@@ -1089,10 +1115,10 @@
         <button class="btn btn-outline" onclick="closeEditor()">Cancel</button>
         <button class="btn btn-outline" id="btn-save-draft">Save draft</button>
         ${user.role !== 'adviser' ? '<button class="btn btn-outline" id="btn-send-adviser">Send to adviser</button>' : ''}
-        <button class="btn btn-red" id="btn-assign">Assign article</button>`;
+        ${canAssign ? '<button class="btn btn-red" id="btn-assign">Assign article</button>' : ''}`;
       document.getElementById('btn-save-draft').addEventListener('click', () => saveArticle('draft'));
       document.getElementById('btn-send-adviser')?.addEventListener('click', () => saveArticle('pending_adviser'));
-      document.getElementById('btn-assign').addEventListener('click',     () => saveArticle('assigned'));
+      document.getElementById('btn-assign')?.addEventListener('click',     () => saveArticle('assigned'));
     }
 
     document.getElementById('editor-overlay').classList.remove('hidden');
@@ -1132,7 +1158,7 @@
     }
     const article = editingId ? articlesData.find(item => item.id === editingId) : null;
     if (article?.status === 'published' && user.role !== 'adviser') return false;
-    return !(['editorial', 'adviser'].includes(user.role)
+    return !(canAssign
       && !articleWriterLocked(article)
       && !document.getElementById('assign-correspondent').value);
   }
@@ -1186,9 +1212,9 @@
     const tags = getSelectedSections();
     const assignee = writerLocked
       ? (existingArticle.assignedTo ?? null)
-      : ['editorial', 'adviser'].includes(user.role)
+      : canAssign
         ? (document.getElementById('assign-correspondent')?.value || null)
-      : (existingArticle?.assignedTo || null);
+      : (existingArticle?.assignedTo ?? null);
     const dueDate = user.role === 'correspondent'
       ? document.getElementById('corr-due-date').value
       : document.getElementById('due-date').value;
@@ -1198,7 +1224,10 @@
         : existingArticle.authorName || '')
       : (user.role === 'correspondent'
         ? userDisplayName
-        : selectedCorrespondentName());
+        : canAssign
+          ? selectedCorrespondentName()
+          // Adviser: keep the existing writer; a new article is written by the adviser.
+          : (existingArticle ? (existingArticle.writerName || existingArticle.authorName || '') : userDisplayName));
     const data = {
       title,
       content,
@@ -1308,7 +1337,7 @@
       }
 
       if (!data.writerName) {
-        showEditorAlert('Select a correspondent to set the writer and assignment.', 'error');
+        showEditorAlert('Select a correspondent or co-editor to set the writer and assignment.', 'error');
         return;
       }
 
