@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Articles — The Frontline CMS</title>
-  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
+  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||localStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
   <link rel="stylesheet" href="shared.css">
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <style>
@@ -434,8 +434,14 @@
   // Start Firebase downloads without holding up editor initialization.
   const authApiPromise = import('../backend/firebase/auth.js');
   const firestoreApiPromise = import('../backend/firebase/firestore.js');
+  // Same checks as requireAuth() in auth.js, without waiting for that module to load.
   function requireAuth(allowedRoles = ['correspondent', 'editorial', 'adviser']) {
-    const sessionUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+    let sessionUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+    if (!sessionUser) {
+      // "Remember me" session from an earlier browser session: copy it into this tab.
+      sessionUser = JSON.parse(localStorage.getItem('user') || 'null');
+      if (sessionUser) sessionStorage.setItem('user', JSON.stringify(sessionUser));
+    }
     if (!sessionUser) {
       window.location.href = 'login.html';
       return null;
@@ -444,6 +450,9 @@
       window.location.href = 'dashboard.html';
       return null;
     }
+    // Return to login if the Firebase sign-in ends or the account is deactivated.
+    authApiPromise.then(api => api.watchSession(sessionUser.uid))
+      .catch(error => console.error('Could not start the session watch:', error));
     return sessionUser;
   }
   const logoutUser = (...args) => authApiPromise.then(api => api.logoutUser(...args));

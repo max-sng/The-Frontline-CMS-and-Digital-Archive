@@ -20,7 +20,12 @@
       <h1 class="auth-title">Log into The Frontline</h1>
       <p class="auth-subtitle">Welcome! Please log in with your account.</p>
 
-      <div class="reset-alert error hidden" id="login-error">
+      <div class="reset-alert success hidden" id="login-notice" role="status">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="login-notice-msg"></span>
+      </div>
+
+      <div class="reset-alert error hidden" id="login-error" role="alert">
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         <span id="login-error-msg">Invalid email or password. Please try again.</span>
       </div>
@@ -72,7 +77,13 @@
   </div>
 
   <script type="module">
-    import { loginUser } from '../backend/firebase/auth.js';
+    import { loginUser, restoreSession } from '../backend/firebase/auth.js';
+
+    const errorBox = document.getElementById('login-error');
+    const errorMsg = document.getElementById('login-error-msg');
+    const noticeBox = document.getElementById('login-notice');
+    const btn      = document.getElementById('login-btn');
+    let loggingIn  = false;
 
     window.toggleEye = function(inputId, btn) {
       const input = document.getElementById(inputId);
@@ -82,33 +93,40 @@
       btn.querySelector('.eye-off').classList.toggle('hidden', !isPassword);
     };
 
+    function showLoginError(message) {
+      noticeBox.classList.add('hidden');
+      errorMsg.textContent = message;
+      errorBox.classList.remove('hidden');
+    }
+
     window.handleLogin = async function() {
+      if (loggingIn) return;
       const email    = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-      const errorBox = document.getElementById('login-error');
-      const errorMsg = document.getElementById('login-error-msg');
-      const btn      = document.getElementById('login-btn');
+      const remember = document.getElementById('remember').checked;
 
       errorBox.classList.add('hidden');
 
       if (!email || !password) {
-        errorMsg.textContent = 'Enter your email and password.';
-        errorBox.classList.remove('hidden');
+        showLoginError('Enter your email and password.');
         return;
       }
 
+      loggingIn = true;
       btn.textContent = 'Logging in…';
       btn.disabled = true;
 
-      const result = await loginUser(email, password);
+      // Let the session check finish first so it cannot end this new sign-in.
+      if (await restoring) { window.location.href = 'dashboard.html'; return; }
+      const result = await loginUser(email, password, { remember });
 
       if (result.success) {
         window.location.href = 'dashboard.html';
       } else {
-        errorMsg.textContent = result.error;
-        errorBox.classList.remove('hidden');
+        showLoginError(result.error);
         btn.textContent = 'Log in';
         btn.disabled = false;
+        loggingIn = false;
       }
     };
 
@@ -116,8 +134,29 @@
       if (e.key === 'Enter') window.handleLogin();
     });
 
-    const user = JSON.parse(sessionStorage.getItem('user') || 'null');
-    if (user) window.location.href = 'dashboard.html';
+    // Carry the typed email over to the password reset page.
+    const forgotLink = document.querySelector('.forgot-link');
+    document.getElementById('login-email').addEventListener('input', e => {
+      const value = e.target.value.trim();
+      forgotLink.href = 'forgot-password.html' + (value ? `?email=${encodeURIComponent(value)}` : '');
+    });
+
+    // Explain why the user landed here.
+    const reasons = {
+      'signed-out': 'Your session ended. Please log in again.',
+      'inactive': 'Your account is no longer active. Please contact an adviser for help.',
+      'password-reset': 'Your password was updated. Log in with your new password.'
+    };
+    const reason = new URLSearchParams(window.location.search).get('reason');
+    if (reasons[reason]) {
+      document.getElementById('login-notice-msg').textContent = reasons[reason];
+      noticeBox.classList.remove('hidden');
+    }
+
+    // Already signed in (this tab, or remembered with "Remember me"): skip the login form.
+    const restoring = restoreSession()
+      .catch(error => { console.error('Could not restore the session:', error); return null; });
+    restoring.then(user => { if (user) window.location.href = 'dashboard.html'; });
   </script>
 </body>
 </html>

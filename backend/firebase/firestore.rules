@@ -7,6 +7,8 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null && (
         (request.auth.uid == userId
+          // Self-registration requires the 6-digit email code (api/verify-code.js sets this).
+          && request.auth.token.email_verified == true
           && request.resource.data.email == request.auth.token.email
           && request.resource.data.email.matches('^[^@]+@gordoncollege.edu.ph$')
           && request.resource.data.role in ['correspondent', 'pending_editorial']
@@ -209,6 +211,11 @@ service cloud.firestore {
         resource.data.uploadedBy == request.auth.uid
         || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial']
       );
+    }
+
+    // Email verification codes: server-only (Admin SDK in api/). No client access.
+    match /email_verifications/{uid} {
+      allow read, write: if false;
     }
 
     // Default deny

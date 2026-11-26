@@ -199,15 +199,26 @@
   function initAccountActions() {
     const accountActions = document.getElementById('popupAccountActions');
     if (!accountActions) return;
-    const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+    const user = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || 'null');
     if (!user) return;
     accountActions.innerHTML = `
       <a class="account-primary" href="dashboard.html">Go to dashboard</a>
       <button class="account-secondary" type="button" id="homeLogoutBtn">Log out</button>
     `;
     accountActions.hidden = false;
-    document.getElementById('homeLogoutBtn').addEventListener('click', () => {
+    document.getElementById('homeLogoutBtn').addEventListener('click', async () => {
       sessionStorage.removeItem('user');
+      localStorage.removeItem('user');
+      // End the Firebase sign-in too, so a remembered session does not log straight back in.
+      try {
+        const [{ signOut }, { auth }] = await Promise.all([
+          import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
+          import('../backend/firebase/firebase-config.js')
+        ]);
+        await signOut(auth);
+      } catch (error) {
+        console.error('Sign-out failed:', error);
+      }
       window.location.href = 'login.html';
     });
   }

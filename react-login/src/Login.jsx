@@ -16,7 +16,7 @@ export default function Login() {
 
   // Already logged in: skip the login page
   useEffect(() => {
-    const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+    const user = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || 'null');
     if (user) window.location.href = DASHBOARD_URL;
   }, []);
 
@@ -30,7 +30,7 @@ export default function Login() {
     }
 
     setLoading(true);
-    const result = await loginUser(email.trim(), password);
+    const result = await loginUser(email.trim(), password, { remember });
 
     if (result.success) {
       window.location.href = DASHBOARD_URL;

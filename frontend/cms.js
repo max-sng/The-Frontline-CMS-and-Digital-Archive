@@ -690,6 +690,8 @@ async function initUserProfileSync() {
     const roleChanged = profile.role && profile.role !== user.role;
     const updatedUser = { ...user, ...profile };
     sessionStorage.setItem('user', JSON.stringify(updatedUser));
+    // "Remember me" keeps a copy in localStorage; keep it current too.
+    if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(updatedUser));
     const roleLabels = { adviser: 'Adviser', editorial: 'Editorial Board', correspondent: 'Correspondent' };
     const roleEl = document.getElementById('topbar-role');
     const nameEl = document.getElementById('topbar-username');
@@ -777,7 +779,7 @@ initSidebarToggles();
       "Loading..." on every page while Firebase loads. Page scripts still refresh it. ── */
 (function prefillTopbarUser() {
   try {
-    const u = JSON.parse(sessionStorage.getItem('user') || 'null');
+    const u = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || 'null');
     if (!u) return;
     const nameEl = document.getElementById('topbar-username');
     const roleEl = document.getElementById('topbar-role');

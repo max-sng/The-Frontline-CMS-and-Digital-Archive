@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings – The Frontline CMS</title>
-  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
+  <script>(function(){try{var u=JSON.parse(sessionStorage.getItem('user')||localStorage.getItem('user')||'null');if(u&&u.role)document.documentElement.setAttribute('data-role',u.role);}catch(e){}})();</script>
   <link rel="stylesheet" href="shared.css">
   <style>
     .tab-panel { display:block;margin-bottom:20px;padding:24px 28px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--radius-lg); }
@@ -536,6 +536,7 @@
       document.getElementById('accSurname').value = surname;
       if (profile) Object.assign(profile, data);
       sessionStorage.setItem('user', JSON.stringify({ ...user, ...data }));
+      if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify({ ...user, ...data }));
       document.getElementById('profileViewName').textContent = data.name || displayName;
       setEditing(false);
 

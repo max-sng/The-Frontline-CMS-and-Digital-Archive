@@ -7,5 +7,11 @@
     "build:public": "node scripts/build-site.mjs public",
     "build:cms": "node scripts/build-site.mjs cms",
     "build": "npm run build:public && npm run build:cms"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.1"
   }
 }

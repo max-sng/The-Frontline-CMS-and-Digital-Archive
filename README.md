@@ -41,10 +41,20 @@ redeploy so the build picks them up. See `.env.example` for every variable name.
 
 ## Email verification (Brevo)
 
-New accounts must enter a 6-digit code emailed to them before the account is
-created. The code is sent through Brevo by two Vercel serverless functions in
-`api/` (`send-code.js` and `verify-code.js`), so the Brevo key never appears in
-the website files.
+New accounts must enter a 6-digit code emailed to them before their profile is
+created. The flow:
+
+1. `register.html` creates the Firebase Auth sign-in (no profile yet, so it cannot log in).
+2. `api/send-code.js` checks the caller's Firebase ID token, stores a hash of a new code
+   in the Firestore collection `email_verifications/{uid}`, and emails the code through
+   Brevo to that account's own address. Limits: one email per minute, five per hour.
+3. `api/verify-code.js` checks the code. A correct code is deleted (it cannot be reused)
+   and the account is marked `emailVerified`. Five wrong guesses disable the code until a
+   new one is requested. Codes expire after 10 minutes, and resending replaces the old code.
+4. The browser saves the profile. `firestore.rules` only allows that once the email is verified.
+
+The Brevo key and the Firebase service account stay on Vercel and never appear in the
+website files. Clients cannot read or write `email_verifications`.
 
 One-time setup:
 
@@ -55,16 +65,32 @@ One-time setup:
 2. Create an API key under **Settings -> SMTP & API -> API Keys & MCP**. Then open
    **Settings -> Security -> Authorized IPs** and click **Deactivate blocking**, otherwise
    Brevo can reject calls from Vercel, whose outgoing IP addresses change.
-3. In the **CMS** Vercel project only, open **Settings → Environment Variables** and add:
+3. In the Firebase console, open **Project settings -> Service accounts** and click
+   **Generate new private key**. Keep the downloaded JSON file private and never commit it
+   (`.gitignore` already excludes `*-firebase-adminsdk-*.json`).
+4. In the **CMS** Vercel project only, open **Settings → Environment Variables** and add:
    - `BREVO_API_KEY` — the Brevo API key
    - `SENDER_EMAIL` — the verified sender address
-   - `EMAIL_CODE_SECRET` — any long random string (it signs the codes)
+   - `EMAIL_CODE_SECRET` — any long random string (it is used to hash the codes)
+   - `FIREBASE_SERVICE_ACCOUNT` — the entire contents of the service account JSON file
    - `SENDER_NAME` — optional, defaults to "The Frontline"
-4. Redeploy. The free Brevo plan sends up to 300 emails per day.
+5. Deploy the updated Firestore rules (`firebase deploy --only firestore:rules`) and
+   redeploy the CMS. The free Brevo plan sends up to 300 emails per day.
 
-Codes expire after 10 minutes. Verification runs on Vercel, so locally it only
-works with `vercel dev` (which serves the `api/` functions); plain Live Server
+Verification runs on Vercel, so locally it only works with `vercel dev` (which serves
+the `api/` functions and needs the same variables in `.env.local`); plain Live Server
 cannot send codes.
+
+## Login sessions ("Remember me")
+
+- **Remember me checked:** Firebase uses `browserLocalPersistence` and the profile is
+  cached in `localStorage`, so the user stays signed in after closing the browser.
+- **Unchecked:** Firebase uses `browserSessionPersistence` and the profile is cached in
+  `sessionStorage` only, so the session ends when the browser (or tab) is closed.
+
+Each CMS page also watches Firebase Auth (`watchSession` in `backend/firebase/auth.js`).
+If the sign-in ends, for example after logging out in another tab, or the account is
+deactivated, the page returns to the login screen.
 
 ## Firebase
 

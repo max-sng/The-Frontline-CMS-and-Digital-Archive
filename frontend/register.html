@@ -322,7 +322,7 @@
   </div>
 
   <script type="module">
-    import { registerUser } from '../backend/firebase/auth.js';
+    import { startRegistration, completeRegistration, getAuthIdToken } from '../backend/firebase/auth.js';
 
     const labels = ['STEP 1 OF 3 — PERSONAL INFO','STEP 2 OF 3 — ROLE AND SECTION','STEP 3 OF 3 — SET PASSWORD'];
     let current = 1;
@@ -423,13 +423,77 @@
       }
       if (password !== confirm) { showError("The passwords don't match."); return; }
       if (!terms) { showError('Agree to the Terms & Conditions and Privacy Policy to continue.'); return; }
+      if (btn.disabled) return;
 
+      // Create (or resume) the sign-in first; the emailed code is tied to it.
+      btn.textContent = 'Creating account…';
+      btn.disabled = true;
+      hideError();
+      const start = await startRegistration(registrationPayload());
+      if (!start.success) {
+        showError(start.error);
+        btn.textContent = 'Create account';
+        btn.disabled = false;
+        return;
+      }
+      if (start.emailVerified) {
+        // Verified earlier but the profile was never saved: finish without a new code.
+        btn.textContent = 'Create account';
+        btn.disabled = false;
+        showVerifyStep();
+        await finishRegistration();
+        return;
+      }
       await sendVerificationCode(btn);
     };
 
     // ── Email verification (6-digit code) ──
-    let verificationToken = '';
     let resendCooldown = null;
+    const VERIFY_UNAVAILABLE = 'Email verification is not available here. It runs on the deployed CMS site (or with "vercel dev" locally), not on Live Server.';
+
+    // Calls a verification endpoint with the new account's Firebase ID token.
+    async function callVerificationApi(path, payload) {
+      let token;
+      try {
+        token = await getAuthIdToken();
+      } catch (e) {
+        return { ok: false, body: { error: 'Network error. Please check your internet connection and try again.' } };
+      }
+      if (!token) {
+        return { ok: false, body: { code: 'session_expired', error: 'Your sign-up session expired. Go back and select Create account again.' } };
+      }
+      let res;
+      try {
+        res = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        return { ok: false, body: { error: 'Could not reach the verification service. Check your internet connection and try again.' } };
+      }
+      const body = await res.json().catch(() => null);
+      if (!body) {
+        // Not our JSON API (e.g. a static server returned an HTML 404/405 page).
+        return { ok: false, status: res.status, body: { error: [404, 405, 501].includes(res.status)
+          ? VERIFY_UNAVAILABLE
+          : 'The verification service returned an unexpected response. Please try again.' } };
+      }
+      return { ok: res.ok, status: res.status, body };
+    }
+
+    function showVerifyStep(email = registrationPayload().email) {
+      document.getElementById('step3').classList.remove('active');
+      document.getElementById('step-label').textContent = 'VERIFY YOUR EMAIL';
+      document.querySelectorAll('.step-seg').forEach(s => s.className = 'step-seg done');
+      document.getElementById('code-hint').textContent = `We sent a 6-digit code to ${email}. Enter it below to finish creating your account. The code expires in 10 minutes.`;
+      document.getElementById('step-verify').classList.add('active');
+      hideError();
+    }
+
+    function setVerifyHint(text) {
+      document.getElementById('code-hint').textContent = text;
+    }
 
     function registrationPayload() {
       return {
@@ -442,49 +506,47 @@
       };
     }
 
-    async function sendVerificationCode(btn) {
+    // Sends (or re-sends) the code. `btn` is the button that shows progress.
+    async function sendVerificationCode(btn, { resend = false } = {}) {
       const data = registrationPayload();
-      btn.textContent = 'Sending code…';
+      btn.textContent = resend ? 'Sending…' : 'Sending code…';
       btn.disabled = true;
 
-      try {
-        const res = await fetch('/api/send-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: data.email, name: data.firstName })
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          showError(body.error || 'The verification email could not be sent. Please try again.');
-          btn.textContent = 'Create account';
-          btn.disabled = false;
-          return;
-        }
-        verificationToken = body.token;
-      } catch (e) {
-        showError('Could not reach the email service. Email verification only works on the Vercel site (or with "vercel dev" locally).');
-        btn.textContent = 'Create account';
-        btn.disabled = false;
+      const { ok, body } = await callVerificationApi('/api/send-code', { name: data.firstName });
+      btn.textContent = resend ? 'Resend code' : 'Create account';
+      btn.disabled = false;
+
+      if (ok) {
+        if (!resend) showVerifyStep(data.email);
+        else setVerifyHint(`We sent a new code to ${data.email}. Earlier codes no longer work. The new code expires in 10 minutes.`);
+        hideError();
+        document.getElementById('reg-code').value = '';
+        startResendCooldown(body.resendAfter || 60);
+        document.getElementById('reg-code').focus();
         return;
       }
 
-      document.getElementById('step3').classList.remove('active');
-      document.getElementById('step-label').textContent = 'VERIFY YOUR EMAIL';
-      document.querySelectorAll('.step-seg').forEach(s => s.className = 'step-seg done');
-      document.getElementById('code-hint').textContent = `We sent a 6-digit code to ${data.email}. Enter it below to finish creating your account.`;
-      document.getElementById('reg-code').value = '';
-      document.getElementById('step-verify').classList.add('active');
-      hideError();
-      btn.textContent = 'Create account';
-      btn.disabled = false;
-      startResendCooldown();
-      document.getElementById('reg-code').focus();
+      if (body.code === 'already_verified') {
+        if (!resend) showVerifyStep(data.email);
+        await finishRegistration();
+        return;
+      }
+      if (body.code === 'cooldown') {
+        // A code was sent less than a minute ago and is still valid: let the user enter it.
+        if (!resend) showVerifyStep(data.email);
+        setVerifyHint(`We already sent a code to ${data.email}. Enter it below, or request a new one when the timer ends.`);
+        startResendCooldown(body.retryAfter || 60);
+        hideError();
+        return;
+      }
+      if (body.code === 'hourly_limit' && body.retryAfter) startResendCooldown(body.retryAfter);
+      if (body.code === 'session_expired' && resend) window.backToPassword();
+      showError(body.error || 'The verification email could not be sent. Please try again.');
     }
 
-    function startResendCooldown() {
+    function startResendCooldown(seconds = 60) {
       const btn = document.getElementById('resend-btn');
       const timer = document.getElementById('resend-timer');
-      let seconds = 60;
       btn.disabled = true;
       timer.textContent = ` (wait ${seconds}s)`;
       clearInterval(resendCooldown);
@@ -502,8 +564,8 @@
 
     window.resendCode = async function() {
       const btn = document.getElementById('resend-btn');
-      btn.disabled = true;
-      await sendVerificationCode(document.getElementById('create-btn'));
+      if (btn.disabled) return;
+      await sendVerificationCode(btn, { resend: true });
     };
 
     window.backToPassword = function() {
@@ -514,48 +576,20 @@
       hideError();
     };
 
-    window.verifyCode = async function() {
-      const code = document.getElementById('reg-code').value.trim();
+    // Saves the profile after the email is verified and shows the success screen.
+    async function finishRegistration() {
       const btn = document.getElementById('verify-btn');
-      if (!/^\d{6}$/.test(code)) { showError('Enter the 6-digit code from your email.'); return; }
-
-      btn.textContent = 'Verifying…';
-      btn.disabled = true;
-
-      let valid = false;
-      try {
-        const res = await fetch('/api/verify-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: registrationPayload().email, code, token: verificationToken })
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok || !body.valid) {
-          showError(body.error || 'That code does not match. Check the email and try again.');
-          btn.textContent = 'Verify & create account';
-          btn.disabled = false;
-          return;
-        }
-        valid = true;
-      } catch (e) {
-        showError('Could not reach the email service. Please check your internet connection and try again.');
-        btn.textContent = 'Verify & create account';
-        btn.disabled = false;
-        return;
-      }
-
-      if (!valid) return;
       btn.textContent = 'Creating account…';
-
-      const result = await registerUser(registrationPayload());
-
+      btn.disabled = true;
+      const result = await completeRegistration(registrationPayload());
       if (result.success) {
+        clearInterval(resendCooldown);
         document.getElementById('step-verify').classList.remove('active');
         document.getElementById('step-label').textContent = 'Account created';
         document.querySelectorAll('.step-seg').forEach(s => s.className = 'step-seg done');
         if (selectedRole === 'editorial') {
           document.getElementById('success-msg').textContent =
-            'Your account has been submitted for admin approval. You will be notified by email once it is reviewed.';
+            'Your email is verified and your account has been submitted for adviser approval. You can log in once an adviser approves it.';
         }
         document.getElementById('step-success').classList.add('active');
         hideError();
@@ -564,7 +598,48 @@
         btn.textContent = 'Verify & create account';
         btn.disabled = false;
       }
+    }
+
+    window.verifyCode = async function() {
+      const codeInput = document.getElementById('reg-code');
+      const code = codeInput.value.trim();
+      const btn = document.getElementById('verify-btn');
+      if (btn.disabled) return;
+      if (!/^\d{6}$/.test(code)) { showError('Enter the 6-digit code from your email.'); return; }
+
+      btn.textContent = 'Verifying…';
+      btn.disabled = true;
+      hideError();
+
+      const { ok, body } = await callVerificationApi('/api/verify-code', { code });
+      if (!ok || !body.valid) {
+        btn.textContent = 'Verify & create account';
+        btn.disabled = false;
+        if (body.code === 'session_expired') {
+          window.backToPassword();
+        } else if (['too_many_attempts', 'expired', 'no_code'].includes(body.code)) {
+          // This code can no longer work: let the user request a new one immediately.
+          codeInput.value = '';
+          clearInterval(resendCooldown);
+          document.getElementById('resend-btn').disabled = false;
+          document.getElementById('resend-timer').textContent = '';
+        } else {
+          codeInput.select();
+        }
+        showError(body.error || 'That code does not match. Check the email and try again.');
+        return;
+      }
+
+      await finishRegistration();
     };
+
+    const codeField = document.getElementById('reg-code');
+    codeField.addEventListener('input', () => {
+      codeField.value = codeField.value.replace(/\D/g, '').slice(0, 6);
+    });
+    codeField.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.verifyCode();
+    });
 
     window.selectRole = function(role) {
       selectedRole = role;

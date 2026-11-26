@@ -1,5 +1,8 @@
 // Mirrors loginUser() in backend/firebase/auth.js so both login pages behave the same.
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword, signOut, setPersistence,
+  browserLocalPersistence, browserSessionPersistence
+} from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
 
@@ -18,8 +21,10 @@ function getErrorMessage(code) {
   return ERROR_MESSAGES[code] || 'An error occurred. Please try again.';
 }
 
-export async function loginUser(email, password) {
+export async function loginUser(email, password, { remember = false } = {}) {
   try {
+    // "Remember me": keep the sign-in after the browser closes, or only for this session.
+    await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
 
@@ -43,7 +48,10 @@ export async function loginUser(email, password) {
       return { success: false, error: 'This account is not active. Please contact an adviser for help.' };
     }
 
-    sessionStorage.setItem('user', JSON.stringify({ uid, ...userData }));
+    const cached = JSON.stringify({ uid, ...userData });
+    sessionStorage.setItem('user', cached);
+    if (remember) localStorage.setItem('user', cached);
+    else localStorage.removeItem('user');
     return { success: true, role: userData.role };
   } catch (error) {
     return { success: false, error: getErrorMessage(error.code) };
