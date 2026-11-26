@@ -294,7 +294,15 @@ img { display: block; max-width: 100%; }
   position: relative; border-radius: 4px; overflow: hidden;
   cursor: pointer; margin-bottom: 16px;
 }
-.hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+.hero-img { width: 100%; aspect-ratio: 16/9; display: block; background: #eef0f3; overflow: hidden; }
+
+/* Article photos on the home page. The grey background shows while a photo loads, so a slow
+   or unreachable image host never leaves a white box; image-fallback.js then swaps in the
+   "Image unavailable" graphic if it fails or times out. */
+.cover-img { display: block; width: 100%; object-fit: cover; background: #eef0f3; }
+.hero-cover { height: 100%; }
+.card-cover { aspect-ratio: 16 / 10; }
+.latest-cover { width: 56px; height: 42px; border-radius: 3px; flex-shrink: 0; }
 .hero-overlay {
   position: absolute; bottom: 0; left: 0; right: 0;
   background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
@@ -413,6 +421,36 @@ img { display: block; max-width: 100%; }
 .contributor-profile-link:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; border-radius: 2px; }
 .meta-role { font-size: var(--fs-xs); color: var(--text-muted); }
 .meta-date { font-size: var(--fs-xs); color: var(--text-muted); margin-left: auto; }
+
+/* Share bar: a thin row under the byline with two small outline pill buttons. */
+.article-share {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 0;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.share-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  min-height: 28px; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: #fff; color: var(--text-sub);
+  font-family: var(--font); font-size: var(--fs-xs); font-weight: 600; line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.share-btn:hover { color: var(--red); border-color: rgba(159, 5, 0, 0.35); background: #fdf6f6; }
+.share-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.share-btn:active { transform: scale(0.97); }
+.share-icon {
+  width: 13px; height: 13px; flex-shrink: 0;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.share-btn.is-copied { color: #1f7a3a; border-color: rgba(31, 122, 58, 0.4); background: #f1f8f3; }
+.share-btn.is-error { color: var(--red); border-color: rgba(159, 5, 0, 0.4); }
+/* Screen readers hear the confirmation; sighted users see it on the button itself. */
+.share-status {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
 
 .article-figure { margin: 36px 0; }
 .article-cover-image {

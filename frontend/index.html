@@ -123,7 +123,7 @@
 
       <div class="home-left">
         <div class="hero-card" id="heroCard" hidden>
-          <div class="hero-img" style="width:100%;aspect-ratio:16/9;display:block;"></div>
+          <div class="hero-img"></div>
           <div class="hero-overlay">
             <span class="hero-tag" id="heroTag"></span>
             <h1 class="hero-title" id="heroTitle"></h1>
@@ -235,16 +235,6 @@
 
   const escapeAttr = value => String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  const fallbackGrads = [
-    "linear-gradient(135deg,#1a0a0a,#3a1a1a)",
-    "linear-gradient(135deg,#0a1a2e,#1a2e4a)",
-    "linear-gradient(135deg,#1a1a0a,#2e2e1a)",
-    "linear-gradient(135deg,#0a2e1a,#1a4a2e)",
-    "linear-gradient(135deg,#2e0a1a,#4a1a2e)",
-    "linear-gradient(135deg,#1a2e2e,#0a1a1a)",
-    "linear-gradient(135deg,#2e1a0a,#4a2e1a)",
-    "linear-gradient(135deg,#0a0a2e,#1a1a4a)",
-  ];
 
   // Highlight the current section in the navbar and menu, and name it in the tab title.
   (function markActiveSection() {
@@ -264,10 +254,10 @@
   searchInput.value = new URLSearchParams(window.location.search).get('q') || '';
   let publishedArticles = [];
 
-  function imgOrGrad(article, i) {
-    return article.coverPhoto
-      ? `<img src="${articleImageSrc(article.coverPhoto)}" alt="${escapeAttr(article.title)}" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;">`
-      : `<div style="background:${fallbackGrads[i % fallbackGrads.length]};aspect-ratio:16/10;"></div>`;
+  // Card photo: the cover when it is an online URL, otherwise the "Image unavailable" graphic.
+  // Broken or unreachable URLs are swapped for the same graphic by image-fallback.js.
+  function cardImage(article) {
+    return `<img class="cover-img card-cover" src="${articleImageSrc(article.coverPhoto)}" alt="${escapeAttr(article.title || '')}" loading="lazy" decoding="async">`;
   }
 
   function truncate(str, n) {
@@ -289,7 +279,7 @@
     document.getElementById('heroCard').style.cursor = 'default';
     document.getElementById('heroCard').onclick = null;
     const heroImg = document.querySelector('.hero-img');
-    heroImg.style.background = 'linear-gradient(135deg,#1a0a0a,#1a1a2e)';
+    heroImg.style.background = '';
     heroImg.innerHTML = '';
     document.getElementById('articleGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">No matching articles.</div>';
     document.getElementById('latestList').innerHTML = '<div style="padding:24px;color:var(--text-muted);font-size:var(--fs-sm);">Try another search or section filter.</div>';
@@ -315,20 +305,15 @@
     document.getElementById('heroCard').onclick = () => window.location = `article-view.html?id=${hero.id}`;
 
     const heroImg = document.querySelector('.hero-img');
-    if (hero.coverPhoto) {
-      heroImg.style.background = 'none';
-      heroImg.innerHTML = `<img src="${articleImageSrc(hero.coverPhoto)}" alt="${escapeAttr(hero.title)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">`;
-    } else {
-      heroImg.style.background = fallbackGrads[0];
-      heroImg.innerHTML = '';
-    }
+    heroImg.style.background = '';
+    heroImg.innerHTML = `<img class="cover-img hero-cover" src="${articleImageSrc(hero.coverPhoto)}" alt="${escapeAttr(hero.title || '')}" fetchpriority="high">`;
 
     const gridArticles = articles.slice(1, 9);
     const grid = document.getElementById('articleGrid');
     if (gridArticles.length) {
       grid.innerHTML = gridArticles.map((a, i) => `
         <a href="article-view.html?id=${a.id}" class="card">
-          ${imgOrGrad(a, i)}
+          ${cardImage(a)}
           <div class="card-body">
             ${articleSection(a) ? `<div class="card-section">${articleSection(a).toUpperCase()}</div>` : ''}
             <div class="card-title">${truncate(a.title, 80)}</div>
@@ -343,10 +328,7 @@
     const latestArticles = articles.slice(0, 7);
     document.getElementById('latestList').innerHTML = latestArticles.map((a, i) => `
       <a href="article-view.html?id=${a.id}" class="latest-item">
-        ${a.coverPhoto
-          ? `<img src="${articleImageSrc(a.coverPhoto)}" alt="${escapeAttr(a.title)}" style="width:56px;height:42px;object-fit:cover;border-radius:3px;flex-shrink:0;">`
-          : `<div style="background:${fallbackGrads[i % fallbackGrads.length]};width:56px;height:42px;border-radius:3px;flex-shrink:0;"></div>`
-        }
+        <img class="cover-img latest-cover" src="${articleImageSrc(a.coverPhoto)}" alt="${escapeAttr(a.title || '')}" width="56" height="42" loading="lazy" decoding="async">
         <div class="latest-info">
           ${articleSection(a) ? `<div class="latest-section">${articleSection(a).toUpperCase()}</div>` : ''}
           <div class="latest-title">${truncate(a.title, 60)}</div>

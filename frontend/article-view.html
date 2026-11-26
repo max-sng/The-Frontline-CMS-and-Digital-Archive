@@ -212,6 +212,84 @@
     return `correspondent-profile-public.html?${params.toString()}`;
   }
 
+  // ── Share bar ──
+  // Share opens the device's share sheet (navigator.share) where available; desktop browsers
+  // without it copy the link instead. Copy link always copies. Either way the button confirms
+  // with "Link copied!" for 2 seconds.
+  const CHECK_ICON = '<svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>';
+  const shareTimers = new WeakMap();
+
+  async function copyText(text) {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    // Older browsers and non-HTTPS pages (e.g. testing on a local network address).
+    const field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.cssText = 'position:fixed;top:-1000px;opacity:0;';
+    document.body.appendChild(field);
+    field.select();
+    const ok = document.execCommand('copy');
+    field.remove();
+    if (!ok) throw new Error('Copy command was rejected');
+  }
+
+  function flashShareButton(button, message, state) {
+    const label = button.querySelector('.share-label');
+    const icon = button.querySelector('.share-icon');
+    if (!button.dataset.label) {
+      button.dataset.label = label.textContent;
+      button.dataset.icon = icon.outerHTML;
+    }
+    clearTimeout(shareTimers.get(button));
+    label.textContent = message;
+    if (state === 'success') icon.outerHTML = CHECK_ICON;
+    button.classList.toggle('is-copied', state === 'success');
+    button.classList.toggle('is-error', state === 'error');
+    document.getElementById('share-status').textContent = message;
+    shareTimers.set(button, setTimeout(() => {
+      label.textContent = button.dataset.label;
+      button.querySelector('.share-icon').outerHTML = button.dataset.icon;
+      button.classList.remove('is-copied', 'is-error');
+      document.getElementById('share-status').textContent = '';
+    }, 2000));
+  }
+
+  async function copyArticleLink(button) {
+    try {
+      await copyText(window.location.href);
+      flashShareButton(button, 'Link copied!', 'success');
+    } catch (error) {
+      console.error('Could not copy the link:', error);
+      flashShareButton(button, "Couldn't copy", 'error');
+    }
+  }
+
+  function initShareBar(title) {
+    const shareButton = document.getElementById('share-native');
+    const copyButton = document.getElementById('share-copy');
+    if (!shareButton || !copyButton) return;
+
+    shareButton.addEventListener('click', async () => {
+      const data = { title, url: window.location.href };
+      const canShare = typeof navigator.share === 'function'
+        && (typeof navigator.canShare !== 'function' || navigator.canShare(data));
+      if (!canShare) {
+        await copyArticleLink(shareButton);
+        return;
+      }
+      try {
+        await navigator.share(data);
+      } catch (error) {
+        // Closing the share sheet is not an error. Anything else falls back to copying.
+        if (error?.name !== 'AbortError') await copyArticleLink(shareButton);
+      }
+    });
+    copyButton.addEventListener('click', () => copyArticleLink(copyButton));
+  }
+
   // ── Comments ──
   // Comments are tied to Frontline accounts. The public site is its own website, so a
   // sign-in on the CMS does not carry over; readers sign in here with the same account.
@@ -512,6 +590,17 @@
             </div>
             ${publishedDate ? `<div class="meta-date">Published on ${publishedDate}</div>` : ''}
           </div>
+          <div class="article-share" role="group" aria-label="Share this article">
+            <button type="button" class="share-btn" id="share-native" aria-label="Share this article">
+              <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+              <span class="share-label">Share</span>
+            </button>
+            <button type="button" class="share-btn" id="share-copy" aria-label="Copy link to this article">
+              <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>
+              <span class="share-label">Copy link</span>
+            </button>
+            <span class="share-status" id="share-status" role="status" aria-live="polite"></span>
+          </div>
           ${article.coverPhoto
             ? `<figure class="article-figure">
                 <img class="article-cover-image" src="${articleImageSrc(article.coverPhoto)}" alt="${escapeHtml(article.title || '')}">
@@ -545,6 +634,7 @@
           else coverImage.addEventListener('load', setOrientation, { once: true });
         }
 
+        initShareBar(article.title || document.title);
         initComments();
         await loadComments();
 

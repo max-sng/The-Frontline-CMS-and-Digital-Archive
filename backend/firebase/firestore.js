@@ -86,16 +86,26 @@ export function articleMatchesSection(article, param) {
   return sections.some(section => accepted.includes(section));
 }
 
-// Safe, escaped value for an <img src="..."> attribute. Only online (http/https) photo URLs
-// are used. Anything else (a local path, embedded data, junk) becomes a URL that fails at
-// once, so image-fallback.js shows the "Image unavailable" graphic instead.
-export function articleImageSrc(value) {
-  const raw = String(value || '').trim();
-  let url = 'about:invalid';
+// Normalizes a stored photo value to an online URL, or '' when it is not one.
+// Accepts http(s) URLs and protocol-relative ones ("//i.ibb.co/..."), and ImgBB-style
+// objects ({ url } or { display_url }) in case one was saved whole.
+export function articleImageUrl(value) {
+  const raw = String((value && typeof value === 'object' ? value.url || value.display_url : value) || '').trim();
+  if (!raw) return '';
   try {
-    const parsed = new URL(raw);
-    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') url = parsed.href;
-  } catch { /* not a URL */ }
+    const parsed = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : '';
+  } catch {
+    return '';
+  }
+}
+
+// Escaped value for an <img src="..."> attribute. Online photo URLs are used as-is. Missing
+// or unusable values (a local path, embedded data, junk) get the "Image unavailable"
+// graphic from image-fallback.js directly, so they never depend on a load error firing.
+export function articleImageSrc(value) {
+  const fallback = (typeof window !== 'undefined' && window.FrontlineImageFallback?.src) || 'about:invalid';
+  const url = articleImageUrl(value) || fallback;
   return url.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
