@@ -86,7 +86,10 @@
   <div class="preview-modal">
     <div class="preview-modal-header">
       <div>
-        <div class="preview-modal-title" id="preview-modal-title">Article Preview</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div class="preview-modal-title" id="preview-modal-title">Article Preview</div>
+          <span class="status-badge status-readonly pending_adviser" id="preview-status"><span class="status-pill-dot dot-pending_adviser"></span><span>Awaiting Final Approval</span></span>
+        </div>
         <div class="preview-modal-note">This is how the article will look when published.</div>
       </div>
       <button class="btn btn-outline" type="button" id="preview-close-btn">Close</button>
@@ -157,14 +160,14 @@
         const rows = list.map(a => {
           const status = escapeHtml(a.status);
           return `
-          <tr>
+          <tr class="queue-row" data-id="${escapeHtml(a.id)}" title="Click to read the full article">
             <td data-label="Writer">${escapeHtml(toTitleCaseName(a.writerName || a.authorName || '—'))}</td>
             <td data-label="Section">${escapeHtml(toTitleCaseName(articleSection(a)))}</td>
             <td class="title-cell" data-label="Title"><button class="title-link" type="button" data-id="${escapeHtml(a.id)}" data-action="preview" title="Read the full article">${escapeHtml(a.title || 'Untitled')}</button></td>
             <td data-label="Status"><span class="status-badge status-readonly ${status}"><span class="status-pill-dot dot-${status}"></span><span>${escapeHtml(STATUS_LABELS[a.status] || a.status)}</span></span></td>
             <td data-label="Action" style="text-align:center">
               <div class="options-cell" style="justify-content:center">
-                <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="preview">${canDecide ? 'Preview' : 'Read article'}</button>
+                <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="preview" aria-label="View ${escapeHtml(a.title || 'article')}"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.46 10C1.73 5.94 5.52 3 10 3s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7S1.73 14.06.46 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span>${canDecide ? 'View' : 'Read article'}</span></button>
                 ${canDecide ? `
                 <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="reject">Reject</button>
                 <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="revision">Revise</button>
@@ -293,11 +296,20 @@
       previewOpener = null;
     }
 
+    // Buttons act directly (Reject / Revise / Approve don't open the preview); a click
+    // anywhere else on a row, or on its title, opens the full article.
     document.getElementById('queue').addEventListener('click', e => {
       const btn = e.target.closest('button[data-action]');
-      if (!btn) return;
-      if (btn.dataset.action === 'preview') openPreview(btn.dataset.id, btn);
-      else runAction(btn.dataset.id, btn.dataset.action, btn);
+      if (btn) {
+        e.stopPropagation();
+        if (btn.dataset.action === 'preview') openPreview(btn.dataset.id, btn);
+        else runAction(btn.dataset.id, btn.dataset.action, btn);
+        return;
+      }
+      if (e.target.closest('a, input, select, textarea, button')) return;
+      if (window.getSelection()?.toString()) return; // selecting text, not opening
+      const row = e.target.closest('tr.queue-row');
+      if (row) openPreview(row.dataset.id, row.querySelector('.title-link'));
     });
     document.querySelector('.preview-modal-footer').addEventListener('click', e => {
       const btn = e.target.closest('button[data-action]');

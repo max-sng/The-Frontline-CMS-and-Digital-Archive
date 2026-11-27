@@ -406,6 +406,9 @@ ul { list-style: none; }
 .preview-frame { flex: 1; width: 100%; border: 0; background: #fff; }
 .preview-modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--border); background: #fff; }
 .preview-modal-footer .preview-footer-note { margin-right: auto; font-size: var(--fs-xs); color: var(--text-muted); }
+#queue tr.queue-row { cursor: pointer; transition: background 0.15s; }
+#queue tr.queue-row:hover td { background: #f3f3f5; }
+#queue tr.queue-row .table-btn svg { flex-shrink: 0; }
 .title-link { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .title-link:hover, .title-link:focus-visible { color: var(--red); text-decoration: underline; }
 @media (max-width: 768px) { .preview-overlay { padding: 0; } .preview-modal { border-radius: 0; } }
