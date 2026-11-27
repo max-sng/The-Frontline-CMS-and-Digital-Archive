@@ -154,8 +154,39 @@ export function canDeleteArticle(article, user) {
 }
 
 // Create new article
+// ── Image URL guard ──
+// Images must be uploaded (ImgBB, see imgbb.js) before anything is written to Firestore.
+// A local preview — blob:, data:, file: or a bare file path — only works on the computer
+// that made it, so every write path refuses one instead of storing it.
+const IMAGE_URL_FIELDS = ['coverPhoto', 'photoURL', 'url', 'thumb'];
+const LOCAL_IMG_IN_HTML = /<img\b[^>]*\bsrc\s*=\s*["']?\s*(?:data:|blob:|file:)/i;
+
+export function isRemoteImageUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+export function assertRemoteImages(data) {
+  if (!data || typeof data !== 'object') return;
+  for (const field of IMAGE_URL_FIELDS) {
+    const value = data[field];
+    if (value == null || value === '') continue;
+    if (typeof value !== 'string' || !isRemoteImageUrl(value)) {
+      throw new Error('An image has not finished uploading, so nothing was saved. Upload the image again and retry.');
+    }
+  }
+  if (typeof data.content === 'string' && LOCAL_IMG_IN_HTML.test(data.content)) {
+    throw new Error('An image in the article has not been uploaded, so nothing was saved. Remove it or insert it again.');
+  }
+}
+
 export async function createArticle(data) {
   try {
+    assertRemoteImages(data);
     const ref = await addDoc(collection(db, "articles"), {
       status:    'draft',
       ...withAssignmentTime(data),
@@ -348,6 +379,7 @@ export async function getArticleComments(articleId) {
 // Update article
 export async function updateArticle(id, data) {
   try {
+    assertRemoteImages(data);
     const session = typeof sessionStorage !== 'undefined' ? JSON.parse(sessionStorage.getItem('user') || 'null') : null;
     if (session?.role === 'correspondent') {
       const existingSnap = await getDoc(doc(db, "articles", id));
@@ -693,6 +725,7 @@ export async function syncPublicProfiles(users) {
 // Update user profile
 export async function updateUser(uid, data) {
   try {
+    assertRemoteImages(data);
     await updateDoc(doc(db, "users", uid), {
       ...normalizeUserNames(data),
       updatedAt: serverTimestamp()
@@ -880,6 +913,8 @@ export async function logAuditEntry(entry) {
 export async function createMediaItem(item) {
   try {
     if (!item?.uploadedBy) return { success: false, error: 'You must be signed in to save media.' };
+    if (!isRemoteImageUrl(item.url)) return { success: false, error: 'The image did not upload, so it was not added to the library.' };
+    assertRemoteImages(item);
     const ref = await addDoc(collection(db, 'media'), {
       filename: String(item.filename || 'image'),
       url: String(item.url || ''),

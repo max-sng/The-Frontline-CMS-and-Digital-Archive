@@ -63,6 +63,8 @@ async function uploadToFirebaseStorage(file, folder = "uploads") {
   return { success: true, url, thumb: url, delete: null };
 }
 
+// Uploads to ImgBB and returns its permanent https://i.ibb.co/... URL. No "expiration"
+// parameter is sent, so ImgBB keeps the image indefinitely.
 async function uploadToImgbb(file) {
   const formData = new FormData();
   formData.append("image", file);
@@ -88,7 +90,7 @@ async function uploadToImgbb(file) {
 
   let data = null;
   try { data = await response.json(); } catch { data = null; }
-  if (response.ok && data?.success && data.data?.url) {
+  if (response.ok && data?.success && /^https:\/\//i.test(data.data?.url || '')) {
     return {
       success: true,
       url: data.data.url,

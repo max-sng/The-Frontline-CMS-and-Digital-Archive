@@ -404,7 +404,9 @@
   }
 
   // Tracks the currently saved photo so cancel/save stay in sync after the first save
-  let currentPhotoURL = profile?.photoURL || user.photoURL || null;
+  // Only an uploaded (online) photo counts; an old local preview (data:/blob:) is dropped.
+  const onlinePhoto = value => /^https?:\/\//i.test(String(value || '').trim()) ? String(value).trim() : null;
+  let currentPhotoURL = onlinePhoto(profile?.photoURL) || onlinePhoto(user.photoURL);
 
   document.getElementById('delete-account-setting').style.display = user.role === 'adviser' ? 'flex' : 'none';
   const notificationDefaults = {
@@ -510,7 +512,7 @@
     if (photoFile) {
       // Same upload path as the Media page (ImgBB, or Firebase Storage when no key is set).
       const upload = await uploadImage(photoFile, { folder: 'profile-photos' });
-      if (upload.success) {
+      if (upload.success && onlinePhoto(upload.url)) {
         photoURL = upload.url;
       } else {
         showToast(upload.error || "Your photo couldn't upload. Try again.", 'error');
@@ -540,6 +542,7 @@
       sessionStorage.setItem('user', JSON.stringify({ ...user, ...data }));
       if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify({ ...user, ...data }));
       document.getElementById('profileViewName').textContent = data.name || displayName;
+      document.getElementById('photoInput').value = ''; // uploaded: don't upload it again next save
       setEditing(false);
 
       if (photoURL) {
@@ -555,7 +558,7 @@
       showToast('Profile saved.', 'success');
     } else {
       console.error('Profile update failed:', result.error);
-      showToast("Couldn't save your profile. Try again.", 'error');
+      showToast(/image/i.test(result.error || '') ? result.error : "Couldn't save your profile. Try again.", 'error');
     }
 
     btn.textContent = 'Save changes';
