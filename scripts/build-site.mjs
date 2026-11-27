@@ -8,9 +8,10 @@
 // development with Live Server keeps working. This script only copies the files each
 // site needs into a flat folder, which Vercel then serves as the site root.
 //
-// Optional environment variables (set them in each Vercel project):
-//   PUBLIC_SITE_URL  e.g. https://the-frontline.vercel.app      (the public site)
-//   CMS_SITE_URL     e.g. https://the-frontline-cms.vercel.app  (the CMS)
+// Optional environment variables (set them in each Vercel project); they override
+// DEFAULT_SITE_URLS below:
+//   PUBLIC_SITE_URL  default https://frontline-public-site.vercel.app  (the public site)
+//   CMS_SITE_URL     default https://the-frontline-cms-and-digital-archi-ochre.vercel.app  (the CMS)
 // They are used to turn the few links that jump from one site to the other
 // (CMS -> article / contributor pages, public site -> login) into absolute URLs.
 // ============================================================
@@ -49,8 +50,18 @@ if (!site) {
   process.exit(1);
 }
 
-const urlFor = { public: process.env.PUBLIC_SITE_URL, cms: process.env.CMS_SITE_URL };
+// Production URLs used when the environment variable is not set. The source files in
+// frontend/ keep relative links, so Live Server on localhost / 127.0.0.1 is unaffected;
+// only the built sites get these absolute URLs.
+const DEFAULT_SITE_URLS = {
+  public: 'https://frontline-public-site.vercel.app',
+  cms: 'https://the-frontline-cms-and-digital-archi-ochre.vercel.app'
+};
 const clean = value => (value || '').trim().replace(/\/+$/, '');
+const urlFor = {
+  public: clean(process.env.PUBLIC_SITE_URL) || DEFAULT_SITE_URLS.public,
+  cms: clean(process.env.CMS_SITE_URL) || DEFAULT_SITE_URLS.cms
+};
 const otherUrl = clean(urlFor[site.otherSite.site]);
 
 const OUT = join(ROOT, 'dist', siteName);

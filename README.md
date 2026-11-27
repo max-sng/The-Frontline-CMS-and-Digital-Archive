@@ -32,8 +32,13 @@ project, which is the only one that has the Brevo environment variables.
 
 Both projects need these environment variables (Settings -> Environment Variables):
 
-- `PUBLIC_SITE_URL` - the public site's production URL, e.g. `https://the-frontline.vercel.app`
-- `CMS_SITE_URL` - the CMS production URL, e.g. `https://the-frontline-cms.vercel.app`
+- `PUBLIC_SITE_URL` - the public site's production URL. Defaults to
+  `https://frontline-public-site.vercel.app` when unset.
+- `CMS_SITE_URL` - the CMS production URL. Defaults to
+  `https://the-frontline-cms-and-digital-archi-ochre.vercel.app` when unset.
+
+Both defaults live in `DEFAULT_SITE_URLS` in `scripts/build-site.mjs`. The source files in
+`frontend/` keep relative links, so local development on localhost / 127.0.0.1 is unaffected.
 
 They turn the few links that jump between the two sites into absolute URLs
 (CMS -> article / contributor pages, public site -> login). After changing them,

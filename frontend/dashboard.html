@@ -93,7 +93,9 @@
 <script src="cms.js"></script>
 <script type="module">
   import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
-  import { getPublishedArticles, articleSection } from '../backend/firebase/firestore.js';
+  import { getPublishedArticles, articleSection, articleImageUrl, articleImageSrc } from '../backend/firebase/firestore.js';
+
+  const escapeHtml = value => String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   // ── Auth guard ──
   const user = requireAuth(['correspondent', 'editorial', 'adviser']);
@@ -108,9 +110,10 @@
     `Welcome back, ${toTitleCaseName(user.firstName || 'there')}! Greetings in pursuit of press freedom!`;
 
   // ── Topbar avatar ──
-  if (user.photoURL) {
+  // A broken or hanging photo gets the small grey placeholder from image-fallback.js.
+  if (articleImageUrl(user.photoURL)) {
     document.getElementById('topbar-avatar').innerHTML =
-      `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      `<img src="${articleImageSrc(user.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
   }
   window.__frontlineLogout = logoutUser;
 
@@ -127,16 +130,15 @@
       grid.className = 'cards-grid';
       articles.forEach(a => {
         grid.innerHTML += `
-          <div class="article-card" onclick="window.location.href='article-view.html?id=${a.id}'">
-            ${a.coverPhoto
-              ? `<img class="card-img" src="${a.coverPhoto}" alt="${a.title}">`
-              : `<div class="card-img" style="background:var(--ink);"></div>`
-            }
+          <div class="article-card" onclick="window.location.href='article-view.html?id=${encodeURIComponent(a.id)}'">
+            <!-- Missing or invalid covers get the grey "Image unavailable" graphic; image-fallback.js
+                 swaps in the same graphic if a cover fails or is still loading after 10 seconds. -->
+            <img class="card-img" src="${articleImageSrc(a.coverPhoto)}" alt="${escapeHtml(a.title || '')}" loading="lazy" decoding="async">
             <div class="card-body">
-              <div class="card-section">${articleSection(a).toUpperCase()}</div>
-              <div class="card-title">${a.title || 'Untitled'}</div>
-              <div class="card-excerpt">${a.excerpt || ''}</div>
-              <div class="card-author">by ${toTitleCaseName(a.writerName || a.authorName || 'Unknown')}</div>
+              <div class="card-section">${escapeHtml(articleSection(a).toUpperCase())}</div>
+              <div class="card-title">${escapeHtml(a.title || 'Untitled')}</div>
+              <div class="card-excerpt">${escapeHtml(a.excerpt || '')}</div>
+              <div class="card-author">by ${escapeHtml(toTitleCaseName(a.writerName || a.authorName || 'Unknown'))}</div>
             </div>
           </div>`;
       });
