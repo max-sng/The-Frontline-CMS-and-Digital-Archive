@@ -195,6 +195,8 @@
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
           <input type="search" id="articles-search" name="articles-search" placeholder="Search articles..." aria-label="Search articles" autocomplete="off">
         </div>
+        <!-- Editors: forwarded articles leave this table; read them in the Approval Queue. -->
+        <a class="btn btn-outline" id="awaiting-adviser-link" href="approval-queue.html" style="display:none;margin-left:auto;">Awaiting adviser approval</a>
       </div>
       <p id="article-editor-load-error" role="alert" style="display:none;color:var(--red);margin:-10px 0 16px;">
         The article tools are still loading. Serve this page from the repository root over HTTP and make sure the backend modules are reachable, then refresh.
@@ -908,6 +910,12 @@
   function buildTable() {
     const query = document.getElementById('articles-search').value.trim().toLocaleLowerCase();
     const tableArticles = articlesData.filter(article => article.status !== 'pending_adviser');
+    const awaitingLink = document.getElementById('awaiting-adviser-link');
+    if (awaitingLink) {
+      const awaiting = articlesData.length - tableArticles.length;
+      awaitingLink.style.display = user.role === 'editorial' ? '' : 'none';
+      awaitingLink.textContent = `Awaiting adviser approval (${awaiting})`;
+    }
     visibleArticles = tableArticles.filter(article => !query || [
       article.title, sectionOf(article), ...(Array.isArray(article.tags) ? article.tags : []), article.writerName, article.authorName,
       article.artistName, article.photojournalistName, article.status
