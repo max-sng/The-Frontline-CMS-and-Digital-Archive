@@ -187,10 +187,18 @@ async function handleMediaFiles(files) {
     import('../backend/firebase/firestore.js')
   ]);
 
+  // Firestore only confirms a write once its server acknowledges it, which can take a long
+  // time on a restricted network. The upload itself is done by then, so the "Uploading" state
+  // never waits longer than this for that confirmation.
+  const SAVE_CONFIRM_TIMEOUT_MS = 10000;
+  const SAVE_PENDING = Symbol('save-pending');
+
   let uploaded = 0;
   let failed = 0;
+  let stillSaving = 0;
   let lastError = '';
-  for (const file of images) {
+  for (const [index, file] of images.entries()) {
+    showToast(images.length === 1 ? 'Uploading image…' : `Uploading image ${index + 1} of ${images.length}…`, 'progress', { persist: true });
     const localUrl = URL.createObjectURL(file);
     const div = createMediaThumb({ filename: file.name, url: localUrl });
     const label = document.createElement('span');
@@ -203,35 +211,62 @@ async function handleMediaFiles(files) {
     try {
       const result = await uploadImage(file);
       if (!result.success) throw new Error(result.error || 'Upload failed.');
-      const saved = await createMediaItem({
+      // Show the online copy right away. Whether the browser can load it (i.ibb.co may be
+      // blocked) does not matter here: image-fallback.js handles a thumbnail that won't load.
+      div.querySelector('img').src = result.thumb || result.url;
+      div.dataset.url = result.url;
+
+      const savePromise = createMediaItem({
         filename: file.name,
         url: result.url,
         thumb: result.thumb || result.url,
         uploadedBy: user.uid
       });
-      if (!saved.success) throw new Error(`Image uploaded, but it could not be saved to the library: ${saved.error || 'unknown error'}`);
-      div.querySelector('img').src = result.thumb || result.url;
-      div.dataset.url = result.url;
-      div.dataset.id = saved.id;
-      label.remove();
-      uploaded++;
+      const saved = await Promise.race([
+        savePromise,
+        new Promise(resolve => setTimeout(() => resolve(SAVE_PENDING), SAVE_CONFIRM_TIMEOUT_MS))
+      ]);
+      if (saved === SAVE_PENDING) {
+        // Uploaded, but Firestore has not confirmed yet: finish quietly in the background.
+        stillSaving++;
+        savePromise.then(late => {
+          if (late.success) {
+            div.dataset.id = late.id;
+            showToast('Image saved to the library.', 'success');
+          } else {
+            div.remove();
+            updateMediaEmptyState();
+            showToast(`Image uploaded, but it could not be saved to the library: ${late.error || 'unknown error'}`, 'error');
+          }
+        });
+      } else if (!saved.success) {
+        throw new Error(`Image uploaded, but it could not be saved to the library: ${saved.error || 'unknown error'}`);
+      } else {
+        div.dataset.id = saved.id;
+        uploaded++;
+      }
     } catch (e) {
       failed++;
       lastError = e?.message || 'Upload failed.';
       div.remove();
       console.error('Media upload failed:', e);
     } finally {
+      label.remove(); // never left behind, whatever happened
       URL.revokeObjectURL(localUrl);
       updateMediaEmptyState();
     }
   }
 
-  if (uploaded && !failed) {
-    showToast(uploaded === 1 ? 'Image uploaded successfully.' : `${uploaded} images uploaded successfully.`, 'success');
-  } else if (uploaded && failed) {
-    showToast(`${uploaded} uploaded, ${failed} failed. ${lastError}`, 'warn');
-  } else if (failed) {
+  // The progress toast is always replaced by a short, auto-dismissing result.
+  const done = uploaded + stillSaving;
+  if (failed && !done) {
     showToast(lastError || 'Upload failed.', 'error');
+  } else if (failed) {
+    showToast(`${done} uploaded, ${failed} failed. ${lastError}`, 'warn');
+  } else if (stillSaving) {
+    showToast(`${done === 1 ? 'Image' : `${done} images`} uploaded. Saving to the library is taking longer than usual; keep this page open for a moment.`, 'warn');
+  } else {
+    showToast(uploaded === 1 ? 'Image uploaded' : `${uploaded} images uploaded`, 'success');
   }
 }
 
@@ -313,7 +348,9 @@ function initDragDrop(zoneId) {
 
 /* ── Toast notification ── */
 let toastTimer;
-function showToast(msg, type = 'success') {
+// type: success | error | warn | progress. Toasts hide after a few seconds; pass
+// { persist: true } for one that stays until the next showToast (e.g. "Uploading…").
+function showToast(msg, type = 'success', { persist = false } = {}) {
   let toast = document.getElementById('cms-toast');
   if (!toast) {
     toast = document.createElement('div');
@@ -335,16 +372,20 @@ function showToast(msg, type = 'success') {
     success: { bg: 'var(--ink)', dot: '#22c55e' },
     error:   { bg: 'var(--red-bright)', dot: '#fff' },
     warn:    { bg: '#b7950b', dot: '#fff' },
+    progress: { bg: 'var(--ink)', dot: '#f5c542' },
   };
   const c = colors[type] || colors.success;
   toast.style.background = c.bg;
   toast.style.color = '#fff';
-  toast.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${c.dot};flex-shrink:0;display:inline-block;"></span><span>${msg}</span>`;
+  toast.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${c.dot};flex-shrink:0;display:inline-block;"></span><span></span>`;
+  toast.lastElementChild.textContent = msg; // plain text: messages can include server error text
   toast.style.opacity = '1';
   toast.style.pointerEvents = 'auto';
   toast.style.transform = 'translateY(0)';
 
+  toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
   clearTimeout(toastTimer);
+  if (persist) return;
   toastTimer = setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(8px)';

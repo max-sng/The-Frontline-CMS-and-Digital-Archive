@@ -808,6 +808,9 @@
   function trackImageUpload(delta) {
     pendingImageUploads = Math.max(0, pendingImageUploads + delta);
     if (pendingImageUploads) setAutoSaveStatus(`Uploading ${pendingImageUploads} image${pendingImageUploads === 1 ? '' : 's'}…`, 'saving');
+    // Never leave "Uploading…" behind: autosave may not run next (e.g. no section yet).
+    // A failure message, or autosave's own status, replaces this right after.
+    else if (delta < 0) setAutoSaveStatus('Image uploaded', 'saved');
   }
 
   async function uploadArticleImage(file) {
