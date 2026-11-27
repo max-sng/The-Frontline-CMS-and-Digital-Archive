@@ -625,6 +625,71 @@ export async function getUser(uid) {
   }
 }
 
+// ── Public contributor profiles ──
+// users/{uid} holds private fields (email, status, ...) and is readable only by signed-in
+// staff, so the public portal reads public_profiles/{uid} instead: a copy of the display
+// fields only. firestore.rules only accepts a copy whose fields equal the user's own profile,
+// written by that user or by an active adviser, and only for active staff accounts.
+export const PUBLIC_PROFILE_FIELDS = ['name', 'firstName', 'surname', 'photoURL', 'section', 'sections', 'bio', 'role'];
+const PUBLIC_PROFILE_ROLES = ['correspondent', 'editorial', 'adviser'];
+
+export function shouldHavePublicProfile(profile) {
+  return Boolean(profile) && profile.status === 'active' && PUBLIC_PROFILE_ROLES.includes(profile.role);
+}
+
+// The public copy of a users/{uid} document, exactly as stored (no normalising, so it matches).
+export function publicProfileFrom(profile) {
+  const copy = {};
+  PUBLIC_PROFILE_FIELDS.forEach(field => {
+    if (profile?.[field] !== undefined) copy[field] = profile[field];
+  });
+  return copy;
+}
+
+function samePublicProfile(a, b) {
+  return PUBLIC_PROFILE_FIELDS.every(field => JSON.stringify(a?.[field] ?? null) === JSON.stringify(b?.[field] ?? null));
+}
+
+export async function getPublicProfile(uid) {
+  try {
+    const snap = await withFirestoreTimeout(getDoc(doc(db, "public_profiles", uid)));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  } catch (e) {
+    // permission-denied until the public_profiles rule is deployed: the page then matches by name.
+    if (e?.code !== 'permission-denied') console.warn("getPublicProfile error:", e);
+    return null;
+  }
+}
+
+// Brings public_profiles/{uid} in line with a users/{uid} document: written when it differs,
+// removed when the account is no longer active staff. `current` is the existing public copy
+// when the caller already has it (undefined = read it first).
+export async function syncPublicProfile(uid, profile, current) {
+  if (!uid || !profile) return { success: false, error: 'No profile' };
+  try {
+    const existing = current === undefined ? await getPublicProfile(uid) : current;
+    if (!shouldHavePublicProfile(profile)) {
+      if (existing) await deleteDoc(doc(db, "public_profiles", uid));
+      return { success: true, changed: Boolean(existing) };
+    }
+    const next = publicProfileFrom(profile);
+    if (existing && samePublicProfile(existing, next)) return { success: true, changed: false };
+    await setDoc(doc(db, "public_profiles", uid), { ...next, updatedAt: serverTimestamp() });
+    return { success: true, changed: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// Adviser backfill: syncs the public copies of many users with one read of the collection.
+export async function syncPublicProfiles(users) {
+  const snap = await withFirestoreTimeout(getDocs(collection(db, "public_profiles")));
+  const existing = new Map(snap.docs.map(d => [d.id, d.data()]));
+  const results = await Promise.all(users.map(person =>
+    syncPublicProfile(person.id || person.uid, person, existing.get(person.id || person.uid) || null)));
+  return { updated: results.filter(r => r.changed).length, failed: results.filter(r => !r.success).length };
+}
+
 // Update user profile
 export async function updateUser(uid, data) {
   try {

@@ -684,9 +684,25 @@ async function initNotificationWidget() {
 async function initUserProfileSync() {
   const user = JSON.parse(sessionStorage.getItem('user') || 'null');
   if (!user?.uid) return;
-  const { subscribeUserProfile, getUser } = await import('../backend/firebase/firestore.js');
+  const { subscribeUserProfile, getUser, syncPublicProfile, publicProfileFrom, shouldHavePublicProfile } = await import('../backend/firebase/firestore.js');
+
+  // Keep this user's public contributor profile (public_profiles/{uid}) in line with their
+  // own profile, so the public portal can show their name and photo to visitors.
+  let lastPublicProfile = null;
+  function syncPublic(profile) {
+    const key = JSON.stringify([shouldHavePublicProfile(profile), publicProfileFrom(profile)]);
+    if (key === lastPublicProfile) return;
+    lastPublicProfile = key;
+    syncPublicProfile(user.uid, profile).then(result => {
+      if (!result.success) {
+        lastPublicProfile = null; // try again on the next profile refresh
+        console.warn('Could not update the public profile:', result.error);
+      }
+    });
+  }
 
   function applyProfile(profile) {
+    syncPublic(profile);
     const roleChanged = profile.role && profile.role !== user.role;
     const updatedUser = { ...user, ...profile };
     sessionStorage.setItem('user', JSON.stringify(updatedUser));

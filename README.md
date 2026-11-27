@@ -108,6 +108,25 @@ production domain. Firestore access rules are in
 firebase deploy --only firestore:rules
 ```
 
+### Public contributor profiles
+
+`users/{uid}` holds private fields such as email, so only signed-in staff can read it.
+The public portal's contributor page (`correspondent-profile-public.html`) reads
+`public_profiles/{uid}` instead. That collection holds a copy of the display fields only:
+name, first name, surname, photo, section(s), bio and role.
+
+- **Who writes it:** a staff member's own copy is updated whenever they use the CMS. An
+  adviser opening the Correspondents page updates everyone's copy and removes the copy of
+  any account that is no longer active.
+- **What the rules allow:** a copy is accepted only if it matches the user's own profile.
+- **Before this works:** deploy the rules once, then have an adviser open Correspondents
+  to fill in existing accounts.
+
+Until then, the profile page still works for links that include the name (the CMS and
+article pages now add it), because articles credit their writer by name. An article is
+credited to a contributor when it is assigned to them or names them as writer. `authorId`
+is only the account that typed it in, so it counts only when no writer is named.
+
 Image uploads (Media page, cover photos, profile photos) use ImgBB when an API
 key is set in `backend/firebase/imgbb.js`; otherwise they fall back to Firebase
 Storage. To use ImgBB, create a free key at https://api.imgbb.com/ and replace

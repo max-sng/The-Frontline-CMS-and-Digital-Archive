@@ -175,7 +175,7 @@
   </footer>
 
 <script type="module">
-  import { getAllPublishedArticles, getUser, toTitleCaseName, articleSection, articleImageSrc } from '../backend/firebase/firestore.js';
+  import { getAllPublishedArticles, getPublicProfile, getUser, toTitleCaseName, articleSection, articleImageSrc } from '../backend/firebase/firestore.js';
 
   // ── Live date ──
   const d = new Date();
@@ -226,12 +226,26 @@
     return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   }
 
+  // An article belongs to a correspondent when it is assigned to them or credits them by name.
+  // authorId is the account that typed the article in, which is often an editor entering
+  // someone else's story, so it only counts when the article names no writer at all.
   function isCreditedToCorrespondent(article, userId, profileNames) {
     const creditedNames = [article.writerName, article.authorName]
       .map(normalizeName)
       .filter(Boolean);
-    const matchesId = userId && (article.authorId === userId || article.assignedTo === userId);
-    return Boolean(matchesId) || profileNames.some(name => creditedNames.includes(name));
+    if (userId && article.assignedTo === userId) return true;
+    if (profileNames.some(name => creditedNames.includes(name))) return true;
+    return Boolean(userId) && article.authorId === userId && !creditedNames.length;
+  }
+
+  // Visitors cannot read users/{uid} (it holds emails), so the public copy in public_profiles
+  // comes first. Signed-in staff fall back to the full profile if no public copy exists yet.
+  async function loadContributor(userId) {
+    if (!userId) return null;
+    const publicProfile = await getPublicProfile(userId);
+    if (publicProfile) return publicProfile;
+    const signedIn = sessionStorage.getItem('user') || localStorage.getItem('user');
+    return signedIn ? getUser(userId) : null;
   }
 
   function normalizeProfileSection(value) {
@@ -263,13 +277,18 @@
 
     try {
       const [user, publishedArticles] = await Promise.all([
-        userId ? getUser(userId) : Promise.resolve(null),
+        loadContributor(userId),
         getAllPublishedArticles()
       ]);
       const profileNames = [
         profileName,
         user?.name,
-        [user?.firstName, user?.surname].filter(Boolean).join(' ')
+        [user?.firstName, user?.surname].filter(Boolean).join(' '),
+        // No profile or name to go on (an old ?uid= link): use the writer credited on the
+        // articles assigned to this account.
+        ...(!profileName && !user && userId
+          ? publishedArticles.filter(article => article.assignedTo === userId).map(article => article.writerName || article.authorName)
+          : [])
       ].map(normalizeName).filter(Boolean);
       const profileArticles = publishedArticles.filter(article => {
         if (profileRole === 'artist') return normalizeName(article.artistName) === normalizeName(profileName);
@@ -358,7 +377,7 @@
             <div>
               ${articleSection(article) ? `<div class="work-card-section">${escapeHtml(articleSection(article).toUpperCase())}</div>` : ''}
               <div class="work-card-title">${escapeHtml(article.title || 'Untitled')}</div>
-              <div class="work-card-author">by ${escapeHtml(toTitleCaseName(article.writerName || article.authorName || user.name || 'Unknown'))}</div>
+              <div class="work-card-author">by ${escapeHtml(toTitleCaseName(article.writerName || article.authorName || displayName || 'Unknown'))}</div>
             </div>
           </a>`).join('');
       }

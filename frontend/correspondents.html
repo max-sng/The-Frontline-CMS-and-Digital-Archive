@@ -226,7 +226,7 @@
 <script src="cms.js"></script>
 <script type="module">
   import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
-  import { getAllUsers, approveEditorial } from '../backend/firebase/firestore.js';
+  import { getAllUsers, approveEditorial, syncPublicProfiles } from '../backend/firebase/firestore.js';
 
   const user = requireAuth(['editorial', 'adviser']);
   if (!user) throw new Error('Not authenticated');
@@ -253,6 +253,13 @@
     try {
       allUsers = await getAllUsers();
       render();
+      // Advisers keep every contributor's public profile (public_profiles) current, so the
+      // public portal can show names and photos to visitors. Runs in the background.
+      if (user.role === 'adviser') {
+        syncPublicProfiles(allUsers)
+          .then(({ failed }) => { if (failed) console.warn(`${failed} public profile(s) could not be updated.`); })
+          .catch(error => console.warn('Could not update public profiles:', error));
+      }
     } catch (e) {
       console.error('Failed to load accounts:', e);
       document.getElementById('corrTableBody').innerHTML =
@@ -330,8 +337,14 @@
   }
 
   window.goPage      = n  => { page = n; render(); };
-  // The profile page reads ?uid= (it previously received ?id=, so every profile showed "not found").
-  window.viewProfile = id => { window.location.href = `correspondent-profile-public.html?uid=${encodeURIComponent(id)}`; };
+  // The profile page reads ?uid=. The name is passed too: visitors cannot read users/{uid}, and
+  // articles credit their writer by name, so the profile can still find them by it.
+  window.viewProfile = id => {
+    const person = allUsers.find(c => c.id === id);
+    const params = new URLSearchParams({ uid: id });
+    if (person) params.set('name', displayName(person));
+    window.location.href = `correspondent-profile-public.html?${params.toString()}`;
+  };
   document.getElementById('corrTableBody').addEventListener('click', e => {
     const view = e.target.closest('[data-view-id]');
     if (view) return window.viewProfile(view.dataset.viewId);

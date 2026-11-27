@@ -234,6 +234,45 @@ service cloud.firestore {
       }
     }
 
+    // Public contributor profiles, read by the public portal without signing in.
+    // users/{uid} cannot be made public (Firestore rules cannot hide single fields, and it
+    // holds emails), so this collection holds a copy of the display fields only. A copy is
+    // accepted only if every field equals the user's own profile and the account is active
+    // staff, so it can never show a name, photo or role the user does not really have.
+    match /public_profiles/{uid} {
+      function profileOwner() {
+        return get(/databases/$(database)/documents/users/$(uid)).data;
+      }
+      function isActiveAdviser() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'adviser'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('status', '') == 'active';
+      }
+      function mirrorsOwner() {
+        let owner = profileOwner();
+        let next = request.resource.data;
+        return next.keys().hasOnly([
+            'name', 'firstName', 'surname', 'photoURL', 'section', 'sections', 'bio', 'role', 'updatedAt'
+          ])
+          && owner.get('status', '') == 'active'
+          && owner.get('role', '') in ['correspondent', 'editorial', 'adviser']
+          && next.get('name', null) == owner.get('name', null)
+          && next.get('firstName', null) == owner.get('firstName', null)
+          && next.get('surname', null) == owner.get('surname', null)
+          && next.get('photoURL', null) == owner.get('photoURL', null)
+          && next.get('section', null) == owner.get('section', null)
+          && next.get('sections', null) == owner.get('sections', null)
+          && next.get('bio', null) == owner.get('bio', null)
+          && next.get('role', null) == owner.get('role', null)
+          && next.updatedAt == request.time;
+      }
+
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && (request.auth.uid == uid || isActiveAdviser())
+        && mirrorsOwner();
+      allow delete: if request.auth != null && (request.auth.uid == uid || isActiveAdviser());
+    }
+
     // Audit log — clients may write audit entries, but never read or modify them
     match /audit_log/{logId} {
       allow create: if request.auth != null;

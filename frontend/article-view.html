@@ -204,13 +204,12 @@
   }
 
   function contributorProfileHref(uid, name, role) {
+    // The name is always included: visitors cannot read users/{uid}, and articles credit
+    // their writer by name, so the profile page can match on it.
     const params = new URLSearchParams();
-    if (uid) {
-      params.set('uid', uid);
-    } else {
-      params.set('name', name);
-      params.set('role', role);
-    }
+    if (uid) params.set('uid', uid);
+    if (name) params.set('name', name);
+    if (!uid || role !== 'correspondent') params.set('role', role);
     return `correspondent-profile-public.html?${params.toString()}`;
   }
 
