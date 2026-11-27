@@ -683,10 +683,10 @@
           correspondentDisplayName(correspondent).toLocaleLowerCase() === writerName.trim().toLocaleLowerCase())
       : [];
     const match = byId || (nameMatches.length === 1 ? nameMatches[0] : null);
-    // An unassigned article credited to this editor is their own: select "Myself".
+    // An unassigned article credited to this editor is their own: select their name.
     const isOwn = canAssign && !assignedTo && isSelfName(writerName);
     select.querySelector('option[data-current]')?.remove();
-    // Editors always have at least "Myself" to choose, even with no correspondents.
+    // Editors can always choose themselves, even with no correspondents.
     const readOnly = !canAssign || select.dataset.locked === 'true';
     if (!match && readOnly) {
       // Show the assignee even when they are not in the selectable list (e.g. adviser view, inactive user).
@@ -700,7 +700,8 @@
       !canAssign || correspondentOptions.length > 0 || select.dataset.locked === 'true';
   }
 
-  // Editors can write their own articles: "Myself" sets them as the writer with no assignment.
+  // Editors can write their own articles: choosing their own name (listed first) sets them
+  // as the writer with no assignment.
   const SELF_WRITER = '__self__';
   const isSelfName = name => Boolean(name) && String(name).trim().toLocaleLowerCase() === userDisplayName.trim().toLocaleLowerCase();
 
@@ -732,7 +733,7 @@
       correspondentsLoaded = true;
       select.replaceChildren(new Option('Select a writer', ''));
       if (canAssign) {
-        const self = new Option(`Myself — ${userDisplayName}`, SELF_WRITER);
+        const self = new Option(userDisplayName, SELF_WRITER);
         select.appendChild(self);
       }
       [['Correspondents', activeCorrespondents], ['Co-editors', coEditors]].forEach(([label, people]) => {
@@ -1624,7 +1625,7 @@
 
       if (!data.writerName) {
         showEditorAlert(canAssign
-          ? 'Choose the writer: yourself ("Myself"), a correspondent or a co-editor.'
+          ? 'Choose the writer: your own name, a correspondent or a co-editor.'
           : 'Select a correspondent or co-editor to set the writer and assignment.', 'error');
         return;
       }
