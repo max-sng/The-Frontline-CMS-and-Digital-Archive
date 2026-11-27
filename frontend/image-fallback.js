@@ -97,6 +97,27 @@
       if (img.naturalWidth === 0) useFallback(img);
       return;
     }
+    // A loading="lazy" image is not requested until it nears the screen, so its clock only
+    // starts then; otherwise thumbnails further down a page would time out unseen.
+    if (img.loading === 'lazy' && lazyObserver) {
+      lazyObserver.observe(img);
+      return;
+    }
+    startLoadTimer(img, src);
+  }
+
+  const lazyObserver = 'IntersectionObserver' in window
+    ? new IntersectionObserver(entries => entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        lazyObserver.unobserve(entry.target);
+        const img = entry.target;
+        if (img.dataset.fallbackApplied === 'true' || img.complete) return;
+        startLoadTimer(img, img.currentSrc || img.src);
+      }), { rootMargin: '300px' })
+    : null;
+
+  function startLoadTimer(img, src) {
+    clearTimeout(loadTimers.get(img));
     loadTimers.set(img, setTimeout(() => {
       if (!img.isConnected || (img.currentSrc || img.src) !== src) return;
       if (!img.complete || img.naturalWidth === 0) useFallback(img);

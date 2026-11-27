@@ -99,13 +99,22 @@ function createMediaThumb(item) {
   div.dataset.url = item.url || '';
   if (item.id) div.dataset.id = item.id;
   const img = document.createElement('img');
-  img.src = item.thumb || item.url || '';
+  // Online thumbnails (and the local preview shown while a file uploads) load as usual;
+  // image-fallback.js swaps in the grey "Image unavailable" graphic if one fails or is still
+  // loading after 10 seconds. A missing or unusable URL gets that graphic straight away.
+  img.src = mediaThumbUrl(item.thumb) || mediaThumbUrl(item.url) || window.FrontlineImageFallback?.src || '';
   img.alt = item.filename || 'Uploaded media';
   img.loading = 'lazy';
   const hover = document.createElement('div');
   hover.className = 'thumb-hover';
   div.append(img, hover);
   return div;
+}
+
+function mediaThumbUrl(value) {
+  const src = String(value || '').trim();
+  if (/^blob:/i.test(src)) return src; // in-progress upload preview, never saved
+  return articleImageUrl(src);
 }
 
 function articleImageUrl(value) {
