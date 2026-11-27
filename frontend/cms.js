@@ -386,6 +386,53 @@ function toTitleCaseName(value) {
 }
 window.toTitleCaseName = toTitleCaseName;
 
+/* ── Article body sanitizer ──
+   Cleans stored article HTML before it is shown (e.g. the Approval Queue preview). Uses
+   DOMPurify when its CDN script has loaded; otherwise an allowlist that keeps the editor's
+   formatting and drops scripts, event handlers and unsafe links. */
+function sanitizeArticleHtml(content) {
+  if (typeof window.DOMPurify?.sanitize === 'function') {
+    return window.DOMPurify.sanitize(content || '', {
+      ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','blockquote','pre','sub','sup','span','div','ul','ol','li','a','img','iframe'],
+      ALLOWED_ATTR: ['href','target','src','alt','frameborder','allowfullscreen','class','style','data-list']
+    });
+  }
+  const parsed = new DOMParser().parseFromString(String(content || ''), 'text/html');
+  const allowedTags = new Set(['P','BR','STRONG','B','EM','I','U','S','H1','H2','H3','BLOCKQUOTE','PRE','SUB','SUP','SPAN','DIV','UL','OL','LI','A','IMG']);
+  const allowedAttributes = new Set(['href','src','alt','title','class','style','data-list']);
+  const allowedStyles = new Set(['font-size','color','background-color','text-align']);
+  const cleanStyle = value => value.split(';').map(rule => rule.trim()).filter(rule => {
+    const [prop, ...rest] = rule.split(':');
+    const val = rest.join(':').trim().toLowerCase();
+    return allowedStyles.has((prop || '').trim().toLowerCase()) && val && !/url\(|expression|javascript:/.test(val);
+  }).join('; ');
+  const cleanNode = node => {
+    Array.from(node.childNodes).forEach(child => {
+      if (child.nodeType !== Node.ELEMENT_NODE) return;
+      if (!allowedTags.has(child.tagName)) {
+        cleanNode(child);
+        child.replaceWith(...child.childNodes);
+        return;
+      }
+      Array.from(child.attributes).forEach(attribute => {
+        const name = attribute.name.toLowerCase();
+        const value = attribute.value.trim();
+        const safeUrl = /^(https?:|mailto:)/i.test(value) || value.startsWith('/') || value.startsWith('#');
+        if (!allowedAttributes.has(name) || ((name === 'href' || name === 'src') && !safeUrl)) {
+          child.removeAttribute(attribute.name);
+        } else if (name === 'style') {
+          const style = cleanStyle(value);
+          if (style) child.setAttribute('style', style); else child.removeAttribute('style');
+        }
+      });
+      cleanNode(child);
+    });
+  };
+  cleanNode(parsed.body);
+  return parsed.body.innerHTML;
+}
+window.sanitizeArticleHtml = sanitizeArticleHtml;
+
 /* Keep the topbar name in Title Case whichever page script sets it. */
 function initTopbarNameFormatting() {
   const nameEl = document.getElementById('topbar-username');

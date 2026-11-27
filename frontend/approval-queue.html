@@ -78,16 +78,36 @@
   </div>
 </div>
 
+<!-- Full article preview: read the whole article before approving or rejecting it. -->
+<div class="preview-overlay hidden" id="preview-overlay" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
+  <div class="preview-modal">
+    <div class="preview-modal-header">
+      <div>
+        <div class="preview-modal-title" id="preview-modal-title">Article Preview</div>
+        <div class="preview-modal-note">This is how the article will look when published.</div>
+      </div>
+      <button class="btn btn-outline" type="button" id="preview-close-btn">Close</button>
+    </div>
+    <iframe class="preview-frame" id="preview-frame" title="Article preview"></iframe>
+    <div class="preview-modal-footer">
+      <span class="preview-footer-note" id="preview-footer-note"></span>
+      <button class="btn btn-outline" type="button" id="preview-reject-btn" data-action="reject">Reject</button>
+      <button class="btn btn-red" type="button" id="preview-approve-btn" data-action="publish">Approve and publish</button>
+    </div>
+  </div>
+</div>
+
   <script src="cms.js"></script>
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
     <script type="module">
     import { requireAuth, logoutUser } from '../backend/firebase/auth.js';
-    import { getAllArticles, updateArticleStatus, articleSection } from '../backend/firebase/firestore.js';
+    import { getAllArticles, updateArticleStatus, articleSection, articleImageUrl, articleImageSrc } from '../backend/firebase/firestore.js';
 
     const user = requireAuth(['adviser']);
     if (!user) throw new Error('Not authorised');
     document.getElementById('topbar-username').textContent = user.name || user.firstName || 'Admin';
     document.getElementById('topbar-role').textContent = 'Adviser';
-    if (user.photoURL) document.getElementById('topbar-avatar').innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    if (articleImageUrl(user.photoURL)) document.getElementById('topbar-avatar').innerHTML = `<img src="${articleImageSrc(user.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     window.__frontlineLogout = logoutUser;
 
     const STATUS_LABELS = {
@@ -111,12 +131,15 @@
       });
     }
 
+    let queueArticles = [];
+
     async function loadQueue() {
       const container = document.getElementById('queue');
       container.textContent = 'Loading…';
       try {
         const all = await getAllArticles();
         const list = all.filter(a => a.status === 'pending_adviser');
+        queueArticles = list;
         if (!list.length) {
           container.innerHTML = '<div class="empty-state empty-state-plain"><div class="empty-state-title">Nothing to approve</div><div class="empty-state-sub">Articles sent to you for final approval will appear here.</div></div>';
           return;
@@ -127,10 +150,11 @@
           <tr>
             <td data-label="Writer">${escapeHtml(toTitleCaseName(a.writerName || a.authorName || '—'))}</td>
             <td data-label="Section">${escapeHtml(toTitleCaseName(articleSection(a)))}</td>
-            <td class="title-cell" data-label="Title">${escapeHtml(a.title || 'Untitled')}</td>
+            <td class="title-cell" data-label="Title"><button class="title-link" type="button" data-id="${escapeHtml(a.id)}" data-action="preview" title="Read the full article">${escapeHtml(a.title || 'Untitled')}</button></td>
             <td data-label="Status"><span class="status-badge status-readonly ${status}"><span class="status-pill-dot dot-${status}"></span><span>${escapeHtml(STATUS_LABELS[a.status] || a.status)}</span></span></td>
             <td data-label="Action" style="text-align:center">
               <div class="options-cell" style="justify-content:center">
+                <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="preview">Preview</button>
                 <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="reject">Reject</button>
                 <button class="btn btn-red table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="publish">Approve</button>
               </div>
@@ -141,7 +165,7 @@
           <div class="table-wrap">
             <table class="articles-table" style="table-layout:fixed;width:100%;border:0;border-radius:0;">
               <colgroup>
-                <col style="width:18%"><col style="width:12%"><col style="width:38%"><col style="width:18%"><col style="width:14%">
+                <col style="width:16%"><col style="width:11%"><col style="width:32%"><col style="width:17%"><col style="width:24%">
               </colgroup>
               <thead><tr>
                 <th>Writer</th><th>Section</th><th>Title</th><th>Status</th><th style="text-align:center">Action</th>
@@ -156,24 +180,109 @@
       }
     }
 
-    document.getElementById('queue').addEventListener('click', async (e) => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-      const id = btn.dataset.id;
-      const act = btn.dataset.action;
-      if (act === 'publish') {
-        btn.disabled = true; btn.textContent = 'Publishing...';
-        const r = await updateArticleStatus(id, 'published');
-        if (r.success) { btn.textContent = 'Published'; showToast('Article published.', 'success'); }
-        else { btn.textContent = 'Publish'; btn.disabled = false; showToast(r.error || "Couldn't publish the article. Try again.", 'error'); return; }
-        await loadQueue();
-      } else if (act === 'reject') {
-        btn.disabled = true; btn.textContent = 'Rejecting...';
-        const r = await updateArticleStatus(id, 'draft');
-        if (r.success) { btn.textContent = 'Rejected'; showToast('Article sent back to drafts.', 'success'); }
-        else { btn.textContent = 'Reject'; btn.disabled = false; showToast(r.error || "Couldn't reject the article. Try again.", 'error'); return; }
-        await loadQueue();
+    // ── Approve / reject (from the list or the preview) ──
+    async function runAction(id, act, btn) {
+      const isPublish = act === 'publish';
+      const label = btn.textContent;
+      const related = document.querySelectorAll(`#queue button[data-id="${CSS.escape(id)}"], .preview-modal-footer button`);
+      related.forEach(b => { b.disabled = true; });
+      btn.textContent = isPublish ? 'Publishing...' : 'Rejecting...';
+      const r = await updateArticleStatus(id, isPublish ? 'published' : 'draft');
+      if (!r.success) {
+        btn.textContent = label;
+        related.forEach(b => { b.disabled = false; });
+        showToast(r.error || (isPublish ? "Couldn't publish the article. Try again." : "Couldn't reject the article. Try again."), 'error');
+        return;
       }
+      showToast(isPublish ? 'Article published.' : 'Article sent back to drafts.', 'success');
+      if (previewId === id) closePreview();
+      await loadQueue();
+    }
+
+    // ── Full article preview ──
+    const previewOverlay = document.getElementById('preview-overlay');
+    const previewFrame = document.getElementById('preview-frame');
+    const PERSON_ICON = '<div class="meta-avatar-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="currentColor"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0z" fill="currentColor"/></svg></div>';
+    let previewId = null;
+    let previewOpener = null;
+
+    function contributor(name, role) {
+      if (!String(name || '').trim()) return '';
+      return `<div class="article-contributor"><div class="meta-avatar">${PERSON_ICON}</div>
+        <div class="meta-info"><div class="meta-name">${escapeHtml(toTitleCaseName(name))}</div><div class="meta-role">${role}</div></div></div>`;
+    }
+
+    function openPreview(id, opener) {
+      const a = queueArticles.find(article => article.id === id);
+      if (!a) return;
+      previewId = id;
+      previewOpener = opener || null;
+      const title = a.title || 'Untitled';
+      const sentAt = (a.submittedAt || a.updatedAt || a.createdAt)?.toDate?.();
+      const dateLabel = sentAt ? sentAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+      const body = sanitizeArticleHtml(a.content || '');
+      const hasBody = new DOMParser().parseFromString(body, 'text/html').body.textContent.trim() || /<(img|iframe)\b/i.test(body);
+      const base = new URL('.', window.location.href).href;
+      const caption = a.cutline ? `<figcaption style="font-size:var(--fs-xs);color:var(--text-muted);margin-top:8px;text-align:center;">${escapeHtml(a.cutline)}</figcaption>` : '';
+
+      previewFrame.srcdoc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+        <base href="${escapeHtml(base)}" target="_blank">
+        <script src="image-fallback.js"><\/script>
+        <link rel="stylesheet" href="frontline.css">
+        <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
+        </head><body>
+        <main class="article-main"><div class="article-wrap">
+          <div class="article-section-tag">${escapeHtml(articleSection(a))}</div>
+          <h1 class="article-title">${escapeHtml(title)}</h1>
+          ${a.excerpt ? `<p class="article-deck" style="font-size:var(--fs-xl);color:var(--text-sub);line-height:1.5;margin:-4px 0 14px;">${escapeHtml(a.excerpt)}</p>` : ''}
+          <div class="article-meta">
+            <div class="article-contributors">
+              ${contributor(a.writerName || a.authorName || 'Unknown writer', 'Writer')}
+              ${contributor(a.artistName, 'Artist')}
+              ${contributor(a.photojournalistName, 'Photojournalist')}
+            </div>
+            ${dateLabel ? `<div class="meta-date">Sent for approval ${escapeHtml(dateLabel)}</div>` : ''}
+          </div>
+          ${a.coverPhoto ? `<figure class="article-figure">
+              <img class="article-cover-image" src="${articleImageSrc(a.coverPhoto)}" alt="${escapeHtml(title)}">
+              ${caption}
+            </figure>` : ''}
+          <div class="article-body">${hasBody ? body : '<p>No content available.</p>'}</div>
+        </div></main></body></html>`;
+
+      document.getElementById('preview-modal-title').textContent = title;
+      document.getElementById('preview-footer-note').textContent =
+        `By ${toTitleCaseName(a.writerName || a.authorName || 'Unknown writer')} · ${toTitleCaseName(articleSection(a) || 'No section')}`;
+      document.querySelectorAll('.preview-modal-footer button').forEach(b => { b.disabled = false; });
+      document.getElementById('preview-approve-btn').textContent = 'Approve and publish';
+      document.getElementById('preview-reject-btn').textContent = 'Reject';
+      previewOverlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('preview-close-btn').focus();
+    }
+
+    function closePreview() {
+      previewOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+      previewId = null;
+      if (previewOpener?.isConnected) previewOpener.focus();
+      previewOpener = null;
+    }
+
+    document.getElementById('queue').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'preview') openPreview(btn.dataset.id, btn);
+      else runAction(btn.dataset.id, btn.dataset.action, btn);
+    });
+    document.querySelector('.preview-modal-footer').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (btn && previewId) runAction(previewId, btn.dataset.action, btn);
+    });
+    document.getElementById('preview-close-btn').addEventListener('click', closePreview);
+    previewOverlay.addEventListener('click', e => { if (e.target === previewOverlay) closePreview(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !previewOverlay.classList.contains('hidden')) closePreview();
     });
 
     document.getElementById('queue-search').addEventListener('input', e => applyFilter(e.target.value));
