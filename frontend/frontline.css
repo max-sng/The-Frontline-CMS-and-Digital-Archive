@@ -25,6 +25,14 @@
 }
 
 body { font-family: var(--font); color: var(--text-main); background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* Sticky footer: the page is a full-height column and <main> takes the leftover space, so
+   on short pages (an empty section, a missing profile) the footer still sits at the bottom
+   of the screen. Long pages scroll as before. 100dvh follows mobile browser toolbars.
+   width: 100% keeps each main's max-width + auto margins centring it inside the column. */
+body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+body > main { flex: 1 0 auto; width: 100%; }
+body > .site-header, body > .site-footer { flex-shrink: 0; }
 html, body, .popup-menu { scrollbar-width: none; }
 html::-webkit-scrollbar, body::-webkit-scrollbar, .popup-menu::-webkit-scrollbar { display: none; }
 ::selection { background: rgba(159, 5, 0, 0.16); color: inherit; }
