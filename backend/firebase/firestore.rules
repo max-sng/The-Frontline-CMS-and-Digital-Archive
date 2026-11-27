@@ -321,9 +321,12 @@ service cloud.firestore {
         && request.resource.data.uploadedBy == request.auth.uid
         && request.resource.data.filename is string
         && request.resource.data.url is string;
+      // The uploader may edit or delete their own media; active advisers and editors may
+      // manage anyone's (e.g. Media Library single and bulk delete).
       allow update, delete: if request.auth != null && (
         resource.data.uploadedBy == request.auth.uid
-        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial']
+        || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['adviser', 'editorial']
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('status', '') == 'active')
       );
     }
 

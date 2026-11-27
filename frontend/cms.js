@@ -107,8 +107,184 @@ function createMediaThumb(item) {
   img.loading = 'lazy';
   const hover = document.createElement('div');
   hover.className = 'thumb-hover';
-  div.append(img, hover);
+  const check = document.createElement('span');
+  check.className = 'media-check';
+  check.setAttribute('aria-hidden', 'true');
+  check.innerHTML = MEDIA_CHECK_ICON;
+  div.append(img, hover, check);
+  enableMediaActions(div, item);
   return div;
+}
+
+/* ── Media delete (single and multi-select) ── */
+const MEDIA_TRASH_ICON = '<svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>';
+const MEDIA_CHECK_ICON = '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>';
+
+// Only media library entries can be deleted here (images inside articles belong to those
+// articles). Matches firestore.rules: the uploader, or an adviser / editor.
+function canDeleteMediaItem(item) {
+  const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+  if (!user?.uid || !item?.id || String(item.id).startsWith('article-')) return false;
+  return item.uploadedBy === user.uid || ['adviser', 'editorial'].includes(user.role);
+}
+
+function enableMediaActions(div, item) {
+  if (item?.uploadedBy) div.dataset.uploadedBy = item.uploadedBy;
+  if (!canDeleteMediaItem(item)) {
+    delete div.dataset.deletable;
+    div.querySelector('.media-delete-btn')?.remove();
+    return;
+  }
+  div.dataset.deletable = 'true';
+  if (div.querySelector('.media-delete-btn')) return;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'media-delete-btn';
+  button.title = 'Delete';
+  button.setAttribute('aria-label', `Delete ${item.filename || 'image'}`);
+  button.innerHTML = MEDIA_TRASH_ICON;
+  div.appendChild(button);
+}
+
+function initMediaSelection() {
+  const grid = document.getElementById('media-grid');
+  const selectBtn = document.getElementById('media-select-btn');
+  const bar = document.getElementById('media-select-bar');
+  if (!grid || !selectBtn || !bar) return;
+  const countEl = document.getElementById('media-select-count');
+  const allBtn = document.getElementById('media-select-all');
+  const deleteBtn = document.getElementById('media-delete-selected');
+  const cancelBtn = document.getElementById('media-select-cancel');
+  let selecting = false;
+
+  const selectable = () => Array.from(grid.querySelectorAll('.media-thumb[data-deletable]'))
+    .filter(thumb => thumb.style.display !== 'none');
+  const selected = () => Array.from(grid.querySelectorAll('.media-thumb.is-selected'));
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const refreshSearch = () => document.getElementById('media-search-input')?.dispatchEvent(new Event('input'));
+
+  function setSelected(thumb, on) {
+    thumb.classList.toggle('is-selected', on);
+    thumb.setAttribute('aria-checked', String(on));
+  }
+
+  function refresh() {
+    const count = selected().length;
+    countEl.textContent = `${count} selected`;
+    deleteBtn.textContent = `Delete selected (${count})`;
+    deleteBtn.disabled = !count;
+    const options = selectable();
+    allBtn.disabled = !options.length;
+    allBtn.textContent = options.length && options.every(thumb => thumb.classList.contains('is-selected'))
+      ? 'Deselect all' : 'Select all';
+  }
+
+  function enter() {
+    selecting = true;
+    grid.classList.add('selecting');
+    bar.hidden = false;
+    selectBtn.style.display = 'none';
+    selectBtn.setAttribute('aria-pressed', 'true');
+    grid.querySelectorAll('.media-thumb[data-deletable]').forEach(thumb => {
+      thumb.tabIndex = 0;
+      thumb.setAttribute('role', 'checkbox');
+      thumb.setAttribute('aria-checked', 'false');
+    });
+    refresh();
+    allBtn.focus();
+  }
+
+  function exit() {
+    selecting = false;
+    grid.classList.remove('selecting');
+    bar.hidden = true;
+    selectBtn.style.display = '';
+    selectBtn.setAttribute('aria-pressed', 'false');
+    grid.querySelectorAll('.media-thumb').forEach(thumb => {
+      thumb.classList.remove('is-selected');
+      thumb.removeAttribute('tabindex');
+      thumb.removeAttribute('role');
+      thumb.removeAttribute('aria-checked');
+    });
+  }
+
+  async function deleteOne(thumb, button) {
+    const name = thumb.querySelector('img')?.alt || 'this image';
+    if (!confirm(`Delete "${name}" from the media library?\n\nArticles that already use this image are not affected.`)) return;
+    button.disabled = true;
+    const { deleteMedia } = await import('../backend/firebase/firestore.js');
+    const result = await deleteMedia(thumb.dataset.id);
+    if (!result.success) {
+      button.disabled = false;
+      showToast(result.error ? `Couldn't delete the image: ${result.error}` : "Couldn't delete the image. Try again.", 'error');
+      return;
+    }
+    thumb.remove();
+    updateMediaEmptyState();
+    refreshSearch();
+    if (selecting) refresh();
+    showToast('Media deleted', 'success');
+  }
+
+  async function deleteSelected() {
+    const thumbs = selected();
+    if (!thumbs.length) return;
+    if (!confirm(`Delete ${plural(thumbs.length, 'selected media item')}?\n\nArticles that already use these images are not affected.`)) return;
+    const label = deleteBtn.textContent;
+    [deleteBtn, allBtn, cancelBtn].forEach(b => { b.disabled = true; });
+    deleteBtn.textContent = 'Deleting…';
+    const { deleteMediaBatch } = await import('../backend/firebase/firestore.js');
+    const result = await deleteMediaBatch(thumbs.map(thumb => thumb.dataset.id));
+    [allBtn, cancelBtn].forEach(b => { b.disabled = false; });
+    if (!result.success) {
+      deleteBtn.textContent = label;
+      deleteBtn.disabled = false;
+      showToast(result.error ? `Nothing was deleted: ${result.error}` : 'Nothing was deleted. Try again.', 'error');
+      return;
+    }
+    thumbs.forEach(thumb => thumb.remove());
+    exit();
+    updateMediaEmptyState();
+    refreshSearch();
+    showToast(`${plural(thumbs.length, 'item')} deleted`, 'success');
+  }
+
+  selectBtn.addEventListener('click', enter);
+  cancelBtn.addEventListener('click', () => { exit(); selectBtn.focus(); });
+  deleteBtn.addEventListener('click', deleteSelected);
+  allBtn.addEventListener('click', () => {
+    const options = selectable();
+    const selectAll = !options.every(thumb => thumb.classList.contains('is-selected'));
+    options.forEach(thumb => setSelected(thumb, selectAll));
+    refresh();
+  });
+
+  grid.addEventListener('click', event => {
+    const deleteButton = event.target.closest('.media-delete-btn');
+    if (deleteButton) {
+      // The card itself must not react (selection / preview).
+      event.stopPropagation();
+      event.preventDefault();
+      deleteOne(deleteButton.closest('.media-thumb'), deleteButton);
+      return;
+    }
+    if (!selecting) return;
+    const thumb = event.target.closest('.media-thumb');
+    if (!thumb?.dataset.deletable) return;
+    setSelected(thumb, !thumb.classList.contains('is-selected'));
+    refresh();
+  });
+  grid.addEventListener('keydown', event => {
+    if (!selecting || (event.key !== ' ' && event.key !== 'Enter')) return;
+    const thumb = event.target.closest('.media-thumb[data-deletable]');
+    if (!thumb) return;
+    event.preventDefault();
+    setSelected(thumb, !thumb.classList.contains('is-selected'));
+    refresh();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && selecting) exit();
+  });
 }
 
 function mediaThumbUrl(value) {
@@ -232,6 +408,7 @@ async function handleMediaFiles(files) {
         savePromise.then(late => {
           if (late.success) {
             div.dataset.id = late.id;
+            enableMediaActions(div, { id: late.id, uploadedBy: user.uid, filename: file.name });
             showToast('Image saved to the library.', 'success');
           } else {
             div.remove();
@@ -243,6 +420,7 @@ async function handleMediaFiles(files) {
         throw new Error(`Image uploaded, but it could not be saved to the library: ${saved.error || 'unknown error'}`);
       } else {
         div.dataset.id = saved.id;
+        enableMediaActions(div, { id: saved.id, uploadedBy: user.uid, filename: file.name });
         uploaded++;
       }
     } catch (e) {
@@ -842,6 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initUserProfileSync();
   initDragDrop('upload-zone');
   initMediaSearch();
+  initMediaSelection();
   initMediaLibrary();
 });
 

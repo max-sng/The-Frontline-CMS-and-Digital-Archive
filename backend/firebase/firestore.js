@@ -6,7 +6,7 @@
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs,
   updateDoc, deleteDoc, query, where, orderBy,
-  limit, serverTimestamp, onSnapshot
+  limit, serverTimestamp, onSnapshot, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { db } from "./firebase-config.js";
@@ -925,6 +925,37 @@ export async function createMediaItem(item) {
     return { success: true, id: ref.id };
   } catch (e) {
     console.error('createMediaItem error', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// Deletes media library entries (the Firestore records). The image files stay on ImgBB, so any
+// article that already uses one of these images keeps working. firestore.rules allows this
+// for the uploader and for active advisers and editors.
+export async function deleteMedia(id) {
+  if (!id) return { success: false, error: 'No media item selected.' };
+  try {
+    await deleteDoc(doc(db, 'media', id));
+    return { success: true };
+  } catch (e) {
+    console.error('deleteMedia error', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// All-or-nothing: each batch commits atomically (Firestore allows 500 writes per batch).
+export async function deleteMediaBatch(ids) {
+  const unique = [...new Set((ids || []).filter(Boolean))];
+  if (!unique.length) return { success: false, error: 'No media items selected.' };
+  try {
+    for (let i = 0; i < unique.length; i += 450) {
+      const batch = writeBatch(db);
+      unique.slice(i, i + 450).forEach(id => batch.delete(doc(db, 'media', id)));
+      await batch.commit();
+    }
+    return { success: true, deleted: unique.length };
+  } catch (e) {
+    console.error('deleteMediaBatch error', e);
     return { success: false, error: e.message };
   }
 }
