@@ -188,7 +188,7 @@
     <main class="cms-content">
       <div class="page-header">
         <h1 class="page-title">Articles</h1>
-        <button class="btn btn-red" id="new-article-btn">Create</button>
+        <button class="btn btn-red" id="new-article-btn">New Article</button>
       </div>
       <div class="articles-toolbar">
         <div class="media-search">
@@ -215,6 +215,8 @@
             loadError.style.display = 'block';
           };
           window.addEventListener('error', reportStartupError, true);
+          // articles.html?new=1 (e.g. the Dashboard's "New Article") opens the editor right away.
+          const openNewFromLink = new URLSearchParams(location.search).get('new') === '1';
           window.addEventListener('unhandledrejection', reportStartupError);
           button.addEventListener('click', () => {
             if (openEditor) {
@@ -228,6 +230,16 @@
               }
             }
           });
+          if (openNewFromLink) {
+            history.replaceState(null, '', location.pathname);
+            // Wait for the rich-text editor script (loaded async) so the editor opens with its
+            // formatting toolbar instead of the plain fallback; give up waiting after 5 seconds.
+            const startedAt = Date.now();
+            (function openWhenReady() {
+              if (typeof window.Quill === 'function' || Date.now() - startedAt > 5000) button.click();
+              else setTimeout(openWhenReady, 100);
+            })();
+          }
           window.__frontlineRegisterArticleEditor = handler => {
             openEditor = handler;
             window.removeEventListener('error', reportStartupError, true);
@@ -671,23 +683,37 @@
           correspondentDisplayName(correspondent).toLocaleLowerCase() === writerName.trim().toLocaleLowerCase())
       : [];
     const match = byId || (nameMatches.length === 1 ? nameMatches[0] : null);
+    // An unassigned article credited to this editor is their own: select "Myself".
+    const isOwn = canAssign && !assignedTo && isSelfName(writerName);
     select.querySelector('option[data-current]')?.remove();
-    const readOnly = !canAssign || select.dataset.locked === 'true' || correspondentOptions.length === 0;
+    // Editors always have at least "Myself" to choose, even with no correspondents.
+    const readOnly = !canAssign || select.dataset.locked === 'true';
     if (!match && readOnly) {
       // Show the assignee even when they are not in the selectable list (e.g. adviser view, inactive user).
       const current = new Option(writerName ? toTitleCase(writerName) : 'Not assigned', '');
       current.dataset.current = 'true';
       select.insertBefore(current, select.firstChild);
     }
-    select.value = match?.id || '';
+    select.value = isOwn ? SELF_WRITER : (match?.id || '');
     select.disabled = readOnly;
     document.getElementById('correspondent-empty-help').hidden =
       !canAssign || correspondentOptions.length > 0 || select.dataset.locked === 'true';
   }
 
+  // Editors can write their own articles: "Myself" sets them as the writer with no assignment.
+  const SELF_WRITER = '__self__';
+  const isSelfName = name => Boolean(name) && String(name).trim().toLocaleLowerCase() === userDisplayName.trim().toLocaleLowerCase();
+
   function selectedCorrespondentName() {
     const select = document.getElementById('assign-correspondent');
+    if (select.value === SELF_WRITER) return userDisplayName;
     return select.value ? select.selectedOptions[0]?.textContent.trim() || '' : '';
+  }
+
+  // The assignee to save: none when the editor is writing it themselves.
+  function selectedAssignee() {
+    const value = document.getElementById('assign-correspondent')?.value || '';
+    return value && value !== SELF_WRITER ? value : null;
   }
 
   // ── Load correspondents into the shared writer and assignment selector ──
@@ -704,7 +730,11 @@
       const coEditors = editors.filter(person => person.status === 'active' && person.id !== user.uid).sort(byName);
       correspondentOptions = [...activeCorrespondents, ...coEditors];
       correspondentsLoaded = true;
-      select.replaceChildren(new Option('Select a correspondent or co-editor', ''));
+      select.replaceChildren(new Option('Select a writer', ''));
+      if (canAssign) {
+        const self = new Option(`Myself — ${userDisplayName}`, SELF_WRITER);
+        select.appendChild(self);
+      }
       [['Correspondents', activeCorrespondents], ['Co-editors', coEditors]].forEach(([label, people]) => {
         if (!people.length) return;
         const group = document.createElement('optgroup');
@@ -712,7 +742,7 @@
         people.forEach(person => group.appendChild(new Option(correspondentDisplayName(person), person.id)));
         select.appendChild(group);
       });
-      if (!correspondentOptions.length) select.options[0].textContent = 'No active correspondents or co-editors';
+      if (!correspondentOptions.length && !canAssign) select.options[0].textContent = 'No active correspondents or co-editors';
       setCorrespondentSelection({
         assignedTo: select.dataset.pendingId || '',
         writerName: select.dataset.pendingName || ''
@@ -1179,7 +1209,7 @@
       ? `${assignerName(article)} assigned this article, so only they can change the assignment or forward it to the adviser.`
       : '';
     correspondentSelect.dataset.locked = String(assignmentLocked(article));
-    correspondentSelect.disabled = !canAssign || assignmentLocked(article) || !correspondentsLoaded || correspondentOptions.length === 0;
+    correspondentSelect.disabled = !canAssign || assignmentLocked(article) || !correspondentsLoaded;
     if (!canAssign) correspondentSelect.setAttribute('aria-describedby', 'assign-adviser-hint');
     else if (writerLocked) correspondentSelect.setAttribute('aria-describedby', 'writer-lock-hint-editorial');
     else if (otherEditorAssigned) correspondentSelect.setAttribute('aria-describedby', 'assign-other-editor-hint');
@@ -1452,7 +1482,7 @@
     const assignee = writerLocked
       ? (existingArticle.assignedTo ?? null)
       : canAssign
-        ? (document.getElementById('assign-correspondent')?.value || null)
+        ? selectedAssignee()
       : (existingArticle?.assignedTo ?? null);
     const dueDate = user.role === 'correspondent'
       ? document.getElementById('corr-due-date').value
@@ -1593,7 +1623,14 @@
       }
 
       if (!data.writerName) {
-        showEditorAlert('Select a correspondent or co-editor to set the writer and assignment.', 'error');
+        showEditorAlert(canAssign
+          ? 'Choose the writer: yourself ("Myself"), a correspondent or a co-editor.'
+          : 'Select a correspondent or co-editor to set the writer and assignment.', 'error');
+        return;
+      }
+
+      if (status === 'assigned' && !data.assignedTo) {
+        showEditorAlert('To assign this article, choose a correspondent or co-editor. Writing it yourself? Use Save draft or Send to adviser.', 'error');
         return;
       }
 

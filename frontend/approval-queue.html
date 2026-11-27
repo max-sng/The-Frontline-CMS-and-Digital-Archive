@@ -167,11 +167,8 @@
             <td data-label="Status"><span class="status-badge status-readonly ${status}"><span class="status-pill-dot dot-${status}"></span><span>${escapeHtml(STATUS_LABELS[a.status] || a.status)}</span></span></td>
             <td data-label="Action" style="text-align:center">
               <div class="options-cell" style="justify-content:center">
-                <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="preview" aria-label="View ${escapeHtml(a.title || 'article')}"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.46 10C1.73 5.94 5.52 3 10 3s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7S1.73 14.06.46 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span>${canDecide ? 'View' : 'Read article'}</span></button>
-                ${canDecide ? `
-                <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="reject">Reject</button>
-                <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="revision">Revise</button>
-                <button class="btn btn-red table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="publish">Approve</button>` : ''}
+                <button class="btn btn-outline table-btn" type="button" data-id="${escapeHtml(a.id)}" data-action="preview" aria-label="View ${escapeHtml(a.title || 'article')}"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.46 10C1.73 5.94 5.52 3 10 3s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7S1.73 14.06.46 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg><span>View</span></button>
+                <!-- Decisions live in the preview footer, so the article is read before acting. -->
               </div>
             </td>
           </tr>`;
@@ -180,9 +177,7 @@
           <div class="table-wrap">
             <table class="articles-table" style="table-layout:fixed;width:100%;border:0;border-radius:0;">
               <colgroup>
-                ${canDecide
-                  ? '<col style="width:14%"><col style="width:9%"><col style="width:26%"><col style="width:16%"><col style="width:35%">'
-                  : '<col style="width:18%"><col style="width:12%"><col style="width:38%"><col style="width:18%"><col style="width:14%">'}
+                <col style="width:18%"><col style="width:12%"><col style="width:40%"><col style="width:18%"><col style="width:12%">
               </colgroup>
               <thead><tr>
                 <th>Writer</th><th>Section</th><th>Title</th><th>Status</th><th style="text-align:center">Action</th>
